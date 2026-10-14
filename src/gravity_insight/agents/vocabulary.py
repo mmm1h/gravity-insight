@@ -18,8 +18,13 @@ WORKSPACE_VOCABULARY_KINDS = frozenset({
     "template",
 })
 
-AUTHORITATIVE_LOCAL_METADATA_KINDS = frozenset({
+CATALOG_VOCABULARY_KINDS = frozenset({
     *WORKSPACE_VOCABULARY_KINDS,
+    "user_report_field",
+})
+
+AUTHORITATIVE_LOCAL_METADATA_KINDS = frozenset({
+    *CATALOG_VOCABULARY_KINDS,
     "table_lineage",
     "status",
 })
@@ -67,11 +72,18 @@ _KIND_TERMS: Mapping[str, tuple[str, ...]] = {
         "分析模板",
         "报表模板",
     ),
+    "user_report_field": (
+        "user report field",
+        "user report fields",
+        "user field catalog",
+        "用户报表字段",
+        "用户字段目录",
+    ),
 }
 
 
 def is_workspace_vocabulary(item: Mapping[str, Any]) -> bool:
-    return str(item.get("kind", "")) in WORKSPACE_VOCABULARY_KINDS
+    return str(item.get("kind", "")) in CATALOG_VOCABULARY_KINDS
 
 
 def is_vocabulary_discovery_query(query: str) -> bool:
@@ -114,6 +126,8 @@ def vocabulary_card_fields(item: Mapping[str, Any], query: str) -> dict[str, Any
     del query
     kind = str(item["kind"])
     name = _optional_text(item.get("name"))
+    payload = item.get("payload")
+    safe_payload = payload if isinstance(payload, Mapping) else {}
     source = _optional_text(item.get("source"))
     operation_id = _optional_text(item.get("operation_id"))
     identity = _vocabulary_identity(item)
@@ -122,7 +136,7 @@ def vocabulary_card_fields(item: Mapping[str, Any], query: str) -> dict[str, Any
     fields: dict[str, Any] = {
         "selector": f"metadata:{kind}:{origin}:{identity}",
         "lookup_query": lookup_query,
-        "scope": "workspace",
+        "scope": str(item.get("scope", "workspace")),
         "source": source,
         "effect": "local_read",
         "executable": True,
@@ -145,6 +159,24 @@ def vocabulary_card_fields(item: Mapping[str, Any], query: str) -> dict[str, Any
         fields["request_fragment"] = {"metrics_list": [name]}
     elif kind == "custom_metric" and name:
         fields["request_fragment"] = {"custom_metrics_list": [name]}
+    elif kind == "user_report_field" and name:
+        selection = _optional_text(safe_payload.get("selection"))
+        group = _optional_text(safe_payload.get("group"))
+        fields.update(
+            group=group,
+            selection=selection,
+            execution_ready=selection == "static_projection",
+        )
+        if group:
+            fields["next"]["argv"].extend(["--group", group])
+        if selection == "static_projection":
+            fields["request_fragment"] = {"fields": [name]}
+        else:
+            fields["next_action"] = (
+                "Resolve the App, run `gravity metadata properties os_version --app-id "
+                "<app-id>`, and use this field only when live user-property metadata "
+                "returns the matching name."
+            )
     elif kind == "template":
         fields.update({
             "catalog_only": True,
@@ -216,6 +248,7 @@ def _vocabulary_identity(item: Mapping[str, Any]) -> str:
 
 __all__ = [
     "AUTHORITATIVE_LOCAL_METADATA_KINDS",
+    "CATALOG_VOCABULARY_KINDS",
     "WORKSPACE_VOCABULARY_KINDS",
     "is_authoritative_local_metadata_card",
     "is_vocabulary_discovery_query",

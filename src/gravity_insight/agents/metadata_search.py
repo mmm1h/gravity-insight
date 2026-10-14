@@ -70,8 +70,8 @@ def _card(query: str) -> dict[str, Any]:
         "metadata_kind": "all",
         "domain": "metadata",
         "description": (
-            "离线搜索已同步的 App、事件、属性、指标和模板名称；目录缺失时先做"
-            "完整原子同步，不从自然语言选择业务字段。"
+            "离线搜索已同步的 App、事件、属性、指标和模板名称，以及 Runtime "
+            "内置用户报表字段；在线目录缺失时先做完整原子同步。"
         ),
         "boundaries": (
             "目录缺失时先做完整原子同步，不从自然语言选择业务字段。",

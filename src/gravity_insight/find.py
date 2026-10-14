@@ -22,6 +22,7 @@ from .agents.vocabulary import (
 from .errors import InputValidationError
 from .find_metadata import search_metadata
 from .runtime import to_jsonable
+from .user_report_fields import KIND as USER_REPORT_FIELD_KIND
 from .workspace import Workspace, load_workspace
 
 
@@ -123,13 +124,50 @@ def metadata_capability_cards(
             if isinstance(item, Mapping)
         ]
     except (InputValidationError, OSError):
+        static_strong = _runtime_metadata_capability_cards(query)
+        if static_strong:
+            return (
+                static_strong if limit is None else static_strong[:limit],
+                [],
+            )
         return [], [
             "The default local metadata catalog is unavailable; run `gravity metadata "
             "sync --all-apps` before metadata discovery."
         ]
     cards = [_metadata_card(query, item) for item in results]
-    strong = [card for card in cards if card["match"]["confidence"] == "strong"]
+    cards.extend(_runtime_metadata_capability_cards(query))
+    strong = _unique_strong_metadata_cards(cards)
     return (strong if limit is None else strong[:limit]), []
+
+
+def _runtime_metadata_capability_cards(query: str) -> list[dict[str, Any]]:
+    from .find_metadata import search_metadata as search_runtime_metadata
+
+    static_query = "" if is_vocabulary_discovery_query(query) else query
+    result = search_runtime_metadata(
+        static_query,
+        kind=USER_REPORT_FIELD_KIND,
+        limit=None,
+        offset=0,
+    )
+    cards = [
+        _metadata_card(query, item)
+        for item in result.get("results", [])
+        if isinstance(item, Mapping)
+    ]
+    return [card for card in cards if card["match"]["confidence"] == "strong"]
+
+
+def _unique_strong_metadata_cards(
+    cards: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    unique: dict[str, dict[str, Any]] = {}
+    for card in cards:
+        if card.get("match", {}).get("confidence") != "strong":
+            continue
+        normalized = dict(card)
+        unique.setdefault(str(normalized.get("selector", "")), normalized)
+    return list(unique.values())
 
 
 def capability_gaps(

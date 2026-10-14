@@ -6,8 +6,22 @@ import json
 import sqlite3
 from contextlib import closing
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
+from .contracts.envelope_obligations import (
+    CompletenessState,
+    DataCompleteness,
+    DiagnosticEvidence,
+    DiagnosticState,
+    EnvelopeObligations,
+    ExecutionState,
+    ExecutionStatus,
+    MutationCertainty,
+    MutationState,
+    SemanticState,
+    SemanticValidity,
+    serialize_envelope,
+)
 from .domains import ANALYSIS_METADATA_OPERATIONS
 from .errors import InputValidationError
 from .metadata_vocabulary import (
@@ -18,6 +32,14 @@ from .metadata_vocabulary import (
 from .result_source import LOCAL_CATALOG, result_source
 from .actionable_error_values import actual_value
 from .runtime_scope import metadata_catalog_path, public_scoped_path
+from .user_report_fields import (
+    KIND as USER_REPORT_FIELD_KIND,
+    OPERATION_ID as USER_REPORT_FIELD_OPERATION_ID,
+    SOURCE as USER_REPORT_FIELD_SOURCE,
+    catalog_metadata as user_report_field_catalog_metadata,
+    search_rows as search_user_report_fields,
+    validate_group as validate_user_report_field_group,
+)
 
 
 SCHEMA_VERSION = "gravity.metadata-search.v1"
@@ -40,11 +62,34 @@ def search_metadata(
     database: str | Path | None = None,
     app_id: str | None = None,
     kind: str = "all",
+    group: str | None = None,
     limit: int | None = 20,
     offset: int = 0,
 ) -> dict[str, Any]:
     """Search the synchronized catalog without creating a network client."""
 
+    selected_group = _validate_search_request(kind, app_id, group, limit, offset)
+    if kind == USER_REPORT_FIELD_KIND:
+        return _user_report_field_result(
+            query, selected_group, limit=limit, offset=offset
+        )
+    return _synchronized_catalog_result(
+        query,
+        database=database,
+        app_id=app_id,
+        kind=kind,
+        limit=limit,
+        offset=offset,
+    )
+
+
+def _validate_search_request(
+    kind: str,
+    app_id: str | None,
+    group: str | None,
+    limit: int | None,
+    offset: int,
+) -> str | None:
     if kind not in _APP_KINDS | _VOCABULARY_KINDS:
         raise InputValidationError("unknown metadata search kind", field="kind", next_action="Use a documented metadata search kind and retry.")
     if app_id is not None and kind in _VOCABULARY_KINDS:
@@ -52,9 +97,28 @@ def search_metadata(
             "workspace Analysis vocabulary cannot be filtered by app_id",
             field="app_id", next_action="Omit app_id or switch to an App-scoped source.",
         )
+    if group is not None and kind != USER_REPORT_FIELD_KIND:
+        raise InputValidationError(
+            "metadata group is supported only for user_report_field searches",
+            field="group",
+            next_action="Set kind=user_report_field or omit group.",
+        )
+    selected_group = validate_user_report_field_group(group)
     if limit is not None:
         search_limit(limit)
     search_offset(offset)
+    return selected_group
+
+
+def _synchronized_catalog_result(
+    query: str,
+    *,
+    database: str | Path | None,
+    app_id: str | None,
+    kind: str,
+    limit: int | None,
+    offset: int,
+) -> dict[str, Any]:
     catalog = Path(database) if database is not None else _default_catalog_path()
     catalog = catalog.expanduser().resolve()
     public_catalog = public_scoped_path(catalog, explicit=database is not None)
@@ -64,6 +128,30 @@ def search_metadata(
             field="database",
             next_action="Run `gravity metadata sync --all-apps`, then retry.",
         )
+    candidates, catalog_status, catalog_failures = _read_synchronized_catalog(
+        catalog, query, app_id, kind
+    )
+    ordered = sorted(candidates, key=_sort_key)
+    page = ordered[offset:] if limit is None else ordered[offset : offset + limit]
+    return _metadata_search_result(
+        query,
+        kind,
+        public_catalog,
+        catalog_status,
+        catalog_failures,
+        ordered,
+        page,
+        limit,
+        offset,
+    )
+
+
+def _read_synchronized_catalog(
+    catalog: Path,
+    query: str,
+    app_id: str | None,
+    kind: str,
+) -> tuple[list[dict[str, Any]], dict[str, str], list[dict[str, str]]]:
     with closing(sqlite3.connect(f"{catalog.as_uri()}?mode=ro", uri=True)) as connection:
         connection.row_factory = sqlite3.Row
         _validate_schema(connection)
@@ -86,9 +174,23 @@ def search_metadata(
                 _vocabulary_candidates(connection, query, vocabulary_kind)
             )
             catalog_failures = vocabulary_failures(connection)
-    ordered = sorted(candidates, key=_sort_key)
-    page = ordered[offset:] if limit is None else ordered[offset : offset + limit]
-    result = {
+            if kind in {"all", "vocabulary"}:
+                candidates.extend(_user_report_field_candidates(query, None))
+    return candidates, catalog_status, catalog_failures
+
+
+def _metadata_search_result(
+    query: str,
+    kind: str,
+    public_catalog: str,
+    catalog_status: Mapping[str, str],
+    catalog_failures: list[dict[str, str]],
+    ordered: list[dict[str, Any]],
+    page: list[dict[str, Any]],
+    limit: int | None,
+    offset: int,
+) -> dict[str, Any]:
+    payload = {
         "schema_version": SCHEMA_VERSION,
         "result_source": result_source(LOCAL_CATALOG),
         "ok": True,
@@ -105,8 +207,104 @@ def search_metadata(
         "results": page,
     }
     if kind in _VOCABULARY_KINDS:
-        result.update(scope="workspace", failures=catalog_failures)
-    return result
+        payload.update(
+            scope="workspace_and_runtime" if kind == "vocabulary" else "workspace",
+            failures=catalog_failures,
+        )
+    return serialize_envelope(
+        payload,
+        _synchronized_catalog_obligations(
+            len(ordered), len(page), has_failures=bool(catalog_failures)
+        ),
+    )
+
+
+def _user_report_field_result(
+    query: str,
+    group: str | None,
+    *,
+    limit: int | None,
+    offset: int,
+) -> dict[str, Any]:
+    candidates = _user_report_field_candidates(query, group)
+    ordered = sorted(candidates, key=_sort_key)
+    page = ordered[offset:] if limit is None else ordered[offset : offset + limit]
+    payload = {
+        "schema_version": SCHEMA_VERSION,
+        "result_source": result_source(LOCAL_CATALOG),
+        "ok": True,
+        "status": "success",
+        "offline": True,
+        "query": query,
+        "kind": USER_REPORT_FIELD_KIND,
+        "group": group,
+        "scope": "runtime",
+        "catalog": user_report_field_catalog_metadata(),
+        "count": len(page),
+        "total": len(ordered),
+        "limit": limit,
+        "offset": offset,
+        "results": page,
+        "failures": [],
+    }
+    return serialize_envelope(payload, _runtime_catalog_obligations(len(ordered), len(page)))
+
+
+def _runtime_catalog_obligations(total: int, count: int) -> EnvelopeObligations:
+    return EnvelopeObligations(
+        ExecutionStatus(ExecutionState.COMPLETE, "LOCAL_CATALOG_READ"),
+        DataCompleteness(
+            CompletenessState.COMPLETE,
+            "VERSIONED_CATALOG_COMPLETE",
+            {"matching_rows": total, "returned_rows": count},
+        ),
+        SemanticValidity(SemanticState.VALID, ("CATALOG_CONTRACT_VALIDATED",)),
+        DiagnosticEvidence(DiagnosticState.NONE),
+        MutationCertainty(MutationState.NOT_APPLICABLE, "READ_ONLY_CATALOG"),
+    )
+
+
+def _synchronized_catalog_obligations(
+    total: int, count: int, *, has_failures: bool
+) -> EnvelopeObligations:
+    diagnostics = (
+        DiagnosticEvidence(
+            DiagnosticState.INCOMPLETE, ("CATALOG_SOURCE_FAILURES",)
+        )
+        if has_failures
+        else DiagnosticEvidence(DiagnosticState.NONE)
+    )
+    return EnvelopeObligations(
+        ExecutionStatus(ExecutionState.COMPLETE, "LOCAL_CATALOG_READ"),
+        DataCompleteness(
+            CompletenessState.UNKNOWN,
+            "SYNCHRONIZED_CATALOG_SCOPE",
+            {"matching_rows": total, "returned_rows": count},
+        ),
+        SemanticValidity(SemanticState.NOT_APPLICABLE, ()),
+        diagnostics,
+        MutationCertainty(MutationState.NOT_APPLICABLE, "READ_ONLY_CATALOG"),
+    )
+
+
+def _user_report_field_candidates(
+    query: str, group: str | None
+) -> list[dict[str, Any]]:
+    return [
+        {
+            "backend": "metadata",
+            "kind": USER_REPORT_FIELD_KIND,
+            "scope": "runtime",
+            "source": USER_REPORT_FIELD_SOURCE,
+            "operation_id": USER_REPORT_FIELD_OPERATION_ID,
+            "name": item["payload"]["name"],
+            "cname": item["payload"]["cname"],
+            "group": item["payload"]["group"],
+            "score": item["score"],
+            "payload": item["payload"],
+        }
+        for item in search_user_report_fields(query, group=group)
+    ]
 
 
 def _vocabulary_candidates(
@@ -119,6 +317,7 @@ def _vocabulary_candidates(
     for row in vocabulary_rows(connection, query, kind):
         name = _optional_text(row["name"])
         cname = _optional_text(row["cname"])
+        payload = json.loads(row["payload_json"])
         results.append(
             {
                 "backend": "metadata",
@@ -128,8 +327,13 @@ def _vocabulary_candidates(
                 "operation_id": str(row["operation_id"]),
                 "name": name,
                 "cname": cname,
+                **(
+                    {"group": payload.get("group")}
+                    if isinstance(payload, Mapping) and payload.get("group") is not None
+                    else {}
+                ),
                 "score": _score(normalized, name, cname, str(row["payload_json"])),
-                "payload": json.loads(row["payload_json"]),
+                "payload": payload,
             }
         )
     return results
