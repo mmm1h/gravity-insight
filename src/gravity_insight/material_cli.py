@@ -10,10 +10,13 @@ from . import runtime
 from .domains import DOMAIN_OPERATIONS
 from .errors import InputValidationError
 from .material_performance import (
+    DATA_DIMENSIONS,
+    DATE_GRAINS,
     DEFAULT_PLATFORMS,
     material_performance,
     validate_material_performance_request,
 )
+from .material_metrics import DEFAULT_GRAVITY_METRICS, REPORT_PLATFORMS
 from .workspace import load_workspace
 from .workspace_app import resolve_workspace_app
 from .title_package import OPERATION_IDS, title_packages
@@ -41,6 +44,26 @@ def add_material_commands(
         add_pagination(item)
     _add_material_fetch_command(subcommands, add_input)
     _add_material_game_command(subcommands, positive_int, concurrency_parser)
+    _add_material_performance_command(
+        subcommands, positive_int, concurrency_parser
+    )
+    packages = subcommands.add_parser(
+        "title-packages",
+        help="Read regular or standard Bytedance title-package summaries.",
+    )
+    packages.add_argument(
+        "--app", required=True, help="Workspace App alias or positive id."
+    )
+    packages.add_argument(
+        "--package-kind", required=True, choices=tuple(OPERATION_IDS)
+    )
+    packages.add_argument("--max-pages", type=positive_int, default=1_000)
+    packages.add_argument("--max-items", type=positive_int, default=100_000)
+
+
+def _add_material_performance_command(
+    subcommands: Any, positive_int: Any, concurrency_parser: Any
+) -> None:
     performance = subcommands.add_parser(
         "performance",
         help="Read platform material performance through one stable operation.",
@@ -56,8 +79,31 @@ def add_material_commands(
     performance.add_argument(
         "--platform",
         action="append",
-        choices=DEFAULT_PLATFORMS,
-        help="Platform; repeat. Defaults to all four supported platforms.",
+        choices=REPORT_PLATFORMS,
+        help="Platform; repeat. Defaults to the established four-platform profile.",
+    )
+    performance.add_argument(
+        "--metric-map",
+        help="JSON object or file mapping each selected platform to metric names.",
+    )
+    performance.add_argument(
+        "--gravity-metric", action="append",
+        help="Gravity metric; repeat or comma-separate. Defaults to the established pair.",
+    )
+    performance.add_argument("--date-grain", choices=DATE_GRAINS, default="total")
+    performance.add_argument(
+        "--data-dimension", choices=DATA_DIMENSIONS, default="material"
+    )
+    performance.add_argument("--relate-dimension", action="append")
+    performance.add_argument("--stat", action="append")
+    performance.add_argument(
+        "--order-by", help="JSON object or file mapping platforms to ordered rules."
+    )
+    performance.add_argument(
+        "--decimal-point", type=int, choices=(2, 3, 4)
+    )
+    performance.add_argument(
+        "--time-lines", help="JSON object or file mapping platforms to time lines."
     )
     performance.add_argument(
         "--concurrency", type=concurrency_parser, default=6,
@@ -69,18 +115,6 @@ def add_material_commands(
         "--output", type=_output_file,
         help="Write the complete JSON result to a local file.",
     )
-    packages = subcommands.add_parser(
-        "title-packages",
-        help="Read regular or standard Bytedance title-package summaries.",
-    )
-    packages.add_argument(
-        "--app", required=True, help="Workspace App alias or positive id."
-    )
-    packages.add_argument(
-        "--package-kind", required=True, choices=tuple(OPERATION_IDS)
-    )
-    packages.add_argument("--max-pages", type=positive_int, default=1_000)
-    packages.add_argument("--max-items", type=positive_int, default=100_000)
 
 
 def _add_material_fetch_command(
@@ -172,17 +206,41 @@ def dispatch_material_command(args: Any, object_input: Callable[[Any], Any]) -> 
             max_pages=args.max_pages,
             max_items=args.max_items,
         )
+    return _dispatch_material_performance(args, object_input)
+
+
+def _dispatch_material_performance(
+    args: Any, object_input: Callable[[Any], Any]
+) -> dict[str, Any]:
     workspace = load_workspace()
     apps = [
         resolve_workspace_app(workspace, value)
         for value in _split_values(args.app, field="app")
     ]
     platforms = tuple(args.platform or DEFAULT_PLATFORMS)
+    options = {
+        "metrics": object_input(args.metric_map) if args.metric_map else None,
+        "gravity_metrics": tuple(
+            _split_values(args.gravity_metric, field="gravity-metric")
+        ) if args.gravity_metric else DEFAULT_GRAVITY_METRICS,
+        "date_grain": args.date_grain,
+        "data_dimension": args.data_dimension,
+        "relate_dimensions": tuple(
+            _split_values(args.relate_dimension, field="relate-dimension")
+        ) if args.relate_dimension else (),
+        "statistics": tuple(
+            _split_values(args.stat, field="stat")
+        ) if args.stat else (),
+        "order_by": object_input(args.order_by) if args.order_by else None,
+        "decimal_point": args.decimal_point,
+        "time_lines": object_input(args.time_lines) if args.time_lines else None,
+    }
     validate_material_performance_request(
         apps,
         args.start,
         args.end,
         platforms=platforms,
+        **options,
         max_workers=args.concurrency,
         max_pages=args.max_pages,
         max_items=args.max_items,
@@ -193,6 +251,7 @@ def dispatch_material_command(args: Any, object_input: Callable[[Any], Any]) -> 
         args.start,
         args.end,
         platforms=platforms,
+        **options,
         max_workers=args.concurrency,
         max_pages=args.max_pages,
         max_items=args.max_items,

@@ -29,6 +29,10 @@ from .metadata_vocabulary import (
     vocabulary_failures,
     vocabulary_rows,
 )
+from .material_metrics import (
+    KIND as MATERIAL_METRIC_KIND,
+    validate_catalog_platform as validate_material_metric_platform,
+)
 from .result_source import LOCAL_CATALOG, result_source
 from .actionable_error_values import actual_value
 from .runtime_scope import metadata_catalog_path, public_scoped_path
@@ -63,15 +67,24 @@ def search_metadata(
     app_id: str | None = None,
     kind: str = "all",
     group: str | None = None,
+    platform: str | None = None,
     limit: int | None = 20,
     offset: int = 0,
 ) -> dict[str, Any]:
     """Search the synchronized catalog without creating a network client."""
 
-    selected_group = _validate_search_request(kind, app_id, group, limit, offset)
+    selected_group, selected_platform = _validate_search_request(
+        kind, app_id, group, platform, limit, offset
+    )
     if kind == USER_REPORT_FIELD_KIND:
         return _user_report_field_result(
             query, selected_group, limit=limit, offset=offset
+        )
+    if kind == MATERIAL_METRIC_KIND:
+        from .material_metric_search import search_material_metric_metadata
+
+        return search_material_metric_metadata(
+            query, selected_platform, limit=limit, offset=offset
         )
     return _synchronized_catalog_result(
         query,
@@ -87,9 +100,10 @@ def _validate_search_request(
     kind: str,
     app_id: str | None,
     group: str | None,
+    platform: str | None,
     limit: int | None,
     offset: int,
-) -> str | None:
+) -> tuple[str | None, str | None]:
     if kind not in _APP_KINDS | _VOCABULARY_KINDS:
         raise InputValidationError("unknown metadata search kind", field="kind", next_action="Use a documented metadata search kind and retry.")
     if app_id is not None and kind in _VOCABULARY_KINDS:
@@ -103,11 +117,20 @@ def _validate_search_request(
             field="group",
             next_action="Set kind=user_report_field or omit group.",
         )
+    if platform is not None and kind != MATERIAL_METRIC_KIND:
+        raise InputValidationError(
+            "metadata platform is supported only for material_metric searches",
+            field="platform",
+            next_action="Set kind=material_metric or omit platform.",
+        )
     selected_group = validate_user_report_field_group(group)
+    selected_platform = (
+        validate_material_metric_platform(platform) if platform is not None else None
+    )
     if limit is not None:
         search_limit(limit)
     search_offset(offset)
-    return selected_group
+    return selected_group, selected_platform
 
 
 def _synchronized_catalog_result(

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Mapping
+from collections.abc import Sequence
 import re
 from typing import Any
 
@@ -12,18 +13,38 @@ from .component_aggregate import (
     aggregate_status,
     component_exit_code,
 )
-from .composite_catalog import stable_operation
+from .contracts.envelope_obligations import (
+    CompletenessState,
+    DataCompleteness,
+    DiagnosticEvidence,
+    DiagnosticState,
+    EnvelopeObligations,
+    ExecutionState,
+    ExecutionStatus,
+    MutationCertainty,
+    MutationState,
+    SemanticState,
+    SemanticValidity,
+    diagnostic_evidence,
+    serialize_envelope,
+)
 from .composite_result import bounded_structural_drift_diagnostics
 from .errors import (
     ErrorCategory,
     ErrorCode,
     ErrorDetail,
-    ManifestError,
     exit_code_for_error,
 )
-from .models import load_operation_manifest
-from .paths import MANIFEST_ROOT
-from .promotion_performance_rows import safe_promotion_rows
+from .material_performance_projection import (
+    MATERIAL_IDENTITY_FIELDS,
+    MATERIAL_REPORT_OPERATION,
+    MATERIAL_ROW_FIELDS,
+    coerce_profile as _coerce_profile,
+    material_component_item_count,
+    material_performance_item_count,
+    project_success_data,
+    safe_rows as _safe_rows,
+)
 from .result_audit import (
     aggregate_result_audit,
     project_result_audit,
@@ -33,47 +54,6 @@ from .result_source import GOVERNED_PRODUCT, result_source
 
 
 SCHEMA_VERSION = "gravity-insight.material-performance.v1"
-MATERIAL_REPORT_OPERATION = stable_operation(
-    "material", "report", action="query"
-).operation_id
-
-
-def _material_source_row_contract() -> tuple[frozenset[str], frozenset[str]]:
-    operations = load_operation_manifest(MANIFEST_ROOT / "candidates.json")
-    matches = tuple(
-        operation
-        for operation in operations
-        if operation.operation_id == MATERIAL_REPORT_OPERATION
-    )
-    if len(matches) != 1:
-        raise ManifestError(
-            "compiled candidate manifest must contain one material report operation"
-        )
-    projection = matches[0].response_projection
-    fields = frozenset(projection.item_keys)
-    opaque = frozenset(projection.opaque_json_item_keys)
-    if not fields or opaque - fields:
-        raise ManifestError(
-            "compiled material report row projection is internally inconsistent"
-        )
-    return fields, opaque
-
-
-MATERIAL_ROW_FIELDS = frozenset(
-    {
-        "file_name", "gravity_material_id", "material_id", "stat_cost", "ctr",
-        "convert_rate", "cost", "conversions_rate", "charge", "action_ratio",
-        "conversion_ratio", "click_rate", "AppRealRegisterCnt",
-        "AppGamePayUserCntStandardAtv",
-    }
-)
-_MATERIAL_SOURCE_ROW_FIELDS, _MATERIAL_OPAQUE_JSON_FIELDS = (
-    _material_source_row_contract()
-)
-if MATERIAL_ROW_FIELDS - _MATERIAL_SOURCE_ROW_FIELDS:
-    raise ManifestError(
-        "material performance row fields must be registered source fields"
-    )
 _SUCCESS_STATUSES = frozenset({"success", "empty"})
 _FAILURE_STATUSES = frozenset(
     {
@@ -113,65 +93,56 @@ _BUILTIN_DEFAULTS = {
 }
 
 
-def material_performance_item_count(value: Any) -> int:
-    if not isinstance(value, Mapping):
-        return 0
-    results = value.get("results")
-    if not isinstance(results, list):
-        return 0
-    return sum(material_component_item_count(item) for item in results)
-
-
-def material_component_item_count(value: Any) -> int:
-    if not isinstance(value, Mapping) or value.get("ok") is not True:
-        return 0
-    data = value.get("data")
-    rows = data.get("list") if isinstance(data, Mapping) else None
-    return len(rows) if isinstance(rows, list) else 0
-
-
 def safe_component(
     value: Any,
-    platform: str,
+    platform: Any,
     *,
     max_pages: int,
 ) -> dict[str, Any]:
+    profile = _coerce_profile(platform)
+    platform = str(getattr(profile, "platform", platform))
+    if profile is None:
+        return _contract_failure(platform, "query_profile", "$.query")
+    query = profile.receipt()
     if not isinstance(value, Mapping):
-        return _contract_failure(platform, "component_shape", "$")
+        return _contract_failure(platform, "component_shape", "$", query=query)
     if (
         value.get("operation_id") != MATERIAL_REPORT_OPERATION
         or value.get("request_id") != platform
     ):
         return _contract_failure(
-            platform, "component_identity", "$.operation_id_or_request_id"
+            platform, "component_identity", "$.operation_id_or_request_id", query=query
         )
     status = value.get("status")
     if not isinstance(status, str):
-        return _contract_failure(platform, "component_status_type", "$.status")
+        return _contract_failure(platform, "component_status_type", "$.status", query=query)
     if value.get("ok") is True and status in _SUCCESS_STATUSES:
-        return _safe_success(value, platform, status, max_pages=max_pages)
+        return _safe_success(
+            value, profile, status, max_pages=max_pages
+        )
     if value.get("ok") is False and status in _FAILURE_STATUSES:
         error = _safe_error(value.get("error"), platform)
         if error is None:
-            return _contract_failure(platform, "component_error_shape", "$.error")
+            return _contract_failure(platform, "component_error_shape", "$.error", query=query)
         if not _failure_matches(status, error["code"]):
             return _contract_failure(
-                platform, "component_error_status", "$.status_or_error.code"
+                platform, "component_error_status", "$.status_or_error.code", query=query
             )
         if error["code"] == ErrorCode.CONTRACT_CHANGED.value:
             inner = value.get("data")
             if result_response_drift(value) is not None or result_response_drift(
                 inner
             ) is not None:
-                return project_result_audit(contract_component(platform), value)
+                return project_result_audit(contract_component(platform, query=query), value)
             return project_result_audit(
                 _contract_failure(
-                    platform, "component_contract_status", "$.status"
+                    platform, "component_contract_status", "$.status", query=query
                 ),
                 value,
             )
-        return {
+        payload = {
             "platform": platform,
+            "query": query,
             "operation_id": MATERIAL_REPORT_OPERATION,
             "ok": False,
             "status": status,
@@ -179,74 +150,61 @@ def safe_component(
             "page": None,
             "error": error,
         }
-    return _contract_failure(platform, "component_status", "$.ok_or_status")
+        return serialize_envelope(
+            payload, _component_obligations(False, status, 0, error)
+        )
+    return _contract_failure(platform, "component_status", "$.ok_or_status", query=query)
 
 
 def _safe_success(
     value: Mapping[str, Any],
-    platform: str,
+    profile: Any,
     status: str,
     *,
     max_pages: int,
 ) -> dict[str, Any]:
+    platform = str(profile.platform)
+    query = profile.receipt()
     if value.get("error") not in (None, {}):
-        return _contract_failure(platform, "success_error", "$.error")
+        return _contract_failure(platform, "success_error", "$.error", query=query)
     envelope = value.get("data")
     if not isinstance(envelope, Mapping):
-        return _contract_failure(platform, "read_envelope_type", "$.data")
+        return _contract_failure(platform, "read_envelope_type", "$.data", query=query)
     if (
         envelope.get("schema_version") != "gravity-insight.read.v1"
         or envelope.get("operation_id") != MATERIAL_REPORT_OPERATION
         or envelope.get("status") != status
         or envelope.get("error") not in (None, {})
     ):
-        return _contract_failure(platform, "read_envelope_identity", "$.data")
+        return _contract_failure(platform, "read_envelope_identity", "$.data", query=query)
     data = envelope.get("data")
-    if not isinstance(data, Mapping) or set(data) - {"list", "page_info"}:
-        return _contract_failure(platform, "read_data_shape", "$.data.data")
-    rows, failure = _safe_rows_with_failure(data.get("list"))
-    if failure is not None or rows is None:
-        check, path = failure or ("row_projection", "$.data.data.list")
-        return _contract_failure(platform, check, path)
+    if not isinstance(data, Mapping) or set(data) - {
+        "list", "page_info", "total", "update_at"
+    }:
+        return _contract_failure(platform, "read_data_shape", "$.data.data", query=query)
+    safe_data, failure = project_success_data(data, profile)
+    if failure is not None or safe_data is None:
+        check, path = failure or ("data_projection", "$.data.data")
+        return _contract_failure(platform, check, path, query=query)
+    rows = safe_data["list"]
     if (status == "empty") != (not rows):
-        return _contract_failure(platform, "row_status", "$.data.status")
+        return _contract_failure(platform, "row_status", "$.data.status", query=query)
     page = _safe_page(envelope.get("page"), len(rows), max_pages=max_pages)
     if page is None:
-        return _contract_failure(platform, "page_receipt", "$.data.page")
-    return {
+        return _contract_failure(platform, "page_receipt", "$.data.page", query=query)
+    payload = {
         "platform": platform,
+        "query": query,
         "operation_id": MATERIAL_REPORT_OPERATION,
         "ok": True,
         "status": status,
-        "data": {"list": rows},
+        "data": safe_data,
         "page": page,
         "error": None,
     }
-
-
-def _safe_rows(value: Any) -> list[dict[str, Any]] | None:
-    rows, failure = _safe_rows_with_failure(value)
-    return rows if failure is None else None
-
-
-def _safe_rows_with_failure(
-    value: Any,
-) -> tuple[list[dict[str, Any]] | None, tuple[str, str] | None]:
-    rows, failure = safe_promotion_rows(
-        value,
-        allowed_fields=_MATERIAL_SOURCE_ROW_FIELDS,
-        opaque_fields=_MATERIAL_OPAQUE_JSON_FIELDS,
+    return serialize_envelope(
+        payload, _component_obligations(True, status, len(rows), None)
     )
-    if rows is None or failure is not None:
-        return rows, failure
-    return [
-        {
-            str(key): item
-            for key, item in row.items()
-            if key in MATERIAL_ROW_FIELDS
-        }
-        for row in rows
-    ], None
 
 
 def _safe_page(value: Any, rows: int, *, max_pages: int) -> dict[str, Any] | None:
@@ -370,7 +328,9 @@ def _valid_retry_receipt(code: str, retryable: Any, retry_after: Any) -> bool:
     )
 
 
-def contract_component(platform: str) -> dict[str, Any]:
+def contract_component(
+    platform: str, *, query: Mapping[str, Any] | None = None
+) -> dict[str, Any]:
     detail = ErrorDetail.create(
         ErrorCode.CONTRACT_CHANGED,
         f"Material performance result contract changed for {platform}.",
@@ -380,8 +340,9 @@ def contract_component(platform: str) -> dict[str, Any]:
             "contract is re-verified."
         ),
     )
-    return {
+    payload = {
         "platform": platform,
+        "query": copy.deepcopy(dict(query)) if query is not None else None,
         "operation_id": MATERIAL_REPORT_OPERATION,
         "ok": False,
         "status": "contract_changed",
@@ -389,10 +350,22 @@ def contract_component(platform: str) -> dict[str, Any]:
         "page": None,
         "error": detail.to_dict(),
     }
+    return serialize_envelope(
+        payload,
+        _component_obligations(
+            False, "contract_changed", 0, detail.to_dict()
+        ),
+    )
 
 
-def _contract_failure(platform: str, check: str, path: str) -> dict[str, Any]:
-    result = contract_component(platform)
+def _contract_failure(
+    platform: str,
+    check: str,
+    path: str,
+    *,
+    query: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    result = contract_component(platform, query=query)
     result["drift_diagnostics"] = bounded_structural_drift_diagnostics(
         MATERIAL_REPORT_OPERATION, [(check, path)]
     )
@@ -430,6 +403,7 @@ def product_envelope(
     max_items: int,
     max_workers: int,
     returned_items: int,
+    profiles: Sequence[Any] | None = None,
 ) -> dict[str, Any]:
     failures = [item for item in results if item.get("ok") is not True]
     success_count = len(results) - len(failures)
@@ -446,6 +420,11 @@ def product_envelope(
         "app_count": app_count,
         "date_range": {"start": window[0], "end": window[1], "inclusive": True},
         "platforms": list(platforms),
+        "queries": [
+            copy.deepcopy(item.receipt()) for item in profiles
+        ] if profiles is not None else [
+            copy.deepcopy(item.get("query")) for item in results
+        ],
         "platform_count": len(platforms),
         "total_count": len(results),
         "success_count": success_count,
@@ -499,8 +478,46 @@ def _failure_matches(status: str, code: str) -> bool:
     return code not in _SPECIAL_FAILURE_CODES
 
 
+def _component_obligations(
+    ok: bool,
+    status: str,
+    rows: int,
+    error: Mapping[str, Any] | None,
+) -> EnvelopeObligations:
+    execution = ExecutionStatus(
+        ExecutionState.COMPLETE if ok else ExecutionState.FAILED,
+        "MATERIAL_COMPONENT_READ_COMPLETE" if ok else "MATERIAL_COMPONENT_READ_FAILED",
+    )
+    completeness = DataCompleteness(
+        CompletenessState.COMPLETE if ok else CompletenessState.UNKNOWN,
+        "MATERIAL_PAGINATION_COMPLETE" if ok else "MATERIAL_COMPLETENESS_UNKNOWN",
+        {"returned_rows": rows},
+    )
+    semantics = SemanticValidity(
+        SemanticState.VALID if ok else SemanticState.INVALID,
+        (
+            "MATERIAL_QUERY_PROFILE_VALIDATED"
+            if ok
+            else "MATERIAL_COMPONENT_REJECTED"
+        ,),
+    )
+    diagnostics = (
+        DiagnosticEvidence(DiagnosticState.NONE)
+        if error is None
+        else diagnostic_evidence(error)
+    )
+    return EnvelopeObligations(
+        execution,
+        completeness,
+        semantics,
+        diagnostics,
+        MutationCertainty(MutationState.NOT_APPLICABLE, "READ_ONLY_MATERIAL_REPORT"),
+    )
+
+
 __all__ = [
     "MATERIAL_REPORT_OPERATION",
+    "MATERIAL_IDENTITY_FIELDS",
     "MATERIAL_ROW_FIELDS",
     "SCHEMA_VERSION",
     "contract_component",

@@ -21,6 +21,7 @@ WORKSPACE_VOCABULARY_KINDS = frozenset({
 CATALOG_VOCABULARY_KINDS = frozenset({
     *WORKSPACE_VOCABULARY_KINDS,
     "user_report_field",
+    "material_metric",
 })
 
 AUTHORITATIVE_LOCAL_METADATA_KINDS = frozenset({
@@ -78,6 +79,14 @@ _KIND_TERMS: Mapping[str, tuple[str, ...]] = {
         "user field catalog",
         "用户报表字段",
         "用户字段目录",
+    ),
+    "material_metric": (
+        "material metric",
+        "material metrics",
+        "creative metric",
+        "creative metrics",
+        "素材指标",
+        "素材报表指标",
     ),
 }
 
@@ -160,23 +169,9 @@ def vocabulary_card_fields(item: Mapping[str, Any], query: str) -> dict[str, Any
     elif kind == "custom_metric" and name:
         fields["request_fragment"] = {"custom_metrics_list": [name]}
     elif kind == "user_report_field" and name:
-        selection = _optional_text(safe_payload.get("selection"))
-        group = _optional_text(safe_payload.get("group"))
-        fields.update(
-            group=group,
-            selection=selection,
-            execution_ready=selection == "static_projection",
-        )
-        if group:
-            fields["next"]["argv"].extend(["--group", group])
-        if selection == "static_projection":
-            fields["request_fragment"] = {"fields": [name]}
-        else:
-            fields["next_action"] = (
-                "Resolve the App, run `gravity metadata properties os_version --app-id "
-                "<app-id>`, and use this field only when live user-property metadata "
-                "returns the matching name."
-            )
+        _user_report_fields(fields, safe_payload, name)
+    elif kind == "material_metric" and name:
+        _material_metric_fields(fields, item, safe_payload, name)
     elif kind == "template":
         fields.update({
             "catalog_only": True,
@@ -187,6 +182,44 @@ def vocabulary_card_fields(item: Mapping[str, Any], query: str) -> dict[str, Any
             ),
         })
     return fields
+
+
+def _user_report_fields(
+    fields: dict[str, Any], payload: Mapping[str, Any], name: str
+) -> None:
+    selection = _optional_text(payload.get("selection"))
+    group = _optional_text(payload.get("group"))
+    fields.update(
+        group=group,
+        selection=selection,
+        execution_ready=selection == "static_projection",
+    )
+    if group:
+        fields["next"]["argv"].extend(["--group", group])
+    if selection == "static_projection":
+        fields["request_fragment"] = {"fields": [name]}
+        return
+    fields["next_action"] = (
+        "Resolve the App, run `gravity metadata properties os_version --app-id "
+        "<app-id>`, and use this field only when live user-property metadata "
+        "returns the matching name."
+    )
+
+
+def _material_metric_fields(
+    fields: dict[str, Any],
+    item: Mapping[str, Any],
+    payload: Mapping[str, Any],
+    name: str,
+) -> None:
+    platform = _optional_text(item.get("platform")) or _optional_text(
+        payload.get("platform")
+    )
+    fields.update(platform=platform, execution_ready=bool(platform))
+    if platform:
+        fields["next"]["argv"].extend(["--platform", platform])
+    target = "gravity_metrics_list" if platform == "gravity" else "metrics_list"
+    fields["request_fragment"] = {target: [name]}
 
 
 def _vocabulary_lookup_query(item: Mapping[str, Any]) -> str:

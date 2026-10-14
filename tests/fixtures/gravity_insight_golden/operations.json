@@ -14320,8 +14320,8 @@
       "action": "list",
       "auth_profile": "gravity_authorization",
       "block_reason": null,
-      "contract_version": "2",
-      "description": "指定媒体的素材指标配置；data 为指标数组。",
+      "contract_version": "3",
+      "description": "版本化素材报表指标目录的线上来源；支持不限媒体、巨量、腾讯、快手和引力指标命名空间，report_type 固定为 material。",
       "domain": "material",
       "executable": true,
       "input_fields": [
@@ -14332,7 +14332,11 @@
           },
           "description": "",
           "enum": [
-            "bytedance"
+            "aggregate",
+            "bytedance",
+            "tencent",
+            "kuaishou",
+            "gravity"
           ],
           "item_enum": [],
           "item_type": null,
@@ -14383,7 +14387,9 @@
         "body_fields": [],
         "defaults": {},
         "fixed_body": {},
-        "fixed_query": {},
+        "fixed_query": {
+          "report_type": "material"
+        },
         "location": "mixed",
         "path_fields": [],
         "query_fields": [
@@ -14696,8 +14702,8 @@
       "action": "query",
       "auth_profile": "gravity_authorization",
       "block_reason": null,
-      "contract_version": "2",
-      "description": "平台素材安全聚合报表。当前 Business chunk 明确巨量/腾讯/磁力/B站指标映射；受控 codec 固定 material/total 聚合、平台与 App filters，并将 stat_list 收紧为空以禁止 designer_id 人员分组。素材 URL 与内部形状未知的 image_set 不向消费方投影。",
+      "contract_version": "3",
+      "description": "平台素材安全聚合报表。受控 codec 强制一个媒体条件和一个 App 条件，动态媒体/引力指标由版本化目录校验；支持日期粒度、单主维度、关联维度、附加字段、排序、精度和平台绑定时间口径。素材 URL 与 image_set 不向消费方投影。",
       "domain": "material",
       "executable": true,
       "input_fields": [
@@ -14722,6 +14728,56 @@
         },
         {
           "default": {
+            "present": true,
+            "value": [
+              "material"
+            ]
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [
+            "material",
+            "album_id",
+            "designer_id",
+            "creative_user_id"
+          ],
+          "item_type": "string",
+          "max_depth": 5,
+          "max_items": 1,
+          "max_length": null,
+          "min_items": 1,
+          "name": "data_dims",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
+        },
+        {
+          "default": {
+            "present": true,
+            "value": "total"
+          },
+          "description": "",
+          "enum": [
+            "day",
+            "week",
+            "month",
+            "total"
+          ],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": 4096,
+          "min_items": null,
+          "name": "date_dims",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "string"
+        },
+        {
+          "default": {
             "present": false,
             "value": null
           },
@@ -14736,6 +14792,107 @@
           "name": "date_list",
           "nullable": false,
           "required": true,
+          "sensitive": false,
+          "type": "array"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "",
+          "enum": [
+            2,
+            3,
+            4
+          ],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": null,
+          "min_items": null,
+          "name": "decimal_point",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "integer"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [],
+          "item_type": "string",
+          "max_depth": 5,
+          "max_items": 500,
+          "max_length": null,
+          "min_items": 0,
+          "name": "gravity_metrics_list",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [],
+          "item_type": "string",
+          "max_depth": 5,
+          "max_items": 500,
+          "max_length": null,
+          "min_items": 1,
+          "name": "metrics_list",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [],
+          "item_schema": {
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "maxLength": 100,
+                "type": "string"
+              },
+              "sort": {
+                "enum": [
+                  0,
+                  1
+                ],
+                "type": "integer"
+              }
+            },
+            "required": [
+              "field",
+              "sort"
+            ],
+            "type": "object"
+          },
+          "item_type": "object",
+          "max_depth": 5,
+          "max_items": 100,
+          "max_length": null,
+          "min_items": 0,
+          "name": "order_by",
+          "nullable": false,
+          "required": false,
           "sensitive": false,
           "type": "array"
         },
@@ -14787,7 +14944,8 @@
             "bytedance",
             "tencent",
             "kuaishou",
-            "bilibili"
+            "bilibili",
+            "aggregate"
           ],
           "item_enum": [],
           "item_type": null,
@@ -14798,6 +14956,88 @@
           "name": "platform",
           "nullable": false,
           "required": true,
+          "sensitive": false,
+          "type": "string"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [
+            "album_id",
+            "designer_id",
+            "creative_user_id",
+            "stat_time"
+          ],
+          "item_type": "string",
+          "max_depth": 5,
+          "max_items": 10,
+          "max_length": null,
+          "min_items": 0,
+          "name": "relate_dims",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [
+            "create_time",
+            "make_time",
+            "album_id",
+            "folder_id",
+            "designer_id",
+            "creative_user_id",
+            "capture_user_id",
+            "performer_user_id",
+            "dub_user_id",
+            "transcribe_user_id",
+            "designer_image_id",
+            "d3_action_user_id",
+            "d3_render_user_id",
+            "other_user_id"
+          ],
+          "item_type": "string",
+          "max_depth": 5,
+          "max_items": 500,
+          "max_length": null,
+          "min_items": 0,
+          "name": "stat_list",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "",
+          "enum": [
+            "REPORTING_TIME",
+            "REQUEST_TIME",
+            "ACTIVE_TIME",
+            "bytedance_std"
+          ],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": 4096,
+          "min_items": null,
+          "name": "time_line",
+          "nullable": false,
+          "required": false,
           "sensitive": false,
           "type": "string"
         }
@@ -14849,11 +15089,27 @@
           "page",
           "page_size",
           "date_list",
-          "app_list"
+          "app_list",
+          "date_dims",
+          "data_dims",
+          "metrics_list",
+          "gravity_metrics_list",
+          "relate_dims",
+          "stat_list",
+          "order_by",
+          "decimal_point",
+          "time_line"
         ],
         "defaults": {
+          "data_dims": [
+            "material"
+          ],
+          "date_dims": "total",
+          "order_by": [],
           "page": 1,
-          "page_size": 10
+          "page_size": 10,
+          "relate_dims": [],
+          "stat_list": []
         },
         "fixed_body": {},
         "fixed_query": {},
@@ -14869,16 +15125,37 @@
       ],
       "resource": "report",
       "response_projection": {
-        "data_dynamic_item_fields": {},
-        "data_item_keys": {},
+        "data_dynamic_item_fields": {
+          "total": [
+            "metrics_list",
+            "gravity_metrics_list"
+          ]
+        },
+        "data_item_keys": {
+          "update_at": [
+            "aggregate",
+            "bytedance",
+            "tencent",
+            "kuaishou",
+            "bilibili"
+          ]
+        },
         "data_keys": [
           "list",
-          "page_info"
+          "page_info",
+          "total",
+          "update_at"
         ],
         "data_path_item_keys": {},
         "data_scalar_list_types": {},
         "data_shape": "object",
-        "dynamic_item_fields": [],
+        "dynamic_item_fields": [
+          "metrics_list",
+          "gravity_metrics_list",
+          "data_dims",
+          "relate_dims",
+          "stat_list"
+        ],
         "empty_object_as_empty_page": false,
         "empty_object_as_empty_result": false,
         "item_keys": [
@@ -14924,13 +15201,12 @@
           "performer_user_id",
           "performer_user_name",
           "transcribe_user_id",
-          "transcribe_user_name"
+          "transcribe_user_name",
+          "stat_time",
+          "status"
         ],
         "known_omitted_data_item_keys": {},
-        "known_omitted_data_keys": [
-          "total",
-          "update_at"
-        ],
+        "known_omitted_data_keys": [],
         "known_omitted_item_keys": [
           "file_url",
           "image_set",

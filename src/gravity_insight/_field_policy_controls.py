@@ -355,6 +355,11 @@ def validate_dynamic_response_fields(
         )
         validate_multidim(operation, requested, metadata_loader)
         return
+    if request_kind == "material_query":
+        from .material_metric_policy import validate_material_dynamic_fields
+
+        validate_material_dynamic_fields(requested, inputs)
+        return
     raise InputValidationError(
         f"actual value: {actual_value(sorted(requested))}; allowed value: dynamic fields "
         "with a registered metadata validator for this operation",

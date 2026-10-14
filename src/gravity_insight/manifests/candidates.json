@@ -1175,8 +1175,8 @@
     {
       "action": "query",
       "auth_profile": "gravity_authorization",
-      "contract_version": 2,
-      "description": "平台素材安全聚合报表。当前 Business chunk 明确巨量/腾讯/磁力/B站指标映射；受控 codec 固定 material/total 聚合、平台与 App filters，并将 stat_list 收紧为空以禁止 designer_id 人员分组。素材 URL 与内部形状未知的 image_set 不向消费方投影。",
+      "contract_version": 3,
+      "description": "平台素材安全聚合报表。受控 codec 强制一个媒体条件和一个 App 条件，动态媒体/引力指标由版本化目录校验；支持日期粒度、单主维度、关联维度、附加字段、排序、精度和平台绑定时间口径。素材 URL 与 image_set 不向消费方投影。",
       "domain": "material",
       "effect": "read",
       "input_fields": {
@@ -1187,8 +1187,83 @@
           "required": true,
           "type": "array"
         },
+        "data_dims": {
+          "default": [
+            "material"
+          ],
+          "item_enum": [
+            "material",
+            "album_id",
+            "designer_id",
+            "creative_user_id"
+          ],
+          "item_type": "string",
+          "max_items": 1,
+          "min_items": 1,
+          "type": "array"
+        },
+        "date_dims": {
+          "default": "total",
+          "enum": [
+            "day",
+            "week",
+            "month",
+            "total"
+          ],
+          "type": "string"
+        },
         "date_list": {
+          "item_type": "string",
+          "max_items": 2,
+          "min_items": 2,
           "required": true,
+          "type": "array"
+        },
+        "decimal_point": {
+          "enum": [
+            2,
+            3,
+            4
+          ],
+          "type": "integer"
+        },
+        "gravity_metrics_list": {
+          "item_type": "string",
+          "max_items": 500,
+          "min_items": 0,
+          "type": "array"
+        },
+        "metrics_list": {
+          "item_type": "string",
+          "max_items": 500,
+          "min_items": 1,
+          "type": "array"
+        },
+        "order_by": {
+          "item_schema": {
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "maxLength": 100,
+                "type": "string"
+              },
+              "sort": {
+                "enum": [
+                  0,
+                  1
+                ],
+                "type": "integer"
+              }
+            },
+            "required": [
+              "field",
+              "sort"
+            ],
+            "type": "object"
+          },
+          "item_type": "object",
+          "max_items": 100,
+          "min_items": 0,
           "type": "array"
         },
         "page": {
@@ -1204,9 +1279,53 @@
             "bytedance",
             "tencent",
             "kuaishou",
-            "bilibili"
+            "bilibili",
+            "aggregate"
           ],
           "required": true,
+          "type": "string"
+        },
+        "relate_dims": {
+          "item_enum": [
+            "album_id",
+            "designer_id",
+            "creative_user_id",
+            "stat_time"
+          ],
+          "item_type": "string",
+          "max_items": 10,
+          "min_items": 0,
+          "type": "array"
+        },
+        "stat_list": {
+          "item_enum": [
+            "create_time",
+            "make_time",
+            "album_id",
+            "folder_id",
+            "designer_id",
+            "creative_user_id",
+            "capture_user_id",
+            "performer_user_id",
+            "dub_user_id",
+            "transcribe_user_id",
+            "designer_image_id",
+            "d3_action_user_id",
+            "d3_render_user_id",
+            "other_user_id"
+          ],
+          "item_type": "string",
+          "max_items": 500,
+          "min_items": 0,
+          "type": "array"
+        },
+        "time_line": {
+          "enum": [
+            "REPORTING_TIME",
+            "REQUEST_TIME",
+            "ACTIVE_TIME",
+            "bytedance_std"
+          ],
           "type": "string"
         }
       },
@@ -1255,11 +1374,27 @@
           "page",
           "page_size",
           "date_list",
-          "app_list"
+          "app_list",
+          "date_dims",
+          "data_dims",
+          "metrics_list",
+          "gravity_metrics_list",
+          "relate_dims",
+          "stat_list",
+          "order_by",
+          "decimal_point",
+          "time_line"
         ],
         "defaults": {
+          "data_dims": [
+            "material"
+          ],
+          "date_dims": "total",
+          "order_by": [],
           "page": 1,
-          "page_size": 10
+          "page_size": 10,
+          "relate_dims": [],
+          "stat_list": []
         },
         "fixed_body": {},
         "fixed_query": {},
@@ -1271,11 +1406,34 @@
       ],
       "resource": "report",
       "response_projection": {
+        "data_dynamic_item_fields": {
+          "total": [
+            "metrics_list",
+            "gravity_metrics_list"
+          ]
+        },
+        "data_item_keys": {
+          "update_at": [
+            "aggregate",
+            "bytedance",
+            "tencent",
+            "kuaishou",
+            "bilibili"
+          ]
+        },
         "data_keys": [
           "list",
-          "page_info"
+          "page_info",
+          "total",
+          "update_at"
         ],
-        "dynamic_item_fields": [],
+        "dynamic_item_fields": [
+          "metrics_list",
+          "gravity_metrics_list",
+          "data_dims",
+          "relate_dims",
+          "stat_list"
+        ],
         "item_keys": [
           "file_name",
           "gravity_material_id",
@@ -1319,11 +1477,9 @@
           "performer_user_id",
           "performer_user_name",
           "transcribe_user_id",
-          "transcribe_user_name"
-        ],
-        "known_omitted_data_keys": [
-          "total",
-          "update_at"
+          "transcribe_user_name",
+          "stat_time",
+          "status"
         ],
         "known_omitted_item_keys": [
           "file_url",

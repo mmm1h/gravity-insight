@@ -1,12 +1,12 @@
 {
-  "classification_policy_sha256": "3f89f4c34c4d67bf5cc0a21a0bf3a190b025914dbce50c4240cad8b6394e430a",
+  "classification_policy_sha256": "7c6a613d21f6d832433692edf18b7d5092c4e0af8f458801ee4bbba52ebd6f70",
   "graph_definition_id": "gravity-insight-runtime-possible-module-dependency-graph.v1",
   "graph_definition_sha256": "b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326",
   "maximum_ast_only_scc_size": 17,
   "maximum_direction_violation_count": 10,
   "minimum_classification_coverage": {
-    "classified_module_count": 214,
-    "module_count": 727
+    "classified_module_count": 220,
+    "module_count": 733
   },
   "protected_non_root_unclassified_modules": [
     "gravity_insight.operators",

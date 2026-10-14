@@ -2,35 +2,36 @@
   "definition_id": "gravity-insight-runtime-possible-module-dependency-graph.v1",
   "definition_sha256": "b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326",
   "edge_kind_counts": {
-    "ast_delayed_import": 526,
-    "ast_eager_import": 2788,
+    "ast_delayed_import": 534,
+    "ast_eager_import": 2813,
     "lazy_export_owner": 62,
-    "package_parent": 726
+    "package_parent": 732
   },
-  "node_count": 727,
+  "node_count": 733,
   "profiles": {
     "ast+lazy-exports": {
       "cyclic_scc_count": 4,
-      "cyclic_scc_sha256": "b24cc31b790a7fd61feb3457183a6d6942b3d8217123f84e54a5993d02b9ded8",
+      "cyclic_scc_sha256": "8e2841659f57a3ff75cf8085e0b99fed08a67c3ef32de09c4ec35b85e6bf5d92",
       "cyclic_scc_sizes": [
-        449,
+        455,
         3,
         2,
         2
       ],
-      "edge_count": 3352,
-      "graph_sha256": "9d0bb194ec5cb3454d6170e5ed25db597c85ff08e03e61bf5a957cdfd6cd6fd8",
-      "largest_cyclic_scc_size": 449,
+      "edge_count": 3384,
+      "graph_sha256": "fbff50ee06e62cb0339a8499cc394e5c091ff6d3e73aefde2c7c90c9556136ef",
+      "largest_cyclic_scc_size": 455,
       "self_loop_scc_count": 0
     },
     "ast-only": {
-      "cyclic_scc_count": 21,
-      "cyclic_scc_sha256": "eed06de02fa9a7fae6e41ba272461570380f6a851232741fcc5d7ab01ae5ad1e",
+      "cyclic_scc_count": 22,
+      "cyclic_scc_sha256": "b93fee6746a6d96b81dbc398a47a50644c69bc9e0140655982ef0e9a11d3b0eb",
       "cyclic_scc_sizes": [
         17,
         11,
         8,
         6,
+        4,
         4,
         3,
         3,
@@ -49,16 +50,16 @@
         2,
         1
       ],
-      "edge_count": 3290,
-      "graph_sha256": "fcda76f8a289692e9e41e738eff99b1f236cc38a61a80e00bc78691b093b9e5a",
+      "edge_count": 3322,
+      "graph_sha256": "e3a709ad7dac9850b2c47b94427fbb08bb506952d21f9547c7087743983212a6",
       "largest_cyclic_scc_size": 17,
       "self_loop_scc_count": 1
     },
     "canonical": {
       "cyclic_scc_count": 7,
-      "cyclic_scc_sha256": "b763c4df1b24abf89b9f0256d5a656aea79d9ee2d5a43f43abe6e118d2e2fe5a",
+      "cyclic_scc_sha256": "8451100d2761e50896dfa8ef5a1dc401a1f80a033086ab4c7e7f1ed9411c0388",
       "cyclic_scc_sizes": [
-        565,
+        571,
         15,
         8,
         3,
@@ -66,17 +67,17 @@
         2,
         2
       ],
-      "edge_count": 3992,
-      "graph_sha256": "2d2cce5385e00fadc40262f82dc0c3e126ed954fcf945479d10e41d8e8d01244",
-      "largest_cyclic_scc_size": 565,
+      "edge_count": 4031,
+      "graph_sha256": "5b930db86ef888c013aece80f17b15d77a44197fa8ec045f335ee4c7997ceb6d",
+      "largest_cyclic_scc_size": 571,
       "self_loop_scc_count": 0
     },
     "eager-ast-only": {
       "cyclic_scc_count": 0,
       "cyclic_scc_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
       "cyclic_scc_sizes": [],
-      "edge_count": 2788,
-      "graph_sha256": "347db80d2662249425ee371230efc376190eeedd4caf85742a7df5d235692730",
+      "edge_count": 2813,
+      "graph_sha256": "653a0f4e196d0b51968b0dde563ba425a72d1d3ab9cf40a78c42f2f824f2505e",
       "largest_cyclic_scc_size": 0,
       "self_loop_scc_count": 0
     }

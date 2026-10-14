@@ -1,0 +1,4587 @@
+{
+  "schema_version": "gravity.material-metric-catalog.v1",
+  "catalog_id": "gravity.material-metrics",
+  "catalog_version": 1,
+  "source": "Gravity Engine User MCP 1.26.0 gravity_metric_creative_search",
+  "platforms": [
+    "aggregate",
+    "bytedance",
+    "tencent",
+    "kuaishou",
+    "gravity"
+  ],
+  "metrics": [
+    {
+      "platform": "aggregate",
+      "name": "AdCost",
+      "cname": "消耗",
+      "tip": "总花费"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdShow",
+      "cname": "展示数",
+      "tip": "广告展示给用户的次数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAvgShowCost",
+      "cname": "千次展现均价",
+      "tip": "消耗/展示数*1000"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdClick",
+      "cname": "点击数",
+      "tip": "当用户点击广告素材时，触发点击事件，该事件被认为是一次有效的广告点击"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdClickRate",
+      "cname": "点击率",
+      "tip": "点击数/展示数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAvgClickCost",
+      "cname": "点击均价",
+      "tip": "消耗/点击数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdConvert",
+      "cname": "转化数",
+      "tip": "所选转化目标对应的转化数量"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdConvertCost",
+      "cname": "转化成本",
+      "tip": "消耗/转化数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdConvertRate",
+      "cname": "转化率",
+      "tip": "转化数/点击数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdDeepConvert",
+      "cname": "深度转化数",
+      "tip": "所选深度转化目标对应的转化数量"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdDeepConvertCost",
+      "cname": "深度转化成本",
+      "tip": "消耗/深度转化数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdDeepConvertRate",
+      "cname": "深度转化率",
+      "tip": "深度转化数/点击数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppActivate",
+      "cname": "激活数",
+      "tip": "对应在广告平台的激活数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppActivateRate",
+      "cname": "激活率",
+      "tip": "激活数/点击数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppActivateCost",
+      "cname": "激活成本",
+      "tip": "消耗/激活数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppRegister",
+      "cname": "注册数",
+      "tip": "用户点击广告后并成功注册的次数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppRegisterRate",
+      "cname": "注册率",
+      "tip": "注册数/点击数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppRegisterCost",
+      "cname": "注册成本",
+      "tip": "消耗/注册数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppFirstPay",
+      "cname": "首次付费数",
+      "tip": "用户在应用内首次完成付费的次数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppFirstPayRate",
+      "cname": "首次付费率",
+      "tip": "首次付费数/激活数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppFirstPayCost",
+      "cname": "首次付费成本",
+      "tip": "消耗/首次付费数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppFirstDayPay",
+      "cname": "首日付费次数",
+      "tip": "用户在应用内首日完成付费的次数（不含巨量平台，无接口查询）"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppFirstDayPayAmount",
+      "cname": "首日付费金额",
+      "tip": "用户在应用内首日完成付费的金额"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppGamePay",
+      "cname": "总付费次数",
+      "tip": "用户在应用内完成付费的总次数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppGamePayCost",
+      "cname": "总付费成本",
+      "tip": "消耗/总付费次数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppGamePayAmount",
+      "cname": "总付费金额",
+      "tip": "用户在应用内完成付费的总金额"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppKeyActive",
+      "cname": "关键行为次数",
+      "tip": "有应用内关键行为的用户数量"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppKeyActiveRate",
+      "cname": "关键行为率",
+      "tip": "关键行为次数/激活数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppKeyActiveCost",
+      "cname": "关键行为成本",
+      "tip": "消耗/关键行为次数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppRetention",
+      "cname": "次日留存数",
+      "tip": "用户激活后第二天打开APP的行为量级"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppRetentionRate",
+      "cname": "次日留存率",
+      "tip": "次日留存数/激活数"
+    },
+    {
+      "platform": "aggregate",
+      "name": "AdAppRetentionCost",
+      "cname": "次日留存成本",
+      "tip": "消耗/次日留存数"
+    },
+    {
+      "platform": "bytedance",
+      "name": "luban_live_enter_cnt",
+      "cname": "直播间观看数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "luban_live_follow_cnt",
+      "cname": "直播间关注数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "luban_live_share_cnt",
+      "cname": "直播间分享数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "luban_live_comment_cnt",
+      "cname": "直播间评论数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "stat_cost",
+      "cname": "消耗",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "show_cnt",
+      "cname": "展示数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "show_cost",
+      "cname": "平均千次展现费用",
+      "tip": "广告平均每一千次展现所付出的费用，计算公式是：总消耗/展示数*1000"
+    },
+    {
+      "platform": "bytedance",
+      "name": "click_cnt",
+      "cname": "点击数",
+      "tip": "当用户点击广告素材时，触发点击事件，该事件被认为是一次有效的广告点击。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "ctr",
+      "cname": "点击率",
+      "tip": "广告被点击的次数占展示次数的百分比。计算方法：点击数/展示数*100%"
+    },
+    {
+      "platform": "bytedance",
+      "name": "cpc",
+      "cname": "平均点击单价",
+      "tip": "广告主为每次点击付出的费用成本，计算公式是：总消耗/点击数"
+    },
+    {
+      "platform": "bytedance",
+      "name": "convert_cnt",
+      "cname": "转化数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "convert_cost",
+      "cname": "平均转化成本",
+      "tip": "广告主为每个转化所付出的平均成本，计算方式：总消耗/转化数。当天数据可能会有波动"
+    },
+    {
+      "platform": "bytedance",
+      "name": "convert_rate",
+      "cname": "转化率",
+      "tip": "广告被用户转化的次数占点击次数的百分比。计算方式：转化数/点击数*100%"
+    },
+    {
+      "platform": "bytedance",
+      "name": "deep_convert_cnt",
+      "cname": "深度转化数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "deep_convert_cost",
+      "cname": "深度转化成本",
+      "tip": "广告主为每个深度转化所付出的平均成本，计算方法：总消耗/深度转化数。当天数据可能会有波动，次日早8点后稳定。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "deep_convert_rate",
+      "cname": "深度转化率",
+      "tip": "广告被用户进行深度转化的次数占转化次数的百分比。计算方式：深度转化数/转化数*100%"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_convert_cnt",
+      "cname": "转化数(计费时间)",
+      "tip": "在转化行为发生（或回传）之后，将转化行为回记到过去30天内的扣费（消耗产生）时间上。 例如：广告在8月20日展示给用户，此时广告花费10元，用户点击广告后于8月23日产生1笔购买，则8月23日这笔购买将会展示在8月20日，8月23日没有转化数。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_convert_cost",
+      "cname": "转化成本(计费时间)",
+      "tip": "转化成本(计费时间) = 消耗 / 转化数(计费时间)。例如：广告在8月20日展示给用户，此时广告花费10元，用户点击广告后，于8月23日产生2笔购买，则8月20日的转化成本（计费时间） = 5元（即10元除以2笔）。成本考核和系统赔付以该指标为准。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_convert_rate",
+      "cname": "转化率(计费时间)",
+      "tip": "所选时间范围内的点击产生转化的概率，归因到计费时间。 转化率(计费时间) = 转化数（计费时间） / 点击数"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_deep_convert_cnt",
+      "cname": "深度转化数(计费时间)",
+      "tip": "在转化行为发生（或回传）之后，将转化行为回记到过去30天内的扣费（消耗产生）时间上。 例如：广告在8月20日展示给用户，此时广告花费10元，用户点击广告后于8月23日产生1笔购买，则8月23日这笔购买将会展示在8月20日。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_deep_convert_cost",
+      "cname": "深度转化成本(计费时间)",
+      "tip": "是一个准确的深度转化成本评估指标。计算方式：消耗 / 深度转化数(计费时间)。例如：广告在8月20日展示给用户，此时广告花费10元，用户点击广告后，于 8 月 23 日产生2笔购买，则8月20日的深度转化成本（计费时间） = 5元（即10元除以2笔）。成本考核和系统赔付以该指标为准。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_deep_convert_rate",
+      "cname": "深度转化率(计费时间)",
+      "tip": "深度转化数（计费时间）/转化数（计费时间）*100%"
+    },
+    {
+      "platform": "bytedance",
+      "name": "click_start_cnt",
+      "cname": "安卓下载开始数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "click_start_cost",
+      "cname": "安卓下载开始成本",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "click_start_rate",
+      "cname": "安卓下载开始率",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "download_finish_cnt",
+      "cname": "安卓下载完成数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "download_finish_cost",
+      "cname": "安卓下载完成成本",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "download_finish_rate",
+      "cname": "安卓下载完成率",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "install_finish_cnt",
+      "cname": "安卓安装完成数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "install_finish_cost",
+      "cname": "安卓安装完成成本",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "install_finish_rate",
+      "cname": "安卓安装完成率",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "active",
+      "cname": "激活数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "active_cost",
+      "cname": "激活成本",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "active_rate",
+      "cname": "激活率",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "active_register",
+      "cname": "注册数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "active_register_cost",
+      "cname": "注册成本",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "active_register_rate",
+      "cname": "注册率",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "game_addiction",
+      "cname": "关键行为数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "game_addiction_cost",
+      "cname": "关键行为数成本",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "game_addiction_rat",
+      "cname": "关键行为数率",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_next_day_open_cnt",
+      "cname": "次留数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "next_day_open",
+      "cname": "次留回传数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "active_pay",
+      "cname": "首次付费数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "in_app_uv",
+      "cname": "APP内访问",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "in_app_detail_uv",
+      "cname": "APP内访问详情页",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "game_pay_count",
+      "cname": "付费次数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_next_day_open_cost",
+      "cname": "次留成本",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_next_day_open_rate",
+      "cname": "次留率",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "active_pay_cost",
+      "cname": "首次付费成本",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "active_pay_rate",
+      "cname": "首次付费率",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "game_pay_cost",
+      "cname": "付费成本",
+      "tip": "当天用户在应用内完成付费的平混成本，计算方式：消耗/付费次数，当天数据可能会有波动，次日早8点后稳定。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "game_pay_rate",
+      "cname": "付费率",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "in_app_cart",
+      "cname": "APP内加入购物车",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "in_app_pay",
+      "cname": "APP内付费",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "in_app_order",
+      "cname": "APP内下单",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "loan_completion",
+      "cname": "完件数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "pre_loan_credit",
+      "cname": "预授信数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "loan_credit",
+      "cname": "授信数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_pay_7d_count",
+      "cname": "7日付费次数(激活时间)",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_ltv_1day",
+      "cname": "当日付费金额",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_ltv_2days",
+      "cname": "激活后一日付费金额",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_ltv_3days",
+      "cname": "激活后二日付费金额",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_ltv_4days",
+      "cname": "激活后三日付费金额",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_ltv_5days",
+      "cname": "激活后四日付费金额",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_ltv_6days",
+      "cname": "激活后五日付费金额",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_ltv_7days",
+      "cname": "激活后六日付费金额",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_ltv_8days",
+      "cname": "激活后七日付费金额",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_roi_1day",
+      "cname": "当日付费ROI",
+      "tip": "所选时间范围内的激活用户在激活当日的付费ROI，计算公式是：当日付费金额/所选时间的消耗。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_roi_2days",
+      "cname": "激活后一日付费ROI",
+      "tip": "所选时间范围内的激活用户在激活后一日内的所有付费ROI，计算公式是：激活后二日付费金额/所选时间的消耗。该指标隔日产出，并做了模糊化处理。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_roi_3days",
+      "cname": "激活后二日付费ROI",
+      "tip": "所选时间范围内的激活用户在激活后二日内的所有付费ROI，计算公式是：激活后二日付费金额/所选时间的消耗。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_roi_4days",
+      "cname": "激活后三日付费ROI",
+      "tip": "所选时间范围内的激活用户在激活后三日内的所有付费ROI，计算公式是：激活后四日付费金额/所选时间的消耗。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_roi_5days",
+      "cname": "激活后四日付费ROI",
+      "tip": "所选时间范围内的激活用户在激活后四日内的所有付费ROI，计算公式是：激活后五日付费金额/所选时间的消耗。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_roi_6days",
+      "cname": "激活后五日付费ROI",
+      "tip": "所选时间范围内的激活用户在激活后五日内的所有付费ROI，计算公式是：激活后六日付费金额/所选时间的消耗。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_roi_7days",
+      "cname": "激活后六日付费ROI",
+      "tip": "所选时间范围内的激活用户在激活后六日内的所有付费ROI，计算公式是：激活后七日付费金额/所选时间的消耗。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_game_in_app_roi_8days",
+      "cname": "激活后七日付费ROI",
+      "tip": "所选时间范围内的激活用户在激活后七日内的整体付费ROI，计算公式是：激活后八日付费金额/所选时间的消耗。"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_day_active_pay_count",
+      "cname": "计费当日激活且首次付费数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_day_active_pay_cost",
+      "cname": "计费当日激活且首次付费成本",
+      "tip": "消耗/计费当日激活且首次付费数"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_day_active_pay_rate",
+      "cname": "计费当日激活且首次付费率",
+      "tip": "计费当日激活且首次付费数/激活数"
+    },
+    {
+      "platform": "bytedance",
+      "name": "active_pay_intra_day_count",
+      "cname": "激活当日首次付费数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "active_pay_intra_day_cost",
+      "cname": "激活当日首次付费成本",
+      "tip": "消耗/激活当日首次付费数"
+    },
+    {
+      "platform": "bytedance",
+      "name": "active_pay_intra_day_rate",
+      "cname": "激活当日首次付费率",
+      "tip": "激活当日首次付费数/激活数"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_micro_game_0d_ltv",
+      "cname": "小游戏当日LTV",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_micro_game_3d_ltv",
+      "cname": "小游戏激活后三日LTV",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_micro_game_7d_ltv",
+      "cname": "小游戏激活后七日LTV",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_micro_game_0d_roi",
+      "cname": "小游戏当日广告变现ROI",
+      "tip": "所选时间范围内的激活用户在激活当日的广告变现ROI，计算公式是：当日LTV / 所选时间的消耗"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_micro_game_3d_roi",
+      "cname": "小游戏激活后三日广告变现ROI",
+      "tip": "所选时间范围内的激活用户在激活后三日内的广告变现ROI，计算公式是：三日LTV / 所选时间的消耗"
+    },
+    {
+      "platform": "bytedance",
+      "name": "attribution_micro_game_7d_roi",
+      "cname": "小游戏激活后七日广告变现ROI",
+      "tip": "所选时间范围内的激活用户在激活后七日内的广告变现ROI，计算公式是：七日LTV / 所选时间的消耗"
+    },
+    {
+      "platform": "bytedance",
+      "name": "phone",
+      "cname": "点击电话按钮",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "form",
+      "cname": "表单提交",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "map",
+      "cname": "地图搜索",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "button",
+      "cname": "按钮button",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "view",
+      "cname": "关键页面浏览",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "qq",
+      "cname": "QQ咨询",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "lottery",
+      "cname": "抽奖",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "vote",
+      "cname": "投票",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "message",
+      "cname": "短信咨询",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "redirect",
+      "cname": "页面跳转",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "consult",
+      "cname": "在线咨询",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "consult_effective",
+      "cname": "有效咨询",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "phone_confirm",
+      "cname": "智能电话-确认拨打",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "phone_connect",
+      "cname": "智能电话-确认接通",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "phone_effective",
+      "cname": "智能电话-有效接通",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "coupon",
+      "cname": "建站卡券领取",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "coupon_single_page",
+      "cname": "卡券页领取",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "redirect_to_shop",
+      "cname": "调起店铺",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "poi_address_click",
+      "cname": "查看店铺地址",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "poi_collect",
+      "cname": "店铺收藏",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "customer_effective",
+      "cname": "有效获客",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "form_submit",
+      "cname": "附加创意表单提交",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "dy_like",
+      "cname": "点赞数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "dy_comment",
+      "cname": "评论量",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "dy_share",
+      "cname": "分享量",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "dy_home_visited",
+      "cname": "主页访问量",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "dy_follow",
+      "cname": "粉丝量",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "ies_challenge_click",
+      "cname": "挑战赛查看数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "ies_music_click",
+      "cname": "音乐查看数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "location_click",
+      "cname": "POI点击数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "message_action",
+      "cname": "私信数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "click_landing_page",
+      "cname": "推广页访问量",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "click_shopwindow",
+      "cname": "主页商品橱窗访问量",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "click_website",
+      "cname": "主页内落地页访问量",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "click_call_dy",
+      "cname": "主页内电话拨打点击量",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "click_download",
+      "cname": "主页下载链接点击量",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "total_play",
+      "cname": "播放量",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "valid_play",
+      "cname": "有效播放数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "play_25_feed_break",
+      "cname": "25%进度播放数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "play_50_feed_break",
+      "cname": "50%进度播放数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "play_75_feed_break",
+      "cname": "75%进度播放数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "play_99_feed_break",
+      "cname": "99%进度播放数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "card_show",
+      "cname": "3秒卡片展现数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "play_duration_3s",
+      "cname": "3s播放数",
+      "tip": ""
+    },
+    {
+      "platform": "bytedance",
+      "name": "play_duration_rate",
+      "cname": "3s播放率",
+      "tip": ""
+    },
+    {
+      "platform": "tencent",
+      "name": "cost",
+      "cname": "花费",
+      "tip": "广告主为广告投放总共付出的费用成本，实际花费请以财务记录为准"
+    },
+    {
+      "platform": "tencent",
+      "name": "thousand_display_price",
+      "cname": "千次展现均价",
+      "tip": "消费/展示数*1000"
+    },
+    {
+      "platform": "tencent",
+      "name": "wechat_cost_stage1",
+      "cname": "一阶段花费（微信）",
+      "tip": "深度优化广告处于模型训练一阶段所消耗的金额，仅微信流量广告支持，复选版位时，该指标只披露微信流量下的表现数据"
+    },
+    {
+      "platform": "tencent",
+      "name": "wechat_cost_stage2",
+      "cname": "二阶段花费（微信）",
+      "tip": "深度优化广告处于模型训练二阶段所消耗的金额，仅微信流量广告支持，复选版位时，该指标只披露微信流量下的表现数据"
+    },
+    {
+      "platform": "tencent",
+      "name": "acquisition_cost",
+      "cname": "一键起量消耗",
+      "tip": "广告在一键起量过程中产生的消耗，若多次使用一键起量，则为多次起量的总消耗"
+    },
+    {
+      "platform": "tencent",
+      "name": "view_count",
+      "cname": "曝光次数",
+      "tip": "广告被展示给用户的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "valid_click_count",
+      "cname": "点击次数",
+      "tip": "广告被用户点击的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "ctr",
+      "cname": "点击率",
+      "tip": "点击数/展示数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "cpc",
+      "cname": "点击均价",
+      "tip": "消费/点击数"
+    },
+    {
+      "platform": "tencent",
+      "name": "valuable_click_count",
+      "cname": "可转化点击次数",
+      "tip": "仅微信流量可统计： 1. 朋友圈：可转化点击是指可能产生转化的外层点击次数。 （1）对于“公众号推广”的广告，包括外层的公众号头像、公众号昵称、详情页查看、原生推广页查看； （2）对于其他类型的广告，包括外层的详情页查看和原生推广页查看。   2. 公众号：可转化点击是指可能产生转化的点击次数。"
+    },
+    {
+      "platform": "tencent",
+      "name": "valuable_click_rate",
+      "cname": "可转化点击率",
+      "tip": "可转化点击次数/展示数*100，微信流量可统计"
+    },
+    {
+      "platform": "tencent",
+      "name": "valuable_click_cost",
+      "cname": "可转化点击成本",
+      "tip": "消耗/可转化点击次数，微信流量可统计"
+    },
+    {
+      "platform": "tencent",
+      "name": "conversions_count",
+      "cname": "目标转化量",
+      "tip": "优化目标的转化量"
+    },
+    {
+      "platform": "tencent",
+      "name": "conversions_cost",
+      "cname": "目标转化成本",
+      "tip": "广告主为每个目标转化量付出的费用成本，计算公式是：花费/目标转化量"
+    },
+    {
+      "platform": "tencent",
+      "name": "conversions_rate",
+      "cname": "目标转化率",
+      "tip": "关键行为转化率，计算公式：关键行为转化次数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "deep_conversions_count",
+      "cname": "深度目标转化量",
+      "tip": "深度优化目标的转化量（如果没有使用深度转化优化功能，这个指标可能为空）"
+    },
+    {
+      "platform": "tencent",
+      "name": "deep_conversions_cost",
+      "cname": "深度转化成本",
+      "tip": "广告主为每个深度目标转化量付出的费用成本，计算公式是：花费/深度目标转化量"
+    },
+    {
+      "platform": "tencent",
+      "name": "deep_conversions_rate",
+      "cname": "深度目标转化率",
+      "tip": "深度优化目标的点击转化率，计算公式是：深度目标转化量/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "conversions_by_click_count",
+      "cname": "目标转化量（点击归因）",
+      "tip": "优化目标的转化量（仅统计点击归因部分）"
+    },
+    {
+      "platform": "tencent",
+      "name": "conversions_by_display_count",
+      "cname": "目标转化量（曝光归因）",
+      "tip": "优化目标的转化量（仅统计曝光归因部分）"
+    },
+    {
+      "platform": "tencent",
+      "name": "conversions_by_display_rate",
+      "cname": "目标转化率（曝光归因）",
+      "tip": "优化目标的点击转化率，计算公式是：目标转化量（曝光归因）/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "conversions_by_click_rate",
+      "cname": "目标转化率（点击归因）",
+      "tip": "优化目标（点击归因）的点击转化率，计算公式是：目标转化量（点击归因）/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "conversions_by_display_cost",
+      "cname": "目标转化成本（曝光归因）。",
+      "tip": "广告主为每个目标转化量（曝光归因）付出的费用成本，计算公式是：花费/目标转化量（曝光归因）"
+    },
+    {
+      "platform": "tencent",
+      "name": "conversions_by_click_cost",
+      "cname": "目标转化成本（点击归因）",
+      "tip": "广告主为每个目标转化量（点击归因）付出的费用成本，计算公式是：花费/目标转化量（点击归因）"
+    },
+    {
+      "platform": "tencent",
+      "name": "preview_deep_conversions_count",
+      "cname": "深度目标转化量（在线预览）",
+      "tip": "通过广告线上预览功能，带来的广告深度优化目标达成量"
+    },
+    {
+      "platform": "tencent",
+      "name": "wechat_deep_conversions_count_stage1",
+      "cname": "一阶段深度目标转化量（微信）",
+      "tip": "深度优化广告处于模型训练一阶段所产生的深层目标转化量，仅微信流量广告支持,复选版位时，该指标只披露微信流量下的表现数据"
+    },
+    {
+      "platform": "tencent",
+      "name": "wechat_deep_conversions_count_stage2",
+      "cname": "二阶段深度目标转化量（微信）",
+      "tip": "深度优化广告处于模型训练二阶段所产生的深层目标转化量，仅微信流量广告支持,复选版位时，该指标只披露微信流量下的表现数据"
+    },
+    {
+      "platform": "tencent",
+      "name": "wechat_shallow_conversions_count_stage1",
+      "cname": "一阶段浅层目标量（微信）",
+      "tip": "深度优化广告处于模型训练一阶段所产生的浅层目标转化量，仅微信流量广告支持，复选版位时，该指标只披露微信流量下的表现数据"
+    },
+    {
+      "platform": "tencent",
+      "name": "wechat_shallow_conversions_count_stage2",
+      "cname": "二阶段浅层目标量（微信）",
+      "tip": "深度优化广告处于模型训练二阶段所产生的浅层目标转化量，仅微信流量广告支持，复选版位时，该指标只披露微信流量下的表现数据"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play_count",
+      "cname": "视频有效播放次数",
+      "tip": "在广告效曝光的前提下产生的视频有效播放数量，视频封面图曝光等场景不计算在内"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play10_count",
+      "cname": "10%进度播放次数",
+      "tip": "播放进度大于等于10%的有效播放量"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play25_count",
+      "cname": "25%进度播放次数",
+      "tip": "播放进度大于等于25%的有效播放量"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play50_count",
+      "cname": "50%进度播放次数",
+      "tip": "播放进度大于等于50%的有效播放量"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play75_count",
+      "cname": "75%进度播放次数",
+      "tip": "播放进度大于等于75%的有效播放量"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play90_count",
+      "cname": "90%进度播放次数",
+      "tip": "播放进度大于等于90%的有效播放量"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play95_count",
+      "cname": "95%进度播放次数",
+      "tip": "播放进度大于等于95%的有效播放量"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play100_count",
+      "cname": "100%进度播放次数",
+      "tip": "播放进度100%的有效播放量"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play_total_time_count",
+      "cname": "视频有效播放总时长",
+      "tip": "视频有效播放总时长"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play_time_count",
+      "cname": "平均有效播放时长",
+      "tip": "平均有效播放时长，计算公式：视频有效播放总时长/视频有效播放次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play_rate",
+      "cname": "有效播放率",
+      "tip": "曝光有效播放率，计算公式：视频有效播放总时长/曝光次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play_cost",
+      "cname": "有效播放成本",
+      "tip": "广告主为每次视频有效播放付出的费用成本，计算公式：花费/视频有效播放量"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play3s_count",
+      "cname": "3s播放完成次数",
+      "tip": "有效播放视频，播放进度大于等于3s的有效播放量"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play3s_rate",
+      "cname": "3s播放完成率",
+      "tip": "3s播放完成率(3s播放完成次数/曝光次数)"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play5s_count",
+      "cname": "5s播放完成次数",
+      "tip": "有效播放视频，播放进度大于等于5s的有效播放量"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play5s_rate",
+      "cname": "5s播放完成率",
+      "tip": "5s播放完成率(5s播放完成次数/曝光次数)"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play7s_count",
+      "cname": "7s播放完成次数",
+      "tip": "有效播放视频，播放进度大于等于7s的有效播放量"
+    },
+    {
+      "platform": "tencent",
+      "name": "video_outer_play7s_rate",
+      "cname": "7s播放完成率",
+      "tip": "7s播放完成率(7s播放完成次数/曝光次数)"
+    },
+    {
+      "platform": "tencent",
+      "name": "no_interest_count",
+      "cname": "不感兴趣点击次数",
+      "tip": "用户点击不感兴趣广告次数，目前仅朋友圈流量可统计"
+    },
+    {
+      "platform": "tencent",
+      "name": "live_stream_crt_click_cnt",
+      "cname": "素材点击次数",
+      "tip": "广告素材的总点击次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "click_image_count",
+      "cname": "外层图片点击次数",
+      "tip": "创意形式外层图片素材点击次数，目前仅朋友圈流量可统计"
+    },
+    {
+      "platform": "tencent",
+      "name": "click_detail_count",
+      "cname": "文字链点击次数",
+      "tip": "用户点击朋友圈广告外层“文字链”位置的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "click_head_count",
+      "cname": "头像点击次数",
+      "tip": "用户点击朋友圈广告外层“头像”位置的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "click_nick_count",
+      "cname": "昵称点击次数",
+      "tip": "用户点击朋友圈广告外层“昵称”位置的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "click_poi_count",
+      "cname": "本地门店点击次数",
+      "tip": "用户点击朋友圈广告外层“门店”位置的总次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "download_count",
+      "cname": "APP下载完成次数",
+      "tip": "用户点击广告并完成app下载的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "download_cost",
+      "cname": "APP下载成本",
+      "tip": "广告主为每次下载付出的费用成本，计算公式：花费/APP下载完成次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "download_rate",
+      "cname": "APP下载率",
+      "tip": "app点击后被下载的比率，计算公式：APP下载完成次数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "activated_count",
+      "cname": "APP激活次数",
+      "tip": "用户完成APP激活的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "activated_rate",
+      "cname": "APP下载激活率",
+      "tip": "app下载后第一次被打开的比率，计算公式是：APP激活次数/APP下载完成次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "add_desktop_pv",
+      "cname": "快应用添加次数",
+      "tip": "用户通过广告打开快应用，并将快应用添加到桌面的行为"
+    },
+    {
+      "platform": "tencent",
+      "name": "add_desktop_cost",
+      "cname": "快应用添加成本",
+      "tip": "快应用添加到桌面的平均成本，计算公式：花费/快应用添加次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "install_count",
+      "cname": "APP安装次数",
+      "tip": "用户下载app并安装完成的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "install_cost",
+      "cname": "APP安装成本",
+      "tip": "广告主为每次安装付出的费用成本，计算公式：花费/APP安装次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "install_rate",
+      "cname": "APP安装率",
+      "tip": "APP安装率，计算公式：APP安装次数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "click_activated_rate",
+      "cname": "APP点击激活率",
+      "tip": "app广告被点击后安装app并第一次打开的比率，计算公式是：APP激活次数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "reg_pv",
+      "cname": "注册次数",
+      "tip": "用户完成注册行为的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "reg_clk_rate",
+      "cname": "点击注册率",
+      "tip": "点击注册率，计算公式：注册次数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "activate_register_rate",
+      "cname": "激活注册率",
+      "tip": "激活注册率，计算公式：注册次数/激活次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "register_by_display_count",
+      "cname": "注册次数（曝光归因）",
+      "tip": "用户完成注册行为的次数（仅统计曝光归因部分）"
+    },
+    {
+      "platform": "tencent",
+      "name": "register_by_click_count",
+      "cname": "注册次数（点击归因）",
+      "tip": "用户完成注册行为的次数（仅统计点击归因部分）"
+    },
+    {
+      "platform": "tencent",
+      "name": "reg_pla_pv",
+      "cname": "注册次数（平台上报）",
+      "tip": "用户完成注册行为的次数（该指标由平台上报数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "reg_all_dedup_pv",
+      "cname": "注册人数（平台上报+广告主上报）",
+      "tip": "平台与广告主上报注册人数的加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "reg_cost_pla",
+      "cname": "注册成本（平台上报+广告主上报）",
+      "tip": "平台与广告主上报注册人数的成本"
+    },
+    {
+      "platform": "tencent",
+      "name": "reg_dedup_pv",
+      "cname": "注册人数",
+      "tip": "广告主上报的注册人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "reg_click_rate_pla",
+      "cname": "注册率（平台上报+广告主上报）",
+      "tip": "注册人数（平台上报+广告主上报）/点击次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_register_users",
+      "cname": "小游戏注册人数",
+      "tip": "首次注册小游戏的独立用户数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_register_cost",
+      "cname": "小游戏注册成本",
+      "tip": "广告主为每个小游戏注册用户付出的花费成本，计算公式：花费/小游戏注册人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_register_rate",
+      "cname": "小游戏注册率",
+      "tip": "小游戏点击注册率，计算公式：小游戏注册人数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "retention_count",
+      "cname": "次日留存次数",
+      "tip": "用户完成激活/注册/浏览行为后，第二天依然活跃的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "retention_cost",
+      "cname": "次日留存成本",
+      "tip": "客户为每个次留行为付出的费用成本，计算公式是：花费/次日留存次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "retention_rate",
+      "cname": "次日留存率",
+      "tip": "激活次日留存率，次日留存次数/APP激活次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "app_retention_d3_uv",
+      "cname": "3日留存人数",
+      "tip": "完成激活/注册/浏览行为后，第3日依然活跃的独立用户数"
+    },
+    {
+      "platform": "tencent",
+      "name": "app_retention_d5_uv",
+      "cname": "5日留存人数",
+      "tip": "完成激活/注册/浏览行为后，第5日依然活跃的独立用户数"
+    },
+    {
+      "platform": "tencent",
+      "name": "app_retention_d7_uv",
+      "cname": "7日留存人数",
+      "tip": "完成激活/注册/浏览行为后，第7日依然活跃的独立用户数"
+    },
+    {
+      "platform": "tencent",
+      "name": "app_retention_d3_rate",
+      "cname": "3日留存率（人数）",
+      "tip": "激活3日留存率，计算公式：3日留存人数/APP激活次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "app_retention_d7_rate",
+      "cname": "7日留存率（人数）",
+      "tip": "激活7日留存率（人数），计算公式：7日留存人数/激活次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "key_page_view_count",
+      "cname": "关键页面访问次数",
+      "tip": "用户在网页关键页面的访问次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "app_key_page_retention_rate",
+      "cname": "关键页面次日留存率",
+      "tip": "关键页面次日留存率，计算公式是：次日留存次数/关键页面访问次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_retention_d1",
+      "cname": "小游戏次日留存人数",
+      "tip": "用户完成注册行为后，第二天依然在小游戏活跃的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_retention_d1_rate",
+      "cname": "小游戏次日留存率",
+      "tip": "小游戏点击次日留存率，计算公式：小游戏次日留存人数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "app_retention_d3_cost",
+      "cname": "3日留存成本（人数）",
+      "tip": "3日留存成本（人数），计算公式：花费/3日留存人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "app_retention_d5_cost",
+      "cname": "5日留存成本（人数）",
+      "tip": "5日留存成本（人数），计算公式：花费/5日留存人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "app_retention_d7_cost",
+      "cname": "7日留存成本（人数）",
+      "tip": "7日留存成本（人数），计算公式：花费/7日留存人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_retention_d1_cost",
+      "cname": "小游戏次日留存成本",
+      "tip": "小游戏次日留存成本，计算公式：花费/小游戏次日留存人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pv",
+      "cname": "付费次数",
+      "tip": "用户完成付费的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_amount",
+      "cname": "付费金额",
+      "tip": "用户在完成付费的总金额"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_cost",
+      "cname": "付费成本",
+      "tip": "广告主为每次付费行为付出的费用成本，计算公式：花费/付费次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_clk_rate",
+      "cname": "点击付费率。",
+      "tip": "点击付费率，计算公式：付费次数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_act_rate",
+      "cname": "激活付费率。",
+      "tip": "激活付费率，计算公式：付费次数/激活次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_reg_arppu",
+      "cname": "付费ARPPU",
+      "tip": "付费ARPPU，计算公式：付费金额/付费次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_imp_pv",
+      "cname": "付费次数（曝光归因）",
+      "tip": "用户完成付费的次数（仅统计曝光归因部分）"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_clk_pv",
+      "cname": "付费次数（点击归因）",
+      "tip": "用户完成付费的次数（仅统计点击归因部分）"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_pv_1d",
+      "cname": "点击首日付费次数",
+      "tip": "用户点击广告当天完成广告付费行为的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_pv_3d",
+      "cname": "点击3日付费次数",
+      "tip": "用户点击广告3日内，完成付费行为次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_pv_5d",
+      "cname": "点击5日付费次数",
+      "tip": "广告主为点击后5日内每次付费行为付出的费用成本，计算公式：花费/点击5日付费次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_pv_7d",
+      "cname": "点击7日付费次数",
+      "tip": "用户点击广告7日内，完成付费行为次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_1d_cost",
+      "cname": "点击首日付费成本",
+      "tip": "广告主为点击首日每次付费行为付出的费用成本，计算公式：花费/点击首日付费次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_3d_cost",
+      "cname": "点击3日付费成本",
+      "tip": "广告主为点击后3日内每次付费行为付出的费用成本，计算公式：花费/点击3日付费次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_5d_cost",
+      "cname": "点击5日付费成本",
+      "tip": "点击5日付费成本，计算公式：花费/点击5日付费次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_7d_cost",
+      "cname": "点击7日付费成本",
+      "tip": "广告主为点击后7日内每次付费行为付出的费用成本，计算公式：花费/点击7日付费次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_1d_rate",
+      "cname": "点击首日付费率。",
+      "tip": "点击首日付费率，计算公式：点击首日付费次数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_3d_rate",
+      "cname": "点击3日付费率",
+      "tip": "点击3日付费率，计算公式：点击3日付费次数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_5d_rate",
+      "cname": "点击5日付费率",
+      "tip": "点击5日付费率，计算公式：点击5日付费次数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_7d_rate",
+      "cname": "点击7日付费率",
+      "tip": "点击7日付费率，计算公式：点击7日付费次数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_paying_users_d1",
+      "cname": "小游戏注册首日付费人数",
+      "tip": "注册当日内，完成付费行为的用户数量"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_paying_amount_d1",
+      "cname": "小游戏注册首日付费金额",
+      "tip": "用户完成注册行为当天，完成广告付费行为带来的付费金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_first_day_paying_roi",
+      "cname": "小游戏注册首日付费ROI",
+      "tip": "小游戏注册首日付费金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_day_pay_count",
+      "cname": "激活首日付费次数",
+      "tip": "用户完成激活行为当天，通过激活归因，完成广告付费行为的次数（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_day_pay_cost",
+      "cname": "激活首日付费成本",
+      "tip": "广告主为激活首日每次付费行为付出的费用成本，计算方式：花费/激活首日付费次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_day_first_pay_count",
+      "cname": "激活首日付费人数",
+      "tip": "激活当天内，完成付费行为的用户数量（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "payment_cost_activated_d1",
+      "cname": "激活首日付费成本（人数）",
+      "tip": "激活首日付费成本（人数），计算公式：花费/激活首日付费人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_day_first_pay_rate",
+      "cname": "激活首日付费率（人数）",
+      "tip": "激活首日付费率（人数），计算公式：激活首日付费人数/APP激活次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_day_pay_amount",
+      "cname": "激活首日付费金额",
+      "tip": "用户完成激活行为当天，通过激活归因，完成广告付费行为带来的付费金额加和（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "payment_amount_activated_d3",
+      "cname": "激活3日付费金额",
+      "tip": "用户完成激活行为3日内，通过激活归因，完成广告付费行为带来的付费金额加和（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "payment_amount_activated_d7",
+      "cname": "激活7日付费金额",
+      "tip": "用户完成激活行为7日内，通过激活归因，完成广告付费行为带来的付费金额加和（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "payment_amount_activated_d14",
+      "cname": "激活14日付费金额",
+      "tip": "用户完成激活行为14日内，完成广告付费行为带来的付费金额加和（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "payment_amount_activated_d30",
+      "cname": "激活30日付费金额",
+      "tip": "用户完成激活行为30日内，完成广告付费行为带来的付费金额加和（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "roi_activated_d1",
+      "cname": "激活首日付费ROI",
+      "tip": "激活首日ROI，激活首日付费金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "roi_activated_d3",
+      "cname": "激活3日付费ROI",
+      "tip": "激活3日付费ROI，计算公式：激活3日付费金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "roi_activated_d7",
+      "cname": "激活7日付费ROI",
+      "tip": "激活3日付费ROI，计算公式：激活7日付费金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "roi_activated_d14",
+      "cname": "激活14日付费ROI",
+      "tip": "激活3日付费ROI，计算公式：激活14日付费金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "roi_activated_d30",
+      "cname": "激活30日付费ROI",
+      "tip": "激活3日付费ROI，计算公式：激活30日付费金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "minigame_24h_pay_amount",
+      "cname": "小游戏注册首24小时付费金额",
+      "tip": "注册后首24小时内产生的付费金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "minigame_24h_pay_uv",
+      "cname": "小游戏注册首24小时付费人数",
+      "tip": "注册后首24小时内产生的付费人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_fd",
+      "cname": "点击首日付费金额",
+      "tip": "用户点击广告当天完成广告付费行为带来的付费金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_td",
+      "cname": "点击3日付费金额",
+      "tip": "用户点击广告3日内，完成的广告付费行为带来的付费金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_ow",
+      "cname": "点击7日付费金额",
+      "tip": "用户点击广告7日内，完成的广告付费行为带来的付费金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_tw",
+      "cname": "点击14日付费金额",
+      "tip": "用户点击广告14日内，完成的广告付费行为带来的付费金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_om",
+      "cname": "点击30日付费金额",
+      "tip": "用户点击广告30日内，完成的广告付费行为带来的付费金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_fd_reward",
+      "cname": "点击首日付费ROI",
+      "tip": "点击首日付费金额/消耗*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_td_reward",
+      "cname": "点击3日付费ROI",
+      "tip": "点击3日付费ROI，计算公式：点击3日付费金额/消耗*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_ow_reward",
+      "cname": "点击7日付费ROI",
+      "tip": "点击7日付费ROI，计算公式：点击7日付费金额/消耗*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_tw_reward",
+      "cname": "点击14日付费ROI",
+      "tip": "点击14日付费ROI，计算公式：点击14日付费金额/消耗*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "cheout_om_reward",
+      "cname": "点击30日付费ROI",
+      "tip": "点击30日付费ROI，计算公式：点击30日付费金额/消耗*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_roi",
+      "cname": "付费ROI",
+      "tip": "付费ROI，计算公式：付费金额/消耗*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_pay_count",
+      "cname": "首次付费人数",
+      "tip": "完成付费行为的用户数量"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_pay_cost",
+      "cname": "首次付费成本",
+      "tip": "广告主为每个付费用户付出的费用成本，计算公式：花费/首次付费人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_pay_rate",
+      "cname": "首次激活付费率",
+      "tip": "首次激活付费率，计算公式：首次付费人数/APP激活次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_pv",
+      "cname": "付费次数（平台上报）",
+      "tip": "用户完成付费的次数，该指标数据由平台上报"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_amount",
+      "cname": "付费金额（平台上报）",
+      "tip": "用户在完成付费的总金额，该指标数据由平台上报"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_first_paying_users",
+      "cname": "小游戏首次付费人数",
+      "tip": "完成付费行为的小游戏用户数量"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_paying_arpu",
+      "cname": "小游戏付费ARPU",
+      "tip": "小游戏付费ARPU，计算公式：付费金额/小游戏注册人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "active_d5_first_pay_uv",
+      "cname": "激活5日首次付费人数",
+      "tip": "激活后5天内，完成付费行为的用户数量（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "active_d5_first_pay_cost",
+      "cname": "激活5日首次付费成本",
+      "tip": "激活5日首次付费成本，计算公式：花费/激活5日付费人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "active_d5_click_first_pay_rate",
+      "cname": "激活5日点击首次付费率",
+      "tip": "激活5日点击首次付费率，计算公式：激活5日首次付费人数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "activated_total_payment_cost",
+      "cname": "激活累计付费成本（人数）",
+      "tip": "激活累计付费成本，计算公式：花费/首次付费人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_day_first_pay_cost",
+      "cname": "激活首日首次付费成本",
+      "tip": "激活首日首次付费行为成本，计算公式：花费/激活首日付费人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_day_pay_amount_arpu",
+      "cname": "激活首日付费ARPU",
+      "tip": "激活首日付费ARPU，计算公式：激活首日付费金额/APP激活次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_day_pay_amount_arppu",
+      "cname": "激活首日付费ARPPU",
+      "tip": "激活首日付费ARPPU，计算公式：激活首日付费金额/激活首日付费人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_first_pay_amount",
+      "cname": "小游戏首次付费金额",
+      "tip": "完成小游戏付费行为带来的金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_paying_users_pla_d1",
+      "cname": "小游戏注册首日付费人数（平台上报）",
+      "tip": "注册首日产生的独立用户数，该指标数据由平台上报"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_first_pay_pla_amount",
+      "cname": "小游戏首次付费金额（平台上报）",
+      "tip": "小游戏用户完成首次付费行为所带来的金额加和，该指标数据由平台上报"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d1_pla_uv",
+      "cname": "小游戏首次付费人数（平台上报）",
+      "tip": "完成付费行为的小游戏用户数量，该指标数据由平台上报"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d3_uv",
+      "cname": "小游戏注册3日付费人数",
+      "tip": "注册3日内，完成付费行为的用户数量"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d7_uv",
+      "cname": "小游戏注册7日付费人数",
+      "tip": "注册7日内，完成付费行为的用户数量"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d14_uv",
+      "cname": "小游戏注册14日付费人数",
+      "tip": "注册14日内，完成付费行为的用户数量"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d30_uv",
+      "cname": "小游戏注册30日付费人数",
+      "tip": "注册30日内，完成付费行为的用户数量"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_d30_pay_count",
+      "cname": "小游戏注册30日付费次数",
+      "tip": "用户在注册30日内完成广告付费行为的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_paying_amount_d3",
+      "cname": "小游戏注册3日付费金额",
+      "tip": "用户在注册3日内完成广告付费行为带来的付费金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "active_d3_pay_count",
+      "cname": "激活3日付费次数",
+      "tip": "用户完成激活行为3日内，通过激活归因，完成广告付费行为的次数（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_30d_pv",
+      "cname": "激活30日付费次数（平台上报）",
+      "tip": "用户激活30日内完成的付费次数，该指标数据由平台上报（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_cost",
+      "cname": "小游戏回流成本（平台上报）",
+      "tip": "小游戏回流成本（平台上报），计算公式：花费/小游戏回流人数（平台上报）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d14_pla_uv",
+      "cname": "小游戏注册14日付费人数（平台上报）",
+      "tip": "注册后14日内产生的独立用户数，该指标数据由平台上报"
+    },
+    {
+      "platform": "tencent",
+      "name": "key_behavior_conversions_rate",
+      "cname": "关键行为转化率",
+      "tip": "关键行为转化率，计算公式：关键行为转化次数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_clk_1d_amount",
+      "cname": "点击首日付费金额（平台上报）",
+      "tip": "用户点击广告当天完成广告付费行为带来的付费金额加和，该指标数据由平台上报"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d3_roi",
+      "cname": "小游戏注册3日付费ROI",
+      "tip": "小游戏注册3日付费ROI，计算公式：小游戏注册3日付费金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_d14_pay_count",
+      "cname": "小游戏注册14日付费次数",
+      "tip": "用户在注册14日内完成广告付费行为的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "active_d7_click_pay_rate",
+      "cname": "激活7日点击付费率",
+      "tip": "激活7日点击付费率，计算公式：激活7日付费次数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_paying_amount_d14",
+      "cname": "小游戏注册14日付费金额",
+      "tip": "用户在注册14日内完成广告付费行为带来的付费金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_first_pay_pla_cost",
+      "cname": "小游戏首次付费成本（平台上报）",
+      "tip": "小游戏首次付费成本（平台上报），计算公式：小游戏首次付费金额（平台上报）/小游戏首次付费人数（平台上报）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d7_roi",
+      "cname": "小游戏注册7日付费ROI",
+      "tip": "小游戏注册7日付费ROI，计算公式：小游戏注册7日付费金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "key_behavior_conversions_count",
+      "cname": "关键行为转化次数",
+      "tip": "用户点击广告后，发生关键行为的次数。目前关键行为会统计下述行为：用户自定义的上报行为、点击当天发生的付费人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_income_amount",
+      "cname": "小游戏回流广告变现金额",
+      "tip": "小游戏回流用户带来的变现金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_1d_amount",
+      "cname": "激活首日付费金额（平台上报）",
+      "tip": "用户激活当天完成广告付费行为带来的付费金额加和，该指标数据由平台上报（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_3d_amount",
+      "cname": "激活3日付费金额（平台上报）",
+      "tip": "用户激活3日内完成的付费金额，该指标数据由平台上报（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_7d_amount",
+      "cname": "激活7日付费金额（平台上报）",
+      "tip": "用户激活7日内发生付费的金额，该指标数据由平台上报（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_14d_amount",
+      "cname": "激活14日付费金额（平台上报）",
+      "tip": "用户激活14日内发生付费的金额，该指标数据由平台上报（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_30d_amount",
+      "cname": "激活30日付费金额（平台上报）",
+      "tip": "用户激活30日内发生付费的金额，该指标数据由平台上报（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_1d_roi",
+      "cname": "激活首日付费ROI（平台上报）",
+      "tip": "激活首日付费ROI（平台上报），计算公式：激活首日付费金额（平台上报）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_7d_roi",
+      "cname": "激活7日付费ROI（平台上报）",
+      "tip": "激活7日付费ROI（平台上报），计算公式：激活7日付费金额（平台上报）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_3d_roi",
+      "cname": "激活3日付费ROI（平台上报）",
+      "tip": "激活3日付费ROI（平台上报），计算公式：激活3日付费金额（平台上报）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_14d_roi",
+      "cname": "激活14日付费ROI（平台上报）",
+      "tip": "激活14日付费ROI（平台上报），计算公式：激活14日付费金额（平台上报）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_30d_roi",
+      "cname": "激活30日付费ROI（平台上报）",
+      "tip": "激活30日付费ROI（平台上报），计算公式：激活30日付费金额（平台上报）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "minigame_1d_pay_count",
+      "cname": "小游戏注册首日付费次数",
+      "tip": "用户在注册当天内完成广告付费行为的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d7_pla_uv",
+      "cname": "小游戏注册7日付费人数（平台上报）",
+      "tip": "注册后7日内产生的独立用户数，该指标数据由平台上报"
+    },
+    {
+      "platform": "tencent",
+      "name": "key_behavior_conversions_cost",
+      "cname": "关键行为转化成本",
+      "tip": "关键行为转化成本，计算公式：花费/关键行为转化次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_purchase_d1_roi",
+      "cname": "小游戏回流首日付费ROI",
+      "tip": "小游戏回流首日付费ROI，该指标由广告主回传数据，计算公式：小游戏回流首日付费金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_paying_arpu_d1",
+      "cname": "小游戏注册首日付费ARPU",
+      "tip": "小游戏注册首日付费金额/小游戏注册人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_paying_amount_d30",
+      "cname": "小游戏注册30日付费金额",
+      "tip": "用户在注册30日内完成广告付费行为带来的付费金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "active_d7_active_pay_rate",
+      "cname": "激活7日激活付费率",
+      "tip": "激活7日激活付费率，计算公式：激活7日付费次数/APP激活次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d14_roi",
+      "cname": "小游戏注册14日付费ROI",
+      "tip": "小游戏注册14日付费ROI，计算公式：小游戏注册14日付费金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d30_pla_uv",
+      "cname": "小游戏注册30日付费人数（平台上报）",
+      "tip": "注册后30日内产生的独立用户数，该指标数据由平台上报"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_purchase_d1_uv",
+      "cname": "小游戏回流首日付费人数",
+      "tip": "小游戏回流用户中，在回流当日产生付费行为的用户加和，该指标数据由广告主回传"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_income_uv",
+      "cname": "小游戏回流广告变现人数",
+      "tip": "完成变现行为的小游戏回流独立用户数"
+    },
+    {
+      "platform": "tencent",
+      "name": "active_d7_pay_cost",
+      "cname": "激活7日付费成本",
+      "tip": "广告主为激活7日内每次付费行为付出的费用成本，计算公式：花费/激活7日付费次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_d7_pay_count",
+      "cname": "小游戏注册7日付费次数",
+      "tip": "用户在注册7日内完成广告付费行为的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_income_d1_amount",
+      "cname": "小游戏回流首日广告变现金额",
+      "tip": "小游戏用户回流首日，完成变现行为带来的变现金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d1_pla_rate",
+      "cname": "小游戏首次付费率（平台上报）",
+      "tip": "小游戏首次付费率（平台上报），计算公式：小游戏首次付费人数（平台上报）/小游戏注册人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "minigame_24h_pay_roi",
+      "cname": "小游戏注册首24小时付费ROI",
+      "tip": "小游戏注册首24小时付费ROI，计算公式：小游戏注册首24小时付费金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "minigame_24h_pay_arpu",
+      "cname": "小游戏注册首24小时付费ARPU",
+      "tip": "小游戏注册首24小时付费ARPU，计算公式：小游戏注册首24小时付费金额/小游戏注册首24小时付费人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_purchase_roi",
+      "cname": "小游戏回流付费ROI",
+      "tip": "小游戏回流付费ROI，该指标数据由广告主回传，计算公式：小游戏回流付费金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "active_d30_pay_count",
+      "cname": "激活30日付费次数",
+      "tip": "用户完成激活行为30日内，完成广告付费行为的次数（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_purchase_d1_cost",
+      "cname": "小游戏回流首日付费成本",
+      "tip": "小游戏回流首日付费成本，该指标由广告主回传数据，计算公式：花费/小游戏回流首日付费人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_3d_pv",
+      "cname": "激活3日付费次数（平台上报）",
+      "tip": "用户激活3日内完成的付费次数，该指标数据由平台上报（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "active_d14_pay_count",
+      "cname": "激活14日付费次数",
+      "tip": "用户完成激活行为14日内，通过激活归因，完成广告付费行为的次数（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_uv",
+      "cname": "小游戏回流人数（平台上报）",
+      "tip": "30日未登录游戏的注册用户在该小游戏发生回流的人数，该指标数据由平台上报"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_income_arpu",
+      "cname": "小游戏回流广告变现ARPU",
+      "tip": "小游戏回流广告变现ARPU，计算公式是：小游戏回流广告变现金额/小游戏回流人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_purchase_amount",
+      "cname": "小游戏回流付费金额",
+      "tip": "小游戏回流用户的累积付费金额，该指标数据由广告主回传"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_d3_pay_count",
+      "cname": "小游戏注册3日付费次数",
+      "tip": "用户在注册3日内完成广告付费行为的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d3_pla_uv",
+      "cname": "小游戏注册3日付费人数（平台上报）",
+      "tip": "注册后3日内产生的独立用户数，该指标数据由平台上报"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_paying_amount_d7",
+      "cname": "小游戏注册7日付费金额",
+      "tip": "用户在注册7日内完成广告付费行为带来的付费金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_income_d1_uv",
+      "cname": "小游戏回流首日广告变现人数",
+      "tip": "小游戏用户回流首日，完成变现行为带来的独立用户数"
+    },
+    {
+      "platform": "tencent",
+      "name": "active_d7_pay_count",
+      "cname": "激活7日付费次数",
+      "tip": "用户完成激活行为7日内，通过激活归因，完成广告付费行为的次数（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "order_pv",
+      "cname": "下单次数",
+      "tip": "用户通过该广告进行全部类型商品成交的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_purchase_cost",
+      "cname": "小游戏回流付费成本",
+      "tip": "小游戏回流付费成本，该指标数据由广告主回传，计算公式：花费/小游戏回流付费人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_7d_pv",
+      "cname": "激活7日付费次数（平台上报）",
+      "tip": "用户激活7日内完成的付费次数，该指标数据由平台上报（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_pla_active_14d_pv",
+      "cname": "激活14日付费次数（平台上报）",
+      "tip": "用户激活14日内完成的付费次数，该指标数据由平台上报（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_purchase_arpu",
+      "cname": "小游戏回流付费ARPU",
+      "tip": "小游戏回流付费ARPU，该指标数据由广告主回传，计算公式：小游戏回流付费金额/小游戏回流人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_purchase_d1_amount",
+      "cname": "小游戏回流首日付费金额",
+      "tip": "小游戏用户回流首日产生的付费金额，该指标由广告主回传"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_income_roi",
+      "cname": "小游戏回流广告变现ROI",
+      "tip": "小游戏回流广告变现ROI，计算公式是：小游戏回流广告变现金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_purchase_uv",
+      "cname": "小游戏回流付费人数",
+      "tip": "小游戏回流用户中，产生付费行为的用户加和，该指标数据由广告主回传"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_bf_income_cost",
+      "cname": "小游戏回流广告变现成本",
+      "tip": "小游戏回流广告变现成本，计算公式：花费/小游戏回流广告变现人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_pay_d30_roi",
+      "cname": "小游戏注册30日付费ROI",
+      "tip": "小游戏注册30日付费ROI，计算公式：小游戏注册30日付费金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_day_order_count",
+      "cname": "点击首日下单次数",
+      "tip": "广告点击发生当天产生的下单次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_member_card_dedup_pv",
+      "cname": "首次购买会员人数",
+      "tip": "首次购买会员的用户数"
+    },
+    {
+      "platform": "tencent",
+      "name": "order_amount",
+      "cname": "下单金额",
+      "tip": "用户下单行为带来的订单金额加和"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_member_card_dedup_cost",
+      "cname": "首次购买会员成本（人数）",
+      "tip": "首次购买会员成本（人数），计算公式：花费/首次购买会员人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_member_card_pv",
+      "cname": "购买会员次数",
+      "tip": "用户购买会员的次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "order_rate",
+      "cname": "下单率",
+      "tip": "点击下单率，计算公式：下单次数/点击次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "order_cost",
+      "cname": "下单成本",
+      "tip": "广告主为每次下单行为付出的费用成本，计算公式：花费/下单次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_member_card_dedup_rate",
+      "cname": "首次购买会员率",
+      "tip": "首次购买会员率，计算公式：首次购买会员人数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "income_roi_3",
+      "cname": "激活3日广告变现ROI",
+      "tip": "激活3日广告变现ROI，计算公式：激活3日广告变现金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "income_roi_7",
+      "cname": "激活7日广告变现ROI",
+      "tip": "激活7日广告变现ROI，计算公式：激活7日广告变现金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "ad_monetization_arppu",
+      "cname": "广告变现ARPPU",
+      "tip": "广告变现ARPPU，计算公式：广告变现金额/广告变现人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mixed_monetization_roi_d7",
+      "cname": "激活7日混合变现ROI",
+      "tip": "激活7日混合变现ROI，计算公式：（激活7日广告变现金额+激活7日付费金额）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "income_val_7",
+      "cname": "激活7日广告变现金额",
+      "tip": "用户完成激活行为7日内，观看或点击广告为广告主带来广告收入金额（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_first_day_ad_monetization_users",
+      "cname": "小游戏注册首日广告变现人数（平台上报）",
+      "tip": "在小游戏完成注册行为当天，观看或点击小游戏广告并产生变现行为的独立用户数（该指标由平台上报数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "purchase_act_arpu",
+      "cname": "付费ARPU（激活次数）",
+      "tip": "付费ARPU（激活次数），计算公式：付费次数/APP激活次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_first_day_ad_paying_cost",
+      "cname": "小游戏注册首日广告变现成本（平台上报）",
+      "tip": "小游戏注册首日广告变现成本（平台上报），计算公式：花费/小游戏注册首日广告变现人数（平台上报）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_ad_monetization_amount",
+      "cname": "小游戏广告变现金额（平台上报）",
+      "tip": "观看或点击小游戏广告为广告主带来广告收入金额（该指标由平台上报数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_ad_monetization_arpu",
+      "cname": "小游戏广告变现ARPU（平台上报）",
+      "tip": "广告变现ARPU，计算公式：广告变现金额（平台上报）/小游戏注册人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "income_val_3",
+      "cname": "激活3日广告变现金额",
+      "tip": "用户完成激活行为3日内，观看或点击广告为广告主带来广告收入金额（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "ad_monetization_amount",
+      "cname": "广告变现金额",
+      "tip": "观看或点击广告为广告主带来广告收入金额"
+    },
+    {
+      "platform": "tencent",
+      "name": "ad_pur_arpu_cost_d1",
+      "cname": "激活首日广告变现ARPU",
+      "tip": "首日广告变现ARPU，计算公式：激活首日广告变现金额/APP激活次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_ad_monetization_users",
+      "cname": "小游戏广告变现人数（平台上报）",
+      "tip": "观看或点击小游戏广告并产生变现行为的独立用户数（该指标由平台上报数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "income_roi_14",
+      "cname": "激活14日广告变现ROI",
+      "tip": "激活14日广告变现ROI，计算公式：激活14日广告变现金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_mixed_monetization_roi_d7",
+      "cname": "小游戏注册7日混合变现ROI",
+      "tip": "（小游戏注册7日广告变现金额（平台上报）+小游戏注册7日付费金额）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_ad_monetization_roi",
+      "cname": "小游戏广告变现ROI（平台上报）",
+      "tip": "小游戏广告变现ROI（平台上报），计算公式：小游戏广告变现金额（平台上报）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "app_ad_paying_users",
+      "cname": "广告变现人数",
+      "tip": "观看或点击广告为广告主带来广告收入分成的独立用户数"
+    },
+    {
+      "platform": "tencent",
+      "name": "income_val_14",
+      "cname": "激活14日广告变现金额",
+      "tip": "用户完成激活行为14日内，观看或点击广告为广告主带来广告收入金额（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_first_day_ad_monetization_amount",
+      "cname": "小游戏注册首日广告变现金额（平台上报）",
+      "tip": "用户在小游戏完成注册行为当天，观看或点击小游戏广告为广告主带来广告收入金额（该指标由平台上报数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "ad_monetization_act_arpu",
+      "cname": "广告变现ARPU（激活次数）",
+      "tip": "广告变现ARPU（激活次数），计算公式：广告变现金额/APP激活次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_first_day_ad_paying_arpu",
+      "cname": "小游戏注册首日广告变现ARPU（平台上报）",
+      "tip": "小游戏注册首日广告变现ARPU（平台上报），计算公式：小游戏注册首日广告变现金额（平台上报）/小游戏注册首日广告变现人数（平台上报）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mixed_monetization_roi_d14",
+      "cname": "激活14日混合变现ROI",
+      "tip": "激活14日混合变现ROI，计算公式：（激活14日广告变现金额+激活14日付费金额）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "income_roi_1",
+      "cname": "激活首日广告变现ROI",
+      "tip": "激活首日广告变现ROI，计算公式：激活首日广告变现金额/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "income_val_1",
+      "cname": "激活首日广告变现金额",
+      "tip": "用户完成激活行为当日内，观看或点击广告为广告主带来广告收入金额（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_ad_monetization_cost",
+      "cname": "小游戏广告变现成本（平台上报）",
+      "tip": "小游戏广告变现成本（平台上报），计算公式：花费/小游戏广告变现金额（平台上报）"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_day_ad_pur_arppu_cost",
+      "cname": "激活首日广告变现ARPPU",
+      "tip": "首日广告变现ARPPU，计算公式：激活首日广告变现金额/激活首日广告变现人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_income_roi_1",
+      "cname": "小游戏注册首日广告变现ROI（平台上报）",
+      "tip": "小游戏注册首日广告变现ROI（平台上报），计算公式：小游戏注册首日广告变现金额（平台上报）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mixed_monetization_roi_d1",
+      "cname": "激活首日混合变现ROI",
+      "tip": "激活首日混合变现ROI，计算公式：（激活首日广告变现金额+激活首日付费金额）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mixed_monetization_roi_d3",
+      "cname": "激活3日混合变现ROI",
+      "tip": "激活3日混合变现ROI，计算公式：（激活3日广告变现金额+激活3日付费金额）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_mixed_monetization_roi_d1_by_reporting",
+      "cname": "小游戏注册首日混合变现ROI（平台上报）",
+      "tip": "（小游戏注册首日广告变现金额（平台上报）+激活首日付费金额（平台上报））/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_mixed_monetization_roi_d3",
+      "cname": "小游戏注册3日混合变现ROI",
+      "tip": "（小游戏注册3日广告变现金额（平台上报）+小游戏注册3日付费金额）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_mixed_monetization_roi_d3_by_reporting",
+      "cname": "小游戏注册3日混合变现ROI（平台上报）",
+      "tip": "（小游戏注册3日广告变现金额（平台上报）+激活3日付费金额（平台上报））/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_mixed_monetization_roi_d7_by_reporting",
+      "cname": "小游戏注册7日混合变现ROI（平台上报）",
+      "tip": "（小游戏注册7日广告变现金额（平台上报）+激活7日付费金额（平台上报））/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_mixed_monetization_roi_d14",
+      "cname": "小游戏注册14日混合变现ROI",
+      "tip": "（小游戏注册14日广告变现金额（平台上报）+小游戏注册14日付费金额）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_mixed_monetization_roi_d14_by_reporting",
+      "cname": "小游戏注册14日混合变现ROI（平台上报）",
+      "tip": "（小游戏注册14日广告变现金额（平台上报）+激活14日付费金额（平台上报））/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "ad_paying_users_d1",
+      "cname": "激活首日广告变现人数",
+      "tip": "用户完成激活行为当日内，观看或点击广告为广告主带来广告收入分成的独立用户数（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "ad_paying_cost_d1",
+      "cname": "激活首日广告变现成本（人数）",
+      "tip": "激活首日广告变现成本（人数），计算公式：花费/激活首日广告变现人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "ad_pur_arpu_cost_d1_24h",
+      "cname": "激活首24小时广告变现ARPU",
+      "tip": "激活首24小时广告变现ARPU，计算公式：激活首24小时广告变现金额/APP激活总量"
+    },
+    {
+      "platform": "tencent",
+      "name": "ad_monetization_penetration_rat_d1",
+      "cname": "激活首日广告变现渗透率",
+      "tip": "激活首日广告变现渗透率，计算公式：激活首日广告变现人数/APP激活次数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_ad_monetization_amount_d3",
+      "cname": "小游戏注册3日广告变现金额（平台上报）",
+      "tip": "用户在小游戏完成注册行为3日内，观看或点击小游戏广告为广告主带来广告收入金额（该指标由平台上报数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_ad_monetization_amount_d7",
+      "cname": "小游戏注册7日广告变现金额（平台上报）",
+      "tip": "用户在微信小游戏完成注册行为7日内，观看或点击小游戏广告为广告主带来广告收入金额（该指标由平台上报数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_ad_monetization_amount_d14",
+      "cname": "小游戏注册14日广告变现金额（平台上报）",
+      "tip": "用户在小游戏完成注册行为14日内，观看或点击小游戏广告为广告主带来广告收入金额（该指标由平台上报数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "minigame_3d_income_uv",
+      "cname": "小游戏注册3日广告变现人数（平台上报）",
+      "tip": "在小游戏完成注册行为3日内，观看或点击小游戏广告并产生变现行为的独立用户数（该指标由平台上报数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "minigame_3d_income_count",
+      "cname": "小游戏注册3日广告变现次数（平台上报）",
+      "tip": "用户在小游戏完成注册行为3日内，观看或点击小游戏广告并产生变现行为的次数（该指标由平台上报数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "minigame_7d_income_uv",
+      "cname": "小游戏注册7日广告变现人数（平台上报）",
+      "tip": "在微信小游戏完成注册行为7日内，观看或点击小游戏广告并产生变现行为的独立用户数（该指标由平台上报数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "minigame_7d_income_count",
+      "cname": "小游戏注册7日广告变现次数（平台上报）",
+      "tip": "用户在小游戏完成注册行为7日内，观看或点击小游戏广告并产生变现行为的次数（该指标由平台上报数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "minigame_3d_income_roi",
+      "cname": "小游戏注册3日广告变现ROI（平台上报）",
+      "tip": "小游戏注册3日广告变现ROI（平台上报）：小游戏注册3日广告变现金额（平台上报）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "minigame_7d_income_roi",
+      "cname": "小游戏注册7日广告变现ROI（平台上报）",
+      "tip": "小游戏注册7日广告变现ROI（平台上报），计算公式：小游戏注册7日广告变现金额（平台上报）/花费*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "income_val_24h",
+      "cname": "激活首24小时广告变现金额",
+      "tip": "用户完成激活行为后24小时内，观看或点击广告为广告主带来广告变现收入金额（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "ad_paying_users_24h",
+      "cname": "激活首24小时广告变现人数",
+      "tip": "用户完成激活行为后24小时内，观看或点击广告为广告主带来广告收入分成的独立用户数（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "income_roi_1_24h",
+      "cname": "激活首24小时广告变现ROI",
+      "tip": "激活首24小时广告变现ROI，计算公式：激活首24小时广告变现金额/花费"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_day_ad_pur_arppu_cost_24h",
+      "cname": "激活首24小时广告变现ARPPU",
+      "tip": "激活首24小时广告变现ARPPU，计算公式：激活首24小时广告变现金额/激活首24小时广告变现人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "income_val_24h_pla",
+      "cname": "激活首24小时广告变现金额（平台上报）",
+      "tip": "用户完成激活行为后24小时内，观看或点击广告为广告主带来广告变现收入金额（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "ad_paying_users_24h_pla",
+      "cname": "激活首24小时广告变现人数（平台上报）",
+      "tip": "用户完成激活行为后24小时内，观看或点击广告为广告主带来广告收入分成的独立用户数（当用户行为源类型为微信小游戏时，使用注册时间统计数据）"
+    },
+    {
+      "platform": "tencent",
+      "name": "income_roi_1_24h_pla",
+      "cname": "激活首24小时广告变现ROI（平台上报）",
+      "tip": "激活首24小时广告变现ROI，计算公式：激活首24小时广告变现金额/花费"
+    },
+    {
+      "platform": "tencent",
+      "name": "ad_pur_arpu_cost_d1_24h_pla",
+      "cname": "激活首24小时广告变现ARPU（平台上报）",
+      "tip": "激活首24小时广告变现ARPU，计算公式：激活首24小时广告变现金额/APP激活总量"
+    },
+    {
+      "platform": "tencent",
+      "name": "first_day_ad_pur_arppu_cost_24h_pla",
+      "cname": "激活首24小时广告变现ARPPU（平台上报）",
+      "tip": "激活首24小时广告变现ARPPU，计算公式：激活首24小时广告变现金额/激活首24小时广告变现人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_create_role_users",
+      "cname": "创建角色人数",
+      "tip": "创建角色人数(游戏)"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_key_page_viewers",
+      "cname": "小游戏关键页面访问人数",
+      "tip": "用户在小游戏完成关键页面访问的次数（微信流量内，统计逻辑为：小游戏新增注册用户里在单游戏停留超过30s的用户）"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_key_page_view_cost",
+      "cname": "小游戏关键页面访问成本（人数）",
+      "tip": "小游戏关键页面访问成本（人数），计算公式：花费/小游戏关键页面访问人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "coupon_click_count",
+      "cname": "（游戏）礼包兑换按钮点击",
+      "tip": "下载app去兑换游戏礼包按钮"
+    },
+    {
+      "platform": "tencent",
+      "name": "coupon_get_count",
+      "cname": "（游戏）礼包（券）领取次数",
+      "tip": "复制礼包码-游戏礼包（券）领取量"
+    },
+    {
+      "platform": "tencent",
+      "name": "game_create_role_count",
+      "cname": "创建角色次数",
+      "tip": "创建角色量(游戏)"
+    },
+    {
+      "platform": "tencent",
+      "name": "game_authorize_count",
+      "cname": "游戏授权次数",
+      "tip": "授权量(游戏)"
+    },
+    {
+      "platform": "tencent",
+      "name": "game_tutorial_finish_count",
+      "cname": "完成新手教程次数",
+      "tip": "完成新手教程量(游戏)"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_create_role_rate",
+      "cname": "创建角色率",
+      "tip": "创建角色率，计算公式：创建角色次数/点击次数*100%"
+    },
+    {
+      "platform": "tencent",
+      "name": "mini_game_create_role_cost",
+      "cname": "创建角色成本（人数）",
+      "tip": "创建角色成本（人数），计算公式：花费/创建角色人数"
+    },
+    {
+      "platform": "tencent",
+      "name": "coupon_issue_count",
+      "cname": "（游戏）礼包（券）发放次数",
+      "tip": "展示礼包码行为-游戏礼包（券）发放量"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "negative",
+      "cname": "减少此类作品数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "submit",
+      "cname": "提交按钮点击数（历史字段，同下方“线索提交个数”，预计年底删除该字段）",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "form_action_ratio",
+      "cname": "落地页数据-表单提交点击率",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "play_5s_ratio",
+      "cname": "5s 播放率",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "play_end_ratio",
+      "cname": "完播率",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_dsp_gift_form",
+      "cname": "附加组件表单提交",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_phone_card_activate",
+      "cname": "电话卡激活数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_measurement_house",
+      "cname": "量房数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "ad_show",
+      "cname": "广告曝光",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "key_action",
+      "cname": "关键行为数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "approx_pay_cost",
+      "cname": "淘系近似购买成本",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "approx_pay_ratio",
+      "cname": "淘系近似购买率",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_three_day_stay_by_conversion",
+      "cname": "3日留存",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_week_stay_by_conversion",
+      "cname": "7日留存",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_making_calls",
+      "cname": "电话拨打数-用户点击电话按钮的次数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_weighted_purchase_amount",
+      "cname": "加权付费金额-当日回传的付费行为所带来的加权付费金额，单位:元，当前用于保险行业",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_weighted_purchase_amount_first_day",
+      "cname": "首日加权付费金额-当日激活的用户在当天产生的付费行为所带来的加权付费金额 单位:元，当前用于保险行业",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "ad_photo_played_75percent",
+      "cname": "75%进度播放数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "ad_photo_played_10s",
+      "cname": "10s播放数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "ad_photo_played_2s",
+      "cname": "2s播放数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "cancel_like",
+      "cname": "取消点赞数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "download_installed",
+      "cname": "安卓安装完成数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "played_end",
+      "cname": "播放完成",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "played_five_seconds",
+      "cname": "播放5s",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "played_three_seconds",
+      "cname": "有效播放数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "backflow_cv_lower",
+      "cname": "回流预估转化数下限",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "backflow_cv_upper",
+      "cname": "回流预估转化数上限",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "conversion_cost_lower",
+      "cname": "回流预估转化成本下限",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "conversion_cost_upper",
+      "cname": "回流预估转化成本上限",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "backflow_payment",
+      "cname": "首日付费总金额，单位元",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "backflow_roi",
+      "cname": "首日ROI",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "backflow_seven_payment",
+      "cname": "7日付费总金额",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "backflow_seven_roi",
+      "cname": "7日ROI",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "charge",
+      "cname": "花费（元）",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "show",
+      "cname": "封面曝光数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "photo_click",
+      "cname": "封面点击数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "aclick",
+      "cname": "素材曝光数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "bclick",
+      "cname": "行为数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "photo_click_ratio",
+      "cname": "封面点击率",
+      "tip": "封面点击数占封面展示数百分比*100%"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "action_ratio",
+      "cname": "素材点击率",
+      "tip": "行为数占素材曝光数百分比*100%"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "impression_1k_cost",
+      "cname": "平均千次封面曝光花费",
+      "tip": "花费/封面展示次数*1000"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "click_1k_cost",
+      "cname": "平均千次素材曝光花费",
+      "tip": "1000*花费/素材曝光次数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "photo_click_cost",
+      "cname": "平均封面点击单价",
+      "tip": "花费/封面点击数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "action_cost",
+      "cname": "平均行为单价",
+      "tip": "花费/行为数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "play_3s_cnt",
+      "cname": "3s播放完成数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "play_3s_ratio",
+      "cname": "3s播放完成率",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "played_num",
+      "cname": "播放数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "share",
+      "cname": "分享数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "comment",
+      "cname": "评论数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "like",
+      "cname": "点赞数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "follow",
+      "cname": "新增粉丝数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "report",
+      "cname": "举报数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "cancel_follow",
+      "cname": "取消关注数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "block",
+      "cname": "拉黑数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay",
+      "cname": "应用下载数据-付费次数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_purchase_amount",
+      "cname": "应用下载数据-付费金额",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "activation",
+      "cname": "应用下载数据-激活数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "download_started",
+      "cname": "应用下载数据-安卓下载开始数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "download_completed",
+      "cname": "应用下载数据-安卓下载完成数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_register",
+      "cname": "应用下载数据-注册数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_jin_jian_app",
+      "cname": "应用下载数据-完件数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_credit_grant_app",
+      "cname": "应用下载数据-授信数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_next_day_stay",
+      "cname": "应用下载数据-次留数（仅支持分日查询）",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_new_user_pay",
+      "cname": "新增付费人数",
+      "tip": "历史30天内首次产生付费的人数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_first_day",
+      "cname": "应用下载数据-首日付费次数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_purchase_amount_first_day",
+      "cname": "应用下载数据-首日付费金额",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_purchase_amount_one_day",
+      "cname": "激活后24h付费金额(回传时间)",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_purchase_amount_one_day_by_conversion",
+      "cname": "激活后24h付费金额(激活时间)",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_purchase_amount_three_day_by_conversion",
+      "cname": "激活后三日付费金额",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_purchase_amount_week_by_conversion",
+      "cname": "激活后7日付费金额",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_week_by_conversion",
+      "cname": "7日付费次数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_24h_stay",
+      "cname": "活后24h次日留存数（回传时间）",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_24h_stay_by_conversion",
+      "cname": "激活后24h次日留存数（激活时间）",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_app_invoked",
+      "cname": "唤醒应用数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_new_user_jinjian_app",
+      "cname": "新增完件人数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_credit_grant_first_day_app",
+      "cname": "app首日授信数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_new_user_credit_grant_app",
+      "cname": "新增授信人数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_order_submit",
+      "cname": "提交订单数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "download_started_cost",
+      "cname": "安卓下载开始单价",
+      "tip": "花费/安卓下载开始数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "download_started_roi",
+      "cname": "安卓下载开始率",
+      "tip": "安卓下载开始数/行为数*100%"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "download_completed_cost",
+      "cname": "安卓下载完成单价",
+      "tip": "花费/安卓下载完成数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "download_completed_roi",
+      "cname": "安卓下载完成率",
+      "tip": "安卓下载完成数/安卓下载开始数*100%"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "activation_cost",
+      "cname": "激活单价",
+      "tip": "花费/激活数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "activation_roi",
+      "cname": "下载完成激活率",
+      "tip": "激活数/安卓下载完成数*100%"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_register_cost",
+      "cname": "注册成本",
+      "tip": "花费/注册数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_register_ratio",
+      "cname": "注册率",
+      "tip": "注册数/激活数*100%"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_new_user_pay_cost",
+      "cname": "新增付费人数成本",
+      "tip": "花费/新增付费人数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_new_user_pay_ratio",
+      "cname": "新增付费人数率",
+      "tip": "新增付费人数/（激活数+表单数）"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_first_day_cost",
+      "cname": "首日付费次数成本",
+      "tip": "花费/首日付费次数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_first_day_roi",
+      "cname": "首日付费ROI",
+      "tip": "首日付费金额/花费*100%"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_purchase_amount_one_day_roi",
+      "cname": "激活后24h-ROI(回传时间)",
+      "tip": "激活用户24小时的付费金额/花费"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_purchase_amount_three_day_by_conversion_roi",
+      "cname": "激活后3日ROI",
+      "tip": "激活后三日付费金额/花费"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_purchase_amount_week_by_conversion_roi",
+      "cname": "激活后7日ROI",
+      "tip": "激活后七日付费金额/花费"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_week_by_conversion_cost",
+      "cname": "7日付费次数成本",
+      "tip": "7日付费次数/花费"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_cost",
+      "cname": "付费次数成本",
+      "tip": "花费/付费次数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_pay_roi",
+      "cname": "ROI",
+      "tip": "付费金额/花费"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_next_day_stay_cost",
+      "cname": "花费/次日留存数",
+      "tip": "花费/次日留存数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_next_day_stay_ratio",
+      "cname": "次留率",
+      "tip": "次留数/激活数*100%"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_24h_stay_cost",
+      "cname": "激活后24h次日留存成本（回传时间）",
+      "tip": "花费/激活后24h次日留存数（回传时间）"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_24h_stay_ratio",
+      "cname": "激活后24h次日留存率（回传时间）",
+      "tip": "激活后24h次日留存数（回传时间/激活数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_24h_stay_by_conversion_cost",
+      "cname": "激活后24h次日留存成本（激活时间）",
+      "tip": "消耗/激活后24h次日留存数（激活时间）"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_24h_stay_by_conversion_ratio",
+      "cname": "激活后24h次日留存率（激活时间）",
+      "tip": "激活后24h次日留存数（激活时间）/激活数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_app_invoked_cost",
+      "cname": "唤起应用成本",
+      "tip": "花费/唤起应用数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_app_invoked_ratio",
+      "cname": "event_app_invoked_ratio",
+      "tip": "唤起应用数/当日行为数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_jin_jian_app_cost",
+      "cname": "完件成本",
+      "tip": "花费/当日回传完件数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_new_user_jinjian_app_cost",
+      "cname": "新增完件人数成本",
+      "tip": "花费/当日新增完件人数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_new_user_jinjian_app_roi",
+      "cname": "新增完件人数率",
+      "tip": "当日新增完件人数/(当日激活数+表单数)"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_credit_grant_first_day_app_cost",
+      "cname": "首日授信成本",
+      "tip": "花费/首日授信数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_credit_grant_first_day_app_ratio",
+      "cname": "首日授信率",
+      "tip": "花费/当日完件数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_credit_grant_app_cost",
+      "cname": "授信成本",
+      "tip": "花费/当日回传授信数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_credit_grant_app_ratio",
+      "cname": "授信率",
+      "tip": "当日回传授信数/当日回传的完件数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_new_user_credit_grant_app_cost",
+      "cname": "新增授信人数成本",
+      "tip": "花费 / 当日新增授信人数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_new_user_credit_grant_app_roi",
+      "cname": "新增能授信人数率",
+      "tip": "当日新增授信人数 / 当日激活数+表单数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_add_shopping_cart",
+      "cname": "添加购物车数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_order_paid_roi",
+      "cname": "订单支付率",
+      "tip": "订单支付数/商品访问数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_add_shopping_cart_cost",
+      "cname": "添加购物车成本",
+      "tip": "消耗/添加购物车数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "union_event_pay_purchase_amount_7d",
+      "cname": "联盟广告收入",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "union_event_pay_purchase_amount_7d_roi",
+      "cname": "联盟变现ROI",
+      "tip": "当日产生的激活设备在7个自然日内(含当日)产生的联盟广告收入/花费"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_watch_app_ad",
+      "cname": "广告观看",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_ad_watch_times",
+      "cname": "广告观看次数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_ad_watch_times_cost",
+      "cname": "广告观看次数成本",
+      "tip": "花费/APP内观看广告次数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_ad_watch_times_ratio",
+      "cname": "广告观看次数转化率",
+      "tip": "APP内观看广告次数/当日行为数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_ad_watch_5_times",
+      "cname": "5次广告观看人数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_ad_watch_5_times_cost",
+      "cname": "5次广告观看成本",
+      "tip": "当日消耗/5次广告广告观看数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_ad_watch_5_times_ratio",
+      "cname": "5次广告观看转化率",
+      "tip": "5次广告广告观看数/当日行为数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_ad_watch_10_times",
+      "cname": "10次广告广告观看数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_ad_watch_10_times_cost",
+      "cname": "10次广告观看成本",
+      "tip": "当日消耗/10次广告广告观看数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_ad_watch_10_times_ratio",
+      "cname": "10次广告观看转化率",
+      "tip": "10次广告广告观看数/当日行为数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_ad_watch_20_times",
+      "cname": "20次广告广告观看数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_ad_watch_20_times_cost",
+      "cname": "20次广告观看成本",
+      "tip": "当日消耗/20次广告广告观看数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_ad_watch_20_times_ratio",
+      "cname": "20次广告观看转化率",
+      "tip": "20次广告广告观看数/当日行为数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "conversion_num",
+      "cname": "转化数(回传时间)",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "conversion_num_cost",
+      "cname": "转化成本(回传时间)",
+      "tip": "消耗/转化数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "conversion_ratio",
+      "cname": "转化率(回传时间)",
+      "tip": "转化数 / 行为数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "deep_conversion_num",
+      "cname": "深度转化数(回传时间)",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "deep_conversion_cost",
+      "cname": "深度转化成本(回传时间)",
+      "tip": "消耗 / 深度转化数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "deep_conversion_ratio",
+      "cname": "深度转化率(回传时间)",
+      "tip": "深度转化数 / 转化数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "conversion_num_by_impression_7d",
+      "cname": "转化数(计费时间)",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "conversion_cost_by_impression_7d",
+      "cname": "转化成本(计费时间)",
+      "tip": "消耗 / 转化数(计费时间)"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "conversion_ratio_by_impression_7d",
+      "cname": "转化率(计费时间)",
+      "tip": "转化数(计费时间) / 行为数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "deep_conversion_num_by_impression_7d",
+      "cname": "深度转化数(计费时间)",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "deep_conversion_cost_by_impression_7d",
+      "cname": "深度转化成本(计费时间)",
+      "tip": "消耗 / 深度转化数(计费时间)"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "deep_conversion_ratio_by_impression_7d",
+      "cname": "深度转化率(计费时间)",
+      "tip": "深度转化数(计费时间) / 转化数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_order_paid",
+      "cname": "应用下载数据-付款成功数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_order_paid_purchase_amount",
+      "cname": "应用下载数据-付款成功金额",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_order_paid_cost",
+      "cname": "订单支付成本",
+      "tip": "当日消耗/订单支付数"
+    },
+    {
+      "platform": "kuaishou",
+      "name": "form_count",
+      "cname": "落地页数据-线索提交个数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_valid_clues",
+      "cname": "落地页数据-有效线索数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "merchant_reco_fans",
+      "cname": "涨粉量",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_goods_view",
+      "cname": "商品访问数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "ad_product_cnt",
+      "cname": "商品成交数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_jin_jian_landing_page",
+      "cname": "落地页数据-落地页完件数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_new_user_jinjian_page",
+      "cname": "落地页新增完件人数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_credit_grant_first_day_landing_page",
+      "cname": "落地页首日授信数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_credit_grant_landing_page",
+      "cname": "落地页数据-落地页授信数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_new_user_credit_grant_page",
+      "cname": "落地页新增授信人数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_button_click",
+      "cname": "按钮点击数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_appoint_form",
+      "cname": "预约表单数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_appoint_jump_click",
+      "cname": "预约跳转点击数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_get_through",
+      "cname": "智能电话-确认接通数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_add_wechat",
+      "cname": "微信复制数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_multi_conversion",
+      "cname": "落地页多转化次数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_credit_card_recheck",
+      "cname": "信用卡核卡数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_credit_card_recheck_first_day",
+      "cname": "信用卡首日核卡数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_no_intention",
+      "cname": "用户无意向数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "approx_pay_count",
+      "cname": "近似购买数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_phone_get_through",
+      "cname": "电话建联数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_intention_confirmed",
+      "cname": "意向确认数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_wechat_connected",
+      "cname": "微信加粉数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_order_successed",
+      "cname": "有效线索成交数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_wechat_qr_code_link_click",
+      "cname": "微信小程序深度加粉数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_audition",
+      "cname": "首次试听到课数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_consultation_valid_retained",
+      "cname": "留咨咨询数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "event_outbound_call",
+      "cname": "电话拨打数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "live_played_3s",
+      "cname": "直播观看数",
+      "tip": ""
+    },
+    {
+      "platform": "kuaishou",
+      "name": "live_event_goods_view",
+      "cname": "直播查看商品数",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppRealRegisterCnt",
+      "cname": "新增用户数",
+      "tip": "实际调用注册接口的用户数（主要用于数据核对与排查）"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppActivateStandard",
+      "cname": "标准_激活数(曝光口径)",
+      "tip": "基于客户端上报的用户首次启动事件统计（小程序：$MPLaunch、应用：$AppStart）"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppActivateBuriedAtv",
+      "cname": "埋点_激活数(曝光口径)",
+      "tip": "引力引擎经过映射管理处理后的激活数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppActivateUploadedAtv",
+      "cname": "回传_激活数(曝光口径)",
+      "tip": "引力引擎实际上报给平台的激活数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppRegisterStandard",
+      "cname": "标准_注册数(曝光口径)",
+      "tip": "基于客户主动上报的用户业务注册事件统计（$MPRegister/$AppRegister）"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppRegisterBuriedAtv",
+      "cname": "埋点_注册数(曝光口径)",
+      "tip": "引力引擎经过映射管理处理后的注册数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppRegisterUploadedAtv",
+      "cname": "回传_注册数(曝光口径)",
+      "tip": "引力引擎实际上报给平台的注册数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstPayStandardAtv",
+      "cname": "标准_首次付费数(曝光口径)",
+      "tip": "引力引擎收集到的全量首次付费数（含自然量）"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstPayAmountStandardAtv",
+      "cname": "标准_首次付费金额(曝光口径)",
+      "tip": "引力引擎收集到的全量首次付费金额（含自然量）"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstPayBuriedAtv",
+      "cname": "埋点_首次付费数(曝光口径)",
+      "tip": "引力引擎经过映射管理处理后的首次付费数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstPayAmountBuriedAtv",
+      "cname": "埋点_首次付费金额(曝光口径)",
+      "tip": "引力引擎经过映射管理处理后的首次付费金额"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstPayUploadedAtv",
+      "cname": "回传_首次付费数(曝光口径)",
+      "tip": "引力引擎实际上报给平台的首次付费数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstPayAmountUploadedAtv",
+      "cname": "回传_首次付费金额(曝光口径)",
+      "tip": "引力引擎实际上报给媒体的首次付费金额"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppGamePayStandardAtv",
+      "cname": "标准_总付费次数(曝光口径)",
+      "tip": "引力引擎收集到的全量付费次数（含自然量）"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppGamePayUserCntStandardAtv",
+      "cname": "标准_总付费人数(曝光口径)",
+      "tip": "标准_总付费次数按用户去重"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppGamePayAmountStandardAtv",
+      "cname": "标准_总付费金额(曝光口径)",
+      "tip": "引力引擎收集到的全量付费金额"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppGamePayBuriedAtv",
+      "cname": "埋点_总付费次数(曝光口径)",
+      "tip": "引力引擎经过映射管理处理后的总付费数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppGamePayUserCntBuriedAtv",
+      "cname": "埋点_总付费人数(曝光口径)",
+      "tip": "埋点_总付费次数按用户去重"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppGamePayAmountBuriedAtv",
+      "cname": "埋点_总付费金额(曝光口径)",
+      "tip": "引力引擎经过映射管理处理后的总付费金额"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppGamePayUploadedAtv",
+      "cname": "回传_总付费次数(曝光口径)",
+      "tip": "引力引擎实际上报给平台的总付费数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppGamePayUserCntUploadedAtv",
+      "cname": "回传_总付费人数(曝光口径)",
+      "tip": "回传_总付费次数按用户去重"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppGamePayAmountUploadedAtv",
+      "cname": "回传_总付费金额(曝光口径)",
+      "tip": "引力引擎实际上报给平台的总付费金额"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppKeyActiveBuriedAtv",
+      "cname": "埋点_关键行为数(曝光口径)",
+      "tip": "引力引擎经过映射管理处理后的关键行为数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppKeyActiveUploadedAtv",
+      "cname": "回传_关键行为数(曝光口径)",
+      "tip": "引力引擎实际上报给平台的关键行为数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppRetentionStandard",
+      "cname": "标准_次留数(曝光口径)",
+      "tip": "引力引擎收集到的全量次留数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppRetentionBuried",
+      "cname": "埋点_次留数(曝光口径)",
+      "tip": "引力引擎经过映射管理处理后的次留数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppRetentionUploaded",
+      "cname": "回传_次留数(曝光口径)",
+      "tip": "引力引擎实际上报给平台的次留数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayPayStandard",
+      "cname": "标准_首日付费次数(曝光口径)",
+      "tip": "引力引擎收集到的全量首日付费次数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayPayUserCntStandard",
+      "cname": "标准_首日付费人数(曝光口径)",
+      "tip": "引力引擎收集到的全量首日付费人数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayPayAmountStandard",
+      "cname": "标准_首日付费金额(曝光口径)",
+      "tip": "引力引擎收集到的全量首日付费金额"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayEachPayCost",
+      "cname": "首日每次付费成本(曝光口径)",
+      "tip": "引力引擎收集到的全量每次付费成本"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayPayBuried",
+      "cname": "埋点_首日付费次数(曝光口径)",
+      "tip": "引力引擎经过映射管理处理后的首日付费次数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayPayUserCntBuried",
+      "cname": "埋点_首日付费人数(曝光口径)",
+      "tip": "引力引擎经过映射管理处理后的首日付费人数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayPayAmountBuried",
+      "cname": "埋点_首日付费金额(曝光口径)",
+      "tip": "引力引擎经过映射管理处理后的首日付费金额"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayPayUploaded",
+      "cname": "回传_首日付费次数(曝光口径)",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayPayUserCntUploaded",
+      "cname": "回传_首日付费人数(曝光口径)",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayPayAmountUploaded",
+      "cname": "回传_首日付费金额(曝光口径)",
+      "tip": "引力引擎实际上报给平台的首日付费金额"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayPayROI",
+      "cname": "首日付费ROI",
+      "tip": "标准_首日付费金额/平台_消耗"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayPayROIUploaded",
+      "cname": "回传_首日付费ROI",
+      "tip": "所选时间范围内激活用户在激活当日经过映射回传过滤后的付费金额/消耗"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppGamePayAtvROI",
+      "cname": "总付费ROI(曝光口径)",
+      "tip": "标准_总付费金额/平台_消耗"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayARPPUStandard",
+      "cname": "首日ARPPU(曝光口径)",
+      "tip": "标准_首日付费金额(曝光口径)/标准_首日付费人数(曝光口径)"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayPayRateStandard",
+      "cname": "首日付费率(曝光口径)",
+      "tip": "标准_首日付费人数(曝光口径)/标准_激活数(曝光口径)"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppFirstDayPayCostStandard",
+      "cname": "首日付费成本(曝光口径)",
+      "tip": "平台_消耗/标准_首日付费人数"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppPayAmountAtvPower",
+      "cname": "累计付费倍率(曝光口径)",
+      "tip": "标准_总付费金额(曝光口径)/标准_首日付费金额(曝光口径)"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_2",
+      "cname": "二日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_3",
+      "cname": "三日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_4",
+      "cname": "四日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_5",
+      "cname": "五日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_6",
+      "cname": "六日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_7",
+      "cname": "七日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_14",
+      "cname": "十四日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_30",
+      "cname": "三十日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_45",
+      "cname": "四十五日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_60",
+      "cname": "六十日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_90",
+      "cname": "九十日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_120",
+      "cname": "一百二十日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_180",
+      "cname": "一百八十日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_210",
+      "cname": "二百一十日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_270",
+      "cname": "二百七十日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_300",
+      "cname": "三百日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayBuried_365",
+      "cname": "三百六十五日付费次数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_2",
+      "cname": "二日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_3",
+      "cname": "三日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_4",
+      "cname": "四日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_5",
+      "cname": "五日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_6",
+      "cname": "六日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_7",
+      "cname": "七日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_14",
+      "cname": "十四日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_30",
+      "cname": "三十日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_45",
+      "cname": "四十五日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_60",
+      "cname": "六十日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_90",
+      "cname": "九十日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_120",
+      "cname": "一百二十日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_180",
+      "cname": "一百八十日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_210",
+      "cname": "二百一十日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_270",
+      "cname": "二百七十日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_300",
+      "cname": "三百日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayUserCnt_365",
+      "cname": "三百六十五日付费人数",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费人数之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_2",
+      "cname": "二日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_3",
+      "cname": "三日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_4",
+      "cname": "四日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_5",
+      "cname": "五日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_6",
+      "cname": "六日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_7",
+      "cname": "七日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_14",
+      "cname": "十四日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_30",
+      "cname": "三十日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_45",
+      "cname": "四十五日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_60",
+      "cname": "六十日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_90",
+      "cname": "九十日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_120",
+      "cname": "一百二十日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_180",
+      "cname": "一百八十日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_210",
+      "cname": "二百一十日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_270",
+      "cname": "二百七十日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_300",
+      "cname": "三百日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayAmountBuried_365",
+      "cname": "三百六十五日付费收入",
+      "tip": "所选时间范围内的激活用户在激活后第N日的付费金额之和"
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_2",
+      "cname": "二日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_3",
+      "cname": "三日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_4",
+      "cname": "四日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_5",
+      "cname": "五日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_6",
+      "cname": "六日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_7",
+      "cname": "七日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_14",
+      "cname": "十四日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_30",
+      "cname": "三十日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_45",
+      "cname": "四十五日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_60",
+      "cname": "六十日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_90",
+      "cname": "九十日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_120",
+      "cname": "一百二十日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_180",
+      "cname": "一百八十日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_210",
+      "cname": "二百一十日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_270",
+      "cname": "二百七十日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_300",
+      "cname": "三百日付费ROI",
+      "tip": ""
+    },
+    {
+      "platform": "gravity",
+      "name": "AppMultiDayGamePayROIBuried_365",
+      "cname": "三百六十五日付费ROI",
+      "tip": ""
+    }
+  ]
+}

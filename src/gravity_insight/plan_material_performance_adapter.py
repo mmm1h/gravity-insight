@@ -9,6 +9,7 @@ from .errors import InputValidationError
 from .material_performance import (
     DEFAULT_PLATFORMS,
     normalize_material_apps,
+    normalize_material_profiles,
     normalize_material_platforms,
     normalize_material_window,
 )
@@ -29,12 +30,17 @@ from .actionable_error_values import actual_value
 
 MATERIAL_PERFORMANCE_NAME = "material_performance"
 MATERIAL_PERFORMANCE_FIELDS = frozenset(
-    {"name", "apps", "start", "end", "platforms"}
+    {
+        "name", "apps", "start", "end", "platforms", "metrics",
+        "gravity_metrics", "date_grain", "data_dimension",
+        "relate_dimensions", "statistics", "order_by", "decimal_point",
+        "time_lines",
+    }
 )
 MATERIAL_PERFORMANCE_OUTPUT_FIELDS = frozenset(
     {
         "app_count", "date_range", "failure_count", "limits", "operation_id",
-        "platform_count", "platforms", "results", "returned_items",
+        "platform_count", "platforms", "queries", "results", "returned_items",
         "success_count", "total_count",
     }
 )
@@ -92,6 +98,24 @@ def validate_material_performance_plan(
             "this node max_items; raise limits.max_items",
             "limits.max_items",
         )
+    try:
+        normalize_material_profiles(
+            platforms,
+            metrics=request.get("metrics"),
+            gravity_metrics=request.get(
+                "gravity_metrics",
+                ("AppRealRegisterCnt", "AppGamePayUserCntStandardAtv"),
+            ),
+            date_grain=request.get("date_grain", "total"),
+            data_dimension=request.get("data_dimension", "material"),
+            relate_dimensions=request.get("relate_dimensions", ()),
+            statistics=request.get("statistics", ()),
+            order_by=request.get("order_by"),
+            decimal_point=request.get("decimal_point"),
+            time_lines=request.get("time_lines"),
+        )
+    except InputValidationError as exc:
+        raise input_error(f"must correct material query options: {exc}", exc.field or "request") from None
     _validate_dates(request, set(context.dynamic_targets))
     validate_selected_fields(
         context.output_fields,
@@ -108,11 +132,26 @@ def execute_material_performance_plan(
     """Execute with inner worker one, then re-verify the public envelope."""
 
     platforms = tuple(request.get("platforms", DEFAULT_PLATFORMS))
+    options = {
+        "metrics": request.get("metrics"),
+        "gravity_metrics": request.get(
+            "gravity_metrics",
+            ("AppRealRegisterCnt", "AppGamePayUserCntStandardAtv"),
+        ),
+        "date_grain": request.get("date_grain", "total"),
+        "data_dimension": request.get("data_dimension", "material"),
+        "relate_dimensions": request.get("relate_dimensions", ()),
+        "statistics": request.get("statistics", ()),
+        "order_by": request.get("order_by"),
+        "decimal_point": request.get("decimal_point"),
+        "time_lines": request.get("time_lines"),
+    }
     result = sdk.material_performance(
         request["apps"],
         request["start"],
         request["end"],
         platforms=platforms,
+        **options,
         max_workers=1,
         max_pages=context.max_pages,
         max_items=context.max_items,
@@ -126,6 +165,10 @@ def execute_material_performance_plan(
         expected_max_pages=context.max_pages,
         expected_max_items=context.max_items,
         expected_max_workers=1,
+        expected_queries=tuple(
+            profile.receipt()
+            for profile in normalize_material_profiles(platforms, **options)
+        ),
     )
     if material_performance_item_count(safe) > context.max_items:
         raise input_error(

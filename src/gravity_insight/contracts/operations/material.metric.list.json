@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 2,
-    "description": "指定媒体的素材指标配置；data 为指标数组。",
+    "contract_version": 3,
+    "description": "版本化素材报表指标目录的线上来源；支持不限媒体、巨量、腾讯、快手和引力指标命名空间，report_type 固定为 material。",
     "domain": "material",
     "effect": "read",
     "examples": [
@@ -20,7 +20,11 @@
     "input_fields": {
       "media_type": {
         "enum": [
-          "bytedance"
+          "aggregate",
+          "bytedance",
+          "tencent",
+          "kuaishou",
+          "gravity"
         ],
         "required": true,
         "type": "string"
@@ -66,7 +70,9 @@
       "body_fields": [],
       "defaults": {},
       "fixed_body": {},
-      "fixed_query": {},
+      "fixed_query": {
+        "report_type": "material"
+      },
       "path_fields": [],
       "query_fields": [
         "media_type"

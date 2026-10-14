@@ -1557,6 +1557,15 @@ class GravityInsightManifestTests(unittest.TestCase):
                 "promotion.tencent.advertiser.list": {"total": ["cost"]},
                 "promotion.tencent.tencent_adgroup_v2.list": {"total": ["cost"]},
                 "promotion.taptap.group.list": {"total": []},
+                "material.report.query": {
+                    "update_at": [
+                        "aggregate",
+                        "bytedance",
+                        "tencent",
+                        "kuaishou",
+                        "bilibili",
+                    ]
+                },
                 "report.company_amount.query": {
                     "total": [
                         "ad_count",

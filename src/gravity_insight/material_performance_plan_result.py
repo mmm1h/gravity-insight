@@ -18,7 +18,9 @@ from .material_performance_result import (
 from .result_audit import project_result_audit
 
 
-_PLATFORMS = frozenset({"bytedance", "tencent", "kuaishou", "bilibili"})
+_PLATFORMS = frozenset(
+    {"aggregate", "bytedance", "tencent", "kuaishou", "bilibili"}
+)
 _PROJECT_STRUCTURAL = frozenset(
     {"schema_version", "ok", "status", "exit_code", "error", "next_action", "result_audit"}
 )
@@ -33,6 +35,7 @@ def sanitize_product_result(
     expected_max_pages: int | None = None,
     expected_max_items: int | None = None,
     expected_max_workers: int | None = None,
+    expected_queries: tuple[Mapping[str, Any], ...] | None = None,
 ) -> dict[str, Any]:
     """Rebuild a product envelope from whitelisted fields and identities."""
 
@@ -41,7 +44,7 @@ def sanitize_product_result(
     parts = _product_parts(value)
     if parts is None:
         return contract_result()
-    platforms, window, app_count, limits, results = parts
+    platforms, queries, window, app_count, limits, results = parts
     if not _matches_expected(
         platforms,
         window,
@@ -53,11 +56,13 @@ def sanitize_product_result(
         expected_max_pages=expected_max_pages,
         expected_max_items=expected_max_items,
         expected_max_workers=expected_max_workers,
+        expected_queries=expected_queries,
+        queries=queries,
     ):
         return contract_result()
     safe = [
-        _resanitize_component(item, platform, max_pages=limits[0])
-        for platform, item in zip(platforms, results, strict=True)
+        _resanitize_component(item, platform, query, max_pages=limits[0])
+        for platform, query, item in zip(platforms, queries, results, strict=True)
     ]
     returned = sum(material_component_item_count(item) for item in safe)
     per_platform_items = limits[1] // len(platforms)
@@ -110,14 +115,18 @@ def project_material_performance_result(
 
 
 def _resanitize_component(
-    value: Any, platform: str, *, max_pages: int
+    value: Any,
+    platform: str,
+    query: Mapping[str, Any],
+    *,
+    max_pages: int,
 ) -> dict[str, Any]:
     if not isinstance(value, Mapping):
-        return contract_component(platform)
+        return contract_component(platform, query=query)
     if value.get("platform") != platform:
-        return contract_component(platform)
+        return contract_component(platform, query=query)
     if value.get("status") == "contract_changed":
-        return contract_component(platform)
+        return contract_component(platform, query=query)
     batch: dict[str, Any] = {
         "operation_id": value.get("operation_id"),
         "request_id": platform,
@@ -134,22 +143,29 @@ def _resanitize_component(
             "data": value.get("data"),
             "page": value.get("page"),
         }
-    return safe_component(batch, platform, max_pages=max_pages)
+    return safe_component(batch, query, max_pages=max_pages)
 
 
 def _product_parts(
     value: Mapping[str, Any],
 ) -> tuple[
-    tuple[str, ...], tuple[str, str], int, tuple[int, int, int], list[Any]
+    tuple[str, ...], tuple[Mapping[str, Any], ...], tuple[str, str], int,
+    tuple[int, int, int], list[Any]
 ] | None:
     if (value.get("schema_version"), value.get("operation_id")) != (
         SCHEMA_VERSION, MATERIAL_REPORT_OPERATION
     ):
         return None
     platforms = _product_platforms(value.get("platforms"))
+    queries = _product_queries(value.get("queries"), platforms)
     window = _product_window(value.get("date_range"))
     app_count = value.get("app_count")
-    if platforms is None or window is None or not _valid_app_count(app_count):
+    if (
+        platforms is None
+        or queries is None
+        or window is None
+        or not _valid_app_count(app_count)
+    ):
         return None
     limits = _product_limits(value.get("limits"), len(platforms))
     results = value.get("results")
@@ -157,7 +173,12 @@ def _product_parts(
         return None
     if len(results) != len(platforms):
         return None
-    return platforms, window, app_count, limits, results
+    if any(
+        not isinstance(item, Mapping) or item.get("query") != query
+        for item, query in zip(results, queries, strict=True)
+    ):
+        return None
+    return platforms, queries, window, app_count, limits, results
 
 
 def _matches_expected(
@@ -172,12 +193,15 @@ def _matches_expected(
     expected_max_pages: int | None,
     expected_max_items: int | None,
     expected_max_workers: int | None,
+    expected_queries: tuple[Mapping[str, Any], ...] | None,
+    queries: tuple[Mapping[str, Any], ...],
 ) -> bool:
     expected = (
         expected_platforms, expected_window, expected_app_count,
         expected_max_pages, expected_max_items, expected_max_workers,
+        expected_queries,
     )
-    actual = (platforms, window, app_count, *limits)
+    actual = (platforms, window, app_count, *limits, queries)
     return all(
         wanted is None or wanted == found
         for wanted, found in zip(expected, actual)
@@ -195,6 +219,24 @@ def _product_platforms(value: Any) -> tuple[str, ...] | None:
         return None
     selected = tuple(value)
     return selected if len(set(selected)) == len(selected) else None
+
+
+def _product_queries(
+    value: Any, platforms: tuple[str, ...] | None
+) -> tuple[Mapping[str, Any], ...] | None:
+    if platforms is None or not isinstance(value, list) or len(value) != len(platforms):
+        return None
+    safe: list[Mapping[str, Any]] = []
+    for platform, item in zip(platforms, value, strict=True):
+        if not isinstance(item, Mapping) or item.get("platform") != platform:
+            return None
+        from .material_performance_result import _coerce_profile
+
+        profile = _coerce_profile(item)
+        if profile is None or profile.receipt() != dict(item):
+            return None
+        safe.append(profile.receipt())
+    return tuple(safe)
 
 
 def _product_window(value: Any) -> tuple[str, str] | None:
