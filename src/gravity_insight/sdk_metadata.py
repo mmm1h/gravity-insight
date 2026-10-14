@@ -116,6 +116,7 @@ class MetadataSdkMixin:
         *,
         kind: str = "vocabulary",
         group: str | None = None,
+        platform: str | None = None,
         database: str | Path | None = None,
         limit: int = 20,
         offset: int = 0,
@@ -136,6 +137,7 @@ class MetadataSdkMixin:
                 database=database,
                 kind=kind,
                 group=group,
+                platform=platform,
                 limit=limit,
                 offset=offset,
             )

@@ -57,6 +57,7 @@ REPORT_MULTIDIM_SHARED_METRIC = _operation(
     "report", "multidim", "custom_metric", "shared", "list"
 )
 REPORT_MONETIZATION_QUERY = _operation("report", "get", "query")
+MATERIAL_REPORT_QUERY = _operation("material", "report", "query")
 
 
 @dataclass(frozen=True)
@@ -174,6 +175,7 @@ OPERATION_RULES: Mapping[str, OperationRule] = {
     REPORT_MONETIZATION_QUERY: OperationRule(
         exact_filter_profile=_MONETIZATION_FILTERS,
     ),
+    MATERIAL_REPORT_QUERY: OperationRule("material_query"),
 }
 
 

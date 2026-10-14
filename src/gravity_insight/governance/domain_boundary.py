@@ -54,6 +54,12 @@ DOMAIN_PACKAGE_LAYER_DEFAULTS = {
 DOMAIN_MODULE_LAYER_OVERRIDES = {
     "gravity_insight._field_policy_user_detail": "domain_services",
     "gravity_insight.user_report_fields": "domain_services",
+    "gravity_insight.material_metrics": "domain_services",
+    "gravity_insight.material_metric_policy": "domain_services",
+    "gravity_insight.material_metric_search": "domain_services",
+    "gravity_insight.material_report_wire": "domain_services",
+    "gravity_insight.material_performance_execution": "product_composite_plan",
+    "gravity_insight.material_performance_projection": "domain_services",
     "gravity_insight.user_detail_registered_aggregate": "product_composite_plan",
     "gravity_insight.material_game_contract": "product_composite_plan",
     "gravity_insight.material_game_performance": "product_composite_plan",

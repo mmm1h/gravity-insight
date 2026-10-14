@@ -23,6 +23,8 @@ from .errors import InputValidationError
 from .find_metadata import search_metadata
 from .runtime import to_jsonable
 from .user_report_fields import KIND as USER_REPORT_FIELD_KIND
+from .material_metrics import KIND as MATERIAL_METRIC_KIND
+from .material_metrics import is_metric_identity as is_material_metric_identity
 from .workspace import Workspace, load_workspace
 
 
@@ -150,9 +152,21 @@ def _runtime_metadata_capability_cards(query: str) -> list[dict[str, Any]]:
         limit=None,
         offset=0,
     )
+    material_results = []
+    from .agents.metadata_search import material_metric_search_intent
+
+    if static_query and (
+        material_metric_search_intent(query) or is_material_metric_identity(query)
+    ):
+        material_results = search_runtime_metadata(
+            static_query,
+            kind=MATERIAL_METRIC_KIND,
+            limit=None,
+            offset=0,
+        ).get("results", [])
     cards = [
         _metadata_card(query, item)
-        for item in result.get("results", [])
+        for item in [*result.get("results", []), *material_results]
         if isinstance(item, Mapping)
     ]
     return [card for card in cards if card["match"]["confidence"] == "strong"]

@@ -21,6 +21,9 @@ from .export_policy import (
     _consume_authorized_blob_download, _consume_authorized_effect_request,
 )
 from .models import OperationSpec
+from .material_report_wire import (
+    material_report_request_parts as _material_report_request_parts,
+)
 from .mutation_policy import MutationPolicyMixin
 from .segment_rule_wire import (
     _analysis_segment_rule_request_parts,
@@ -79,15 +82,6 @@ _EXACT_READ_ONLY_PATH_EXCEPTIONS = frozenset({
     "/turbo_engine/api/v2/datamanageconfig/template/subject/share/list/",
     "/turbo_engine/api/v2/datamanageconfig/template/share/list/", "/turbo_engine/api/v3/subscribe/list/",
 })
-_MATERIAL_REPORT_METRICS: Mapping[str, tuple[str, ...]] = MappingProxyType(
-    {
-        "bytedance": ("stat_cost", "ctr", "convert_rate"),
-        "tencent": ("cost", "ctr", "conversions_rate"),
-        "kuaishou": ("charge", "action_ratio", "conversion_ratio"),
-        "bilibili": ("cost", "click_rate"),
-    }
-)
-
 @dataclass(frozen=True, eq=False)
 class _AuthorizedRequest:
     """One-shot wire request minted from a validated registry operation.
@@ -702,42 +696,6 @@ def _business_report_request_parts(
         body["need_ratio"] = True
     if values.get("calc_diff") is True:
         body["calc_diff"] = True
-    isolated = json.loads(_canonical_wire_snapshot({}, body))
-    return isolated["query"], isolated["body"]
-
-
-def _material_report_request_parts(
-    values: Mapping[str, Any],
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Build a platform-specific aggregate without personnel dimensions."""
-
-    platform = values.get("platform")
-    metrics = _MATERIAL_REPORT_METRICS.get(platform)
-    if metrics is None:
-        raise PolicyViolation("material report platform is outside the codec allowlist")
-    body = {
-        "data_dims": ["material"],
-        "date_dims": "total",
-        "metrics_list": list(metrics),
-        "gravity_metrics_list": [
-            "AppRealRegisterCnt",
-            "AppGamePayUserCntStandardAtv",
-        ],
-        "stat_list": [],
-        "filters": [
-            {"field": "ad_platform", "operator": "EQUALS", "values": [platform]},
-            {
-                "field": "app_id",
-                "operator": "IN",
-                "values": values.get("app_list"),
-            },
-        ],
-        "date_list": values.get("date_list"),
-        "relate_dims": [],
-        "order_by": [],
-        "page": values.get("page", 1),
-        "page_size": values.get("page_size", 10),
-    }
     isolated = json.loads(_canonical_wire_snapshot({}, body))
     return isolated["query"], isolated["body"]
 

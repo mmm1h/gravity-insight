@@ -22,14 +22,16 @@ from .plan_adapter_support import (
 from .actionable_error_values import actual_value
 from .user_report_fields import GROUPS as USER_REPORT_FIELD_GROUPS
 from .user_report_fields import KIND as USER_REPORT_FIELD_KIND
+from .material_metrics import CATALOG_PLATFORMS as MATERIAL_METRIC_PLATFORMS
+from .material_metrics import KIND as MATERIAL_METRIC_KIND
 
 
 REQUEST_FIELDS = frozenset(
-    {"query", "app_id", "kind", "group", "limit", "offset", "max_age_hours"}
+    {"query", "app_id", "kind", "group", "platform", "limit", "offset", "max_age_hours"}
 )
 OUTPUT_FIELDS = frozenset(
     {
-        "backend", "kind", "group", "scope", "source", "app_id", "operation_id",
+        "backend", "kind", "group", "platform", "scope", "source", "app_id", "operation_id",
         "name", "cname", "payload", "score",
         "table_id", "observed", "versions", "operations",
         "synced_at", "age_seconds", "expires_at", "stale", "fresh",
@@ -45,6 +47,7 @@ VOCABULARY_KINDS = frozenset(
         "media_enum",
         "template",
         USER_REPORT_FIELD_KIND,
+        MATERIAL_METRIC_KIND,
         "vocabulary",
     }
 )
@@ -58,7 +61,7 @@ def validate_metadata_plan(
 ) -> None:
     request_object(request, REQUEST_FIELDS, "metadata_search")
     validate_exact_targets(
-        context, frozenset({"/query", "/app_id", "/group", "/limit", "/offset"})
+        context, frozenset({"/query", "/app_id", "/group", "/platform", "/limit", "/offset"})
     )
     query = request.get("query", "")
     if not isinstance(query, str) and not has_dynamic(context, "/query"):
@@ -79,19 +82,35 @@ def validate_metadata_plan(
     ):
         raise input_error(f"actual value: {actual_value(app_id)}; " + ("metadata app_id must be a string or integer"), "app_id")
     group = request.get("group")
-    if group is not None and (
-        kind != USER_REPORT_FIELD_KIND or group not in USER_REPORT_FIELD_GROUPS
-    ):
-        raise input_error(
-            f"actual value: {actual_value(group)}; metadata group requires kind=user_report_field and a documented group",
-            "group",
-        )
+    platform = request.get("platform")
+    _validate_runtime_filters(kind, group, platform)
     limit = request.get("limit", min(20, context.max_items))
     bounded_optional(limit, 1, min(100, context.max_items), "limit")
     bounded_optional(request.get("offset", 0), 0, 2**31 - 1, "offset")
     if kind == "status":
         bounded_optional(request.get("max_age_hours", 24), 1, 8_760, "max_age_hours")
     validate_selected_fields(context.output_fields, OUTPUT_FIELDS, "output_fields")
+
+
+def _validate_runtime_filters(
+    kind: str, group: Any, platform: Any
+) -> None:
+    if group is not None and (
+        kind != USER_REPORT_FIELD_KIND or group not in USER_REPORT_FIELD_GROUPS
+    ):
+        raise input_error(
+            f"actual value: {actual_value(group)}; metadata group requires "
+            "kind=user_report_field and a documented group",
+            "group",
+        )
+    if platform is not None and (
+        kind != MATERIAL_METRIC_KIND or platform not in MATERIAL_METRIC_PLATFORMS
+    ):
+        raise input_error(
+            f"actual value: {actual_value(platform)}; metadata platform requires "
+            "kind=material_metric and a documented platform",
+            "platform",
+        )
 
 
 def execute_metadata_plan(
@@ -125,6 +144,7 @@ def execute_metadata_plan(
             app_id=request.get("app_id"),
             kind=kind,
             group=request.get("group"),
+            platform=request.get("platform"),
             **options,
         )
     fields = context.output_fields or tuple(sorted(OUTPUT_FIELDS))

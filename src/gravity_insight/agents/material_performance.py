@@ -7,7 +7,11 @@ from collections.abc import Mapping
 import re
 from typing import Any
 
-from ..material_performance import DEFAULT_PLATFORMS
+from ..material_performance import DATA_DIMENSIONS, DATE_GRAINS, DEFAULT_PLATFORMS
+from ..material_metrics import (
+    DEFAULT_GRAVITY_METRICS,
+    REPORT_PLATFORMS,
+)
 from .intent_text import affirmative_intent_text
 
 
@@ -61,12 +65,12 @@ MATERIAL_PERFORMANCE_CAPABILITY: Mapping[str, Any] = {
     "aliases": (
         "read governed material performance across supported platforms",
         "run a cross-platform material report",
-        "读取受治理的四平台素材表现",
+        "读取受治理的素材表现",
         "执行跨平台素材效果报表",
     ),
     "description": (
-        "按显式 App、日期和平台并发读取稳定素材表现行；保留各平台物理指标，"
-        "不做跨平台归一、排名或业务结论。"
+        "按显式 App、日期、平台、指标和分组读取稳定素材表现行；指标来自版本化目录，"
+        "保留物理值且不做跨平台归一、排名或业务结论。"
     ),
     "boundaries": (
         "保留各平台物理指标，不做跨平台归一、排名或业务结论。",
@@ -95,8 +99,45 @@ MATERIAL_PERFORMANCE_CAPABILITY: Mapping[str, Any] = {
             "item_type": "string",
             "required": False,
             "nullable": False,
-            "enum": list(DEFAULT_PLATFORMS),
+            "enum": list(REPORT_PLATFORMS),
             "default": list(DEFAULT_PLATFORMS),
+        },
+        "metrics": {
+            "type": "object", "required": False, "nullable": True,
+            "description": "Platform to media metric arrays; discover with metadata:material_metric.",
+        },
+        "gravity_metrics": {
+            "type": "array", "item_type": "string", "required": False,
+            "nullable": False, "max_items": 500,
+            "default": list(DEFAULT_GRAVITY_METRICS),
+        },
+        "date_grain": {
+            "type": "string", "required": False, "nullable": False,
+            "enum": list(DATE_GRAINS), "default": "total",
+        },
+        "data_dimension": {
+            "type": "string", "required": False, "nullable": False,
+            "enum": list(DATA_DIMENSIONS), "default": "material",
+        },
+        "relate_dimensions": {
+            "type": "array", "item_type": "string", "required": False,
+            "nullable": False, "default": [],
+        },
+        "statistics": {
+            "type": "array", "item_type": "string", "required": False,
+            "nullable": False, "default": [],
+        },
+        "order_by": {
+            "type": "object", "required": False, "nullable": True,
+            "description": "Platform to ordered {field, sort} arrays.",
+        },
+        "decimal_point": {
+            "type": "integer", "required": False, "nullable": True,
+            "enum": [2, 3, 4],
+        },
+        "time_lines": {
+            "type": "object", "required": False, "nullable": True,
+            "description": "Platform-bound time lines; Tencent or ByteDance only.",
         },
     },
 }
@@ -196,6 +237,15 @@ def material_performance_input_template() -> dict[str, Any]:
         "start": "<start:YYYY-MM-DD>",
         "end": "<end:YYYY-MM-DD>",
         "platforms": list(DEFAULT_PLATFORMS),
+        "metrics": None,
+        "gravity_metrics": list(DEFAULT_GRAVITY_METRICS),
+        "date_grain": "total",
+        "data_dimension": "material",
+        "relate_dimensions": [],
+        "statistics": [],
+        "order_by": None,
+        "decimal_point": None,
+        "time_lines": None,
     }
 
 
