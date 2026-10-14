@@ -56,8 +56,8 @@ catalog**。其余当前 allowlisted composite 由 adapter preflight 验证，�
 | `composite` | allowlisted `name` + 专用字段 | adapter 预检 request、binding target 和投影 |
 | `receipt_query` | receipt list/get/export 查询 | 只读、值无关，不暴露磁盘布局 |
 
-Plan 不接受任意 HTTP、Python、表达式、join/reduce、条件或循环。业务组合必须先成为受治理 product、
-composite 或 SQL product。
+`metadata_search` 的 `kind=user_report_field` 读取 Runtime 内置目录，可选七类精确 `group` 且不接受 `app_id`；其他 kind 不接受 `group`。Plan 不接受任意 HTTP、Python、表达式、join/reduce、条件或循环。
+业务组合必须先成为受治理 product、composite 或 SQL product。
 
 ## 依赖、binding 与 foreach
 

@@ -20,14 +20,16 @@ from .plan_adapter_support import (
     validate_selected_fields,
 )
 from .actionable_error_values import actual_value
+from .user_report_fields import GROUPS as USER_REPORT_FIELD_GROUPS
+from .user_report_fields import KIND as USER_REPORT_FIELD_KIND
 
 
 REQUEST_FIELDS = frozenset(
-    {"query", "app_id", "kind", "limit", "offset", "max_age_hours"}
+    {"query", "app_id", "kind", "group", "limit", "offset", "max_age_hours"}
 )
 OUTPUT_FIELDS = frozenset(
     {
-        "backend", "kind", "scope", "source", "app_id", "operation_id",
+        "backend", "kind", "group", "scope", "source", "app_id", "operation_id",
         "name", "cname", "payload", "score",
         "table_id", "observed", "versions", "operations",
         "synced_at", "age_seconds", "expires_at", "stale", "fresh",
@@ -42,6 +44,7 @@ VOCABULARY_KINDS = frozenset(
         "metric_tag_category",
         "media_enum",
         "template",
+        USER_REPORT_FIELD_KIND,
         "vocabulary",
     }
 )
@@ -55,7 +58,7 @@ def validate_metadata_plan(
 ) -> None:
     request_object(request, REQUEST_FIELDS, "metadata_search")
     validate_exact_targets(
-        context, frozenset({"/query", "/app_id", "/limit", "/offset"})
+        context, frozenset({"/query", "/app_id", "/group", "/limit", "/offset"})
     )
     query = request.get("query", "")
     if not isinstance(query, str) and not has_dynamic(context, "/query"):
@@ -75,6 +78,14 @@ def validate_metadata_plan(
         isinstance(app_id, bool) or not isinstance(app_id, (str, int))
     ):
         raise input_error(f"actual value: {actual_value(app_id)}; " + ("metadata app_id must be a string or integer"), "app_id")
+    group = request.get("group")
+    if group is not None and (
+        kind != USER_REPORT_FIELD_KIND or group not in USER_REPORT_FIELD_GROUPS
+    ):
+        raise input_error(
+            f"actual value: {actual_value(group)}; metadata group requires kind=user_report_field and a documented group",
+            "group",
+        )
     limit = request.get("limit", min(20, context.max_items))
     bounded_optional(limit, 1, min(100, context.max_items), "limit")
     bounded_optional(request.get("offset", 0), 0, 2**31 - 1, "offset")
@@ -113,6 +124,7 @@ def execute_metadata_plan(
             str(request.get("query", "")),
             app_id=request.get("app_id"),
             kind=kind,
+            group=request.get("group"),
             **options,
         )
     fields = context.output_fields or tuple(sorted(OUTPUT_FIELDS))

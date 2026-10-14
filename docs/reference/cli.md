@@ -568,12 +568,12 @@ gravity metadata status
 gravity metadata sync --app-id <id> --dry-run
 gravity metadata sync --all-apps
 gravity metadata search <query>
+gravity metadata vocabulary <query> --kind user_report_field [--group <group>]
 gravity metadata tables <query>
 ```
 
-`status/search/tables` 严格离线。单 App sync 只替换目标 App；全 App sync 使用 staging 后原子替换。
-partial snapshot 公布失败来源，不能证明上游当前状态。数据表沿革是 account-scope 观察，不推断表名、
-App 归属或“当前版本”。
+`status/search/vocabulary/tables` 严格离线；`user_report_field` 是无需 sync 的版本化 Runtime 目录，`--group` 仅支持 `base/pay/ad_revenue/profile/attribution/re_attribute/device`；`live_metadata` 字段须经目标 App 实时属性验证。单 App sync 只替换目标 App，全 App sync 使用 staging 后原子替换。
+partial snapshot 公布失败来源，不能证明上游当前状态；数据表沿革是 account-scope 观察，不推断表名、App 归属或“当前版本”。
 
 ## SQL
 

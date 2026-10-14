@@ -1,0 +1,746 @@
+{
+  "schema_version": "gravity.user-report-field-catalog.v1",
+  "catalog_id": "gravity.user-report-fields",
+  "catalog_version": 1,
+  "source": "Gravity Engine User MCP 1.26.0 gravity_report_user_fields_search",
+  "groups": [
+    "base",
+    "pay",
+    "ad_revenue",
+    "profile",
+    "attribution",
+    "re_attribute",
+    "device"
+  ],
+  "fields": [
+    {
+      "name": "ClientID",
+      "cname": "用户ClientID",
+      "description": "引力引擎分配的唯一用户标识",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "AdPlatform",
+      "cname": "广告媒体平台",
+      "description": "用户来源广告平台，如 bytedance、tencent、kuaishou、bilibili、natural 等",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "Channel",
+      "cname": "渠道",
+      "description": "用户来源渠道，如 xiaomi、huawei、base_channel 等",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "Version",
+      "cname": "客户端版本",
+      "description": "用户注册时的客户端版本号",
+      "group": "base",
+      "type": "integer",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "TurboPromotedObjectID",
+      "cname": "推广活动ID",
+      "description": "引力引擎推广活动唯一标识",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "Name",
+      "cname": "推广活动名称",
+      "description": "引力推广活动名称",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "WXOpenID",
+      "cname": "微信OpenID",
+      "description": "用户微信OpenID，非微信小游戏场景为空",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "AdvertiserID",
+      "cname": "广告账户ID",
+      "description": "归因广告所属的广告账户ID",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "AdAid",
+      "cname": "广告ID",
+      "description": "归因广告的广告ID",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "AdGid",
+      "cname": "计划ID",
+      "description": "归因广告的计划ID",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "AdCid",
+      "cname": "创意ID",
+      "description": "归因广告的创意ID",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "CSite",
+      "cname": "版位",
+      "description": "版位",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "CreateTime",
+      "cname": "注册时间",
+      "description": "用户注册时间，格式 YYYY-MM-DD HH:MM:SS",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "AdClickTime",
+      "cname": "广告点击时间",
+      "description": "用户点击归因广告的时间，无点击则为空",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "LatestLoginDay",
+      "cname": "最近登录日期",
+      "description": "用户最近一次登录日期，格式 YYYYMMDD",
+      "group": "base",
+      "type": "string",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "device_id",
+      "cname": "设备ID",
+      "description": "设备唯一标识，0 表示未获取",
+      "group": "base",
+      "type": "integer",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$pay_amount_sum",
+      "cname": "累计付费金额",
+      "description": "用户历史累计付费总金额（单位：分）",
+      "group": "pay",
+      "type": "float",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$pay_count",
+      "cname": "累计付费次数",
+      "description": "用户历史累计付费总次数",
+      "group": "pay",
+      "type": "float",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$pay_max_amount",
+      "cname": "最大单笔付费金额",
+      "description": "用户单笔最大付费金额（单位：分）",
+      "group": "pay",
+      "type": "float",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$first_pay_time",
+      "cname": "首次付费时间",
+      "description": "用户首次付费的时间戳，0 表示未付费",
+      "group": "pay",
+      "type": "integer",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$first_pay_method",
+      "cname": "首次付费方式",
+      "description": "用户首次付费所用的支付方式",
+      "group": "pay",
+      "type": "integer",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$first_pay_reason",
+      "cname": "首次付费原因",
+      "description": "用户首次付费的触发原因",
+      "group": "pay",
+      "type": "integer",
+      "default": true,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$ad_ltv",
+      "cname": "广告总收入",
+      "description": "用户广告变现累计总收入（全部广告形式之和，单位：元/万分之一）",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$ad_count",
+      "cname": "广告展示次数",
+      "description": "用户广告展示总次数（全部广告形式之和）",
+      "group": "ad_revenue",
+      "type": "integer",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$ad_avg_ecpm",
+      "cname": "广告平均ECPM",
+      "description": "用户广告平均千次展示收益（全周期）",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$ad_max_ecpm",
+      "cname": "广告最大ECPM",
+      "description": "用户单次广告展示最高ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$ad_24h_ltv",
+      "cname": "近24小时广告收入",
+      "description": "用户近24小时广告变现收入",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$ad_24h_count",
+      "cname": "近24小时广告展示次数",
+      "description": "用户近24小时广告展示次数",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$ad_24h_avg_ecpm",
+      "cname": "近24小时广告平均ECPM",
+      "description": "用户近24小时广告平均ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$reward_ad_ltv",
+      "cname": "激励广告总收入",
+      "description": "用户激励广告累计收入",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$reward_ad_count",
+      "cname": "激励广告展示次数",
+      "description": "用户激励广告展示总次数",
+      "group": "ad_revenue",
+      "type": "integer",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$reward_ad_avg_ecpm",
+      "cname": "激励广告平均ECPM",
+      "description": "用户激励广告平均ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$reward_ad_max_ecpm",
+      "cname": "激励广告最大ECPM",
+      "description": "用户激励广告单次最高ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$reward_ad_24h_ltv",
+      "cname": "激励广告近24小时收入",
+      "description": "用户近24小时激励广告收入",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$reward_24h_count",
+      "cname": "激励广告近24小时次数",
+      "description": "用户近24小时激励广告展示次数",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$reward_ad_24h_avg_ecpm",
+      "cname": "激励广告近24小时ECPM",
+      "description": "用户近24小时激励广告平均ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$banner_ad_ltv",
+      "cname": "Banner广告总收入",
+      "description": "用户Banner广告累计收入",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$banner_ad_count",
+      "cname": "Banner广告展示次数",
+      "description": "用户Banner广告展示总次数",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$banner_ad_avg_ecpm",
+      "cname": "Banner广告平均ECPM",
+      "description": "用户Banner广告平均ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$banner_ad_max_ecpm",
+      "cname": "Banner广告最大ECPM",
+      "description": "用户Banner广告单次最高ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$banner_ad_24h_ltv",
+      "cname": "Banner广告近24小时收入",
+      "description": "用户近24小时Banner广告收入",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$banner_24h_count",
+      "cname": "Banner广告近24小时次数",
+      "description": "用户近24小时Banner广告展示次数",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$banner_ad_24h_avg_ecpm",
+      "cname": "Banner广告近24小时ECPM",
+      "description": "用户近24小时Banner广告平均ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$interstitial_ad_ltv",
+      "cname": "插屏广告总收入",
+      "description": "用户插屏广告累计收入",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$interstitial_ad_count",
+      "cname": "插屏广告展示次数",
+      "description": "用户插屏广告展示总次数",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$interstitial_ad_avg_ecpm",
+      "cname": "插屏广告平均ECPM",
+      "description": "用户插屏广告平均ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$interstitial_ad_max_ecpm",
+      "cname": "插屏广告最大ECPM",
+      "description": "用户插屏广告单次最高ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$interstitial_ad_24h_ltv",
+      "cname": "插屏广告近24小时收入",
+      "description": "用户近24小时插屏广告收入",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$interstitial_24h_count",
+      "cname": "插屏广告近24小时次数",
+      "description": "用户近24小时插屏广告展示次数",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$interstitial_ad_24h_avg_ecpm",
+      "cname": "插屏广告近24小时ECPM",
+      "description": "用户近24小时插屏广告平均ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$native_ad_ltv",
+      "cname": "原生广告总收入",
+      "description": "用户原生广告累计收入",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$native_ad_count",
+      "cname": "原生广告展示次数",
+      "description": "用户原生广告展示总次数",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$native_ad_avg_ecpm",
+      "cname": "原生广告平均ECPM",
+      "description": "用户原生广告平均ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$native_ad_max_ecpm",
+      "cname": "原生广告最大ECPM",
+      "description": "用户原生广告单次最高ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$native_ad_24h_ltv",
+      "cname": "原生广告近24小时收入",
+      "description": "用户近24小时原生广告收入",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$native_24h_count",
+      "cname": "原生广告近24小时次数",
+      "description": "用户近24小时原生广告展示次数",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$native_ad_24h_avg_ecpm",
+      "cname": "原生广告近24小时ECPM",
+      "description": "用户近24小时原生广告平均ECPM",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$splash_ad_ltv",
+      "cname": "开屏广告总收入",
+      "description": "用户开屏广告累计收入",
+      "group": "ad_revenue",
+      "type": "float",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$splash_ad_count",
+      "cname": "开屏广告展示次数",
+      "description": "用户开屏广告展示总次数",
+      "group": "ad_revenue",
+      "type": "integer",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$splash_ad_avg_ecpm",
+      "cname": "开屏广告平均ECPM",
+      "description": "用户开屏广告平均ECPM",
+      "group": "ad_revenue",
+      "type": "integer",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$splash_ad_max_ecpm",
+      "cname": "开屏广告最大ECPM",
+      "description": "用户开屏广告单次最高ECPM",
+      "group": "ad_revenue",
+      "type": "integer",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$splash_ad_24h_ltv",
+      "cname": "开屏广告近24小时收入",
+      "description": "用户近24小时开屏广告收入",
+      "group": "ad_revenue",
+      "type": "integer",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$splash_24h_count",
+      "cname": "开屏广告近24小时次数",
+      "description": "用户近24小时开屏广告展示次数",
+      "group": "ad_revenue",
+      "type": "integer",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$splash_ad_24h_avg_ecpm",
+      "cname": "开屏广告近24小时ECPM",
+      "description": "用户近24小时开屏广告平均ECPM",
+      "group": "ad_revenue",
+      "type": "integer",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$os",
+      "cname": "操作系统",
+      "description": "用户设备操作系统，如 ios、android",
+      "group": "profile",
+      "type": "string",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$os_version",
+      "cname": "操作系统版本",
+      "description": "用户设备操作系统版本号",
+      "group": "profile",
+      "type": "string",
+      "default": false,
+      "selection": "live_metadata"
+    },
+    {
+      "name": "user$brand",
+      "cname": "设备品牌",
+      "description": "用户设备品牌，如 Apple、HUAWEI",
+      "group": "profile",
+      "type": "string",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$manufacturer",
+      "cname": "设备制造商",
+      "description": "用户设备制造商",
+      "group": "profile",
+      "type": "string",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$model",
+      "cname": "设备型号",
+      "description": "用户设备型号，如 iPhone14,2",
+      "group": "profile",
+      "type": "string",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$country",
+      "cname": "国家",
+      "description": "用户所在国家，如 中国",
+      "group": "profile",
+      "type": "string",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$province",
+      "cname": "省份",
+      "description": "用户所在省份，如 广东省",
+      "group": "profile",
+      "type": "string",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$city",
+      "cname": "城市",
+      "description": "用户所在城市，如 深圳市",
+      "group": "profile",
+      "type": "string",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$channel",
+      "cname": "用户属性渠道",
+      "description": "用户属性中记录的渠道，通常与顶层 Channel 一致",
+      "group": "profile",
+      "type": "string",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$first_scene",
+      "cname": "首次启动场景",
+      "description": "用户首次启动应用的场景值",
+      "group": "profile",
+      "type": "string",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$attribution_count",
+      "cname": "归因次数",
+      "description": "用户被归因的总次数",
+      "group": "attribution",
+      "type": "integer",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$reactive_count",
+      "cname": "再激活次数",
+      "description": "用户被再激活的次数",
+      "group": "attribution",
+      "type": "integer",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$latest_attribution_company",
+      "cname": "最新归因平台",
+      "description": "最近一次归因的广告平台标识",
+      "group": "attribution",
+      "type": "integer",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$latest_attribution_time",
+      "cname": "最新归因时间",
+      "description": "最近一次归因的时间戳",
+      "group": "attribution",
+      "type": "integer",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "user$latest_reactive_time",
+      "cname": "最新再激活时间",
+      "description": "最近一次再激活的时间戳",
+      "group": "attribution",
+      "type": "integer",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "re_attribute_info",
+      "cname": "再归因信息",
+      "description": "嵌套对象。包含 ReAttributeRetargetingCount（再归因重定向次数）等字段",
+      "group": "re_attribute",
+      "type": "object",
+      "default": false,
+      "selection": "static_projection"
+    },
+    {
+      "name": "device_info",
+      "cname": "设备信息",
+      "description": "嵌套对象。包含设备详细信息，部分用户可能为 null",
+      "group": "device",
+      "type": "object",
+      "default": false,
+      "selection": "static_projection"
+    }
+  ]
+}

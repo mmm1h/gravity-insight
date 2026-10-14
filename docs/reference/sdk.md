@@ -286,9 +286,9 @@ fingerprint，不保存请求值、响应体或凭据。使用 `list_http_receip
 
 ## Metadata 与缓存
 
-`metadata_status()`、`analysis_vocabulary()`、`table_lineage()` 严格离线。`sync_metadata_app()` 只更新
-一个显式 App；失败不把 partial staging 冒充完整 catalog。lineage 是 account-scope 观察，不能据此
-推断表名、App 归属或当前版本。
+`metadata_status()`、`analysis_vocabulary()`、`table_lineage()` 严格离线；`analysis_vocabulary(query,
+kind="user_report_field", group=...)` 读取无需 SQLite sync 的版本化 Runtime 目录。`static_projection` 可构造
+用户明细 `fields`，`live_metadata` 仍需目标 App 实时属性。`sync_metadata_app()` 只更新一个显式 App；失败不把 partial staging 冒充完整 catalog。lineage 是 account-scope 观察，不能据此推断表名、App 归属或当前版本。
 
 进程内 metadata cache 按 principal 和 credential generation 隔离，只缓存允许的 metadata snapshot。
 需要最新值时调用 `clear_metadata_cache()`，或临时 `bypass_metadata_cache(True)`；mutation 成功会失效

@@ -18,6 +18,8 @@ from .analysis_context import ANALYSIS_CONTEXT_SOURCES, AnalysisContextSource
 from .errors import InputValidationError
 from .runtime import call_batch
 from .actionable_error_values import actual_value
+from .user_report_fields import GROUPS as USER_REPORT_FIELD_GROUPS
+from .user_report_fields import KIND as USER_REPORT_FIELD_KIND
 
 
 VOCABULARY_SOURCES = tuple(ANALYSIS_CONTEXT_SOURCES[4:])
@@ -28,6 +30,7 @@ VOCABULARY_KINDS = (
     "metric_tag_category",
     "media_enum",
     "template",
+    USER_REPORT_FIELD_KIND,
 )
 VOCABULARY_SEARCH_KINDS = (*VOCABULARY_KINDS, "vocabulary")
 VOCABULARY_SYNC_ACTION = (
@@ -87,13 +90,17 @@ def add_vocabulary_command(
 ) -> None:
     vocabulary = metadata_commands.add_parser(
         "vocabulary",
-        help="Search synchronized workspace Analysis metrics and templates offline.",
+        help=(
+            "Search synchronized workspace Analysis vocabulary and built-in Runtime "
+            "user report fields offline."
+        ),
     )
     vocabulary.set_defaults(network_required=False)
     vocabulary.add_argument("query", nargs="?", default="")
     vocabulary.add_argument(
         "--kind", choices=VOCABULARY_SEARCH_KINDS, default="vocabulary"
     )
+    vocabulary.add_argument("--group", choices=USER_REPORT_FIELD_GROUPS)
     vocabulary.add_argument("--database", type=Path, default=None)
     vocabulary.add_argument("--limit", type=metadata_limit, default=20, help="Maximum rows, 1-100 (default: 20); page with --offset.")
     vocabulary.add_argument("--offset", type=nonnegative_int, default=0)
@@ -106,6 +113,7 @@ def run_vocabulary_search(args: Any) -> dict[str, Any]:
         args.query,
         database=args.database,
         kind=args.kind,
+        group=getattr(args, "group", None),
         limit=args.limit,
         offset=args.offset,
     )

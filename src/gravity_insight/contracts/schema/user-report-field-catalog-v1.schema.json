@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://gravity.local/schemas/user-report-field-catalog-v1.schema.json",
+  "title": "Gravity User Report Field Catalog v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "catalog_id",
+    "catalog_version",
+    "source",
+    "groups",
+    "fields"
+  ],
+  "properties": {
+    "schema_version": {"const": "gravity.user-report-field-catalog.v1"},
+    "catalog_id": {"const": "gravity.user-report-fields"},
+    "catalog_version": {"const": 1},
+    "source": {"type": "string", "minLength": 1},
+    "groups": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "base",
+          "pay",
+          "ad_revenue",
+          "profile",
+          "attribution",
+          "re_attribute",
+          "device"
+        ]
+      }
+    },
+    "fields": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "cname",
+          "description",
+          "group",
+          "type",
+          "default",
+          "selection"
+        ],
+        "properties": {
+          "name": {"type": "string", "minLength": 1, "maxLength": 256},
+          "cname": {"type": "string", "minLength": 1, "maxLength": 256},
+          "description": {"type": "string", "minLength": 1, "maxLength": 500},
+          "group": {
+            "enum": [
+              "base",
+              "pay",
+              "ad_revenue",
+              "profile",
+              "attribution",
+              "re_attribute",
+              "device"
+            ]
+          },
+          "type": {"enum": ["string", "integer", "float", "object"]},
+          "default": {"type": "boolean"},
+          "selection": {"enum": ["static_projection", "live_metadata"]}
+        }
+      }
+    }
+  }
+}

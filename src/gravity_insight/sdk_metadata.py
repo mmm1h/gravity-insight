@@ -115,11 +115,12 @@ class MetadataSdkMixin:
         query: str = "",
         *,
         kind: str = "vocabulary",
+        group: str | None = None,
         database: str | Path | None = None,
         limit: int = 20,
         offset: int = 0,
     ) -> dict[str, Any]:
-        """Search synchronized Analysis vocabulary without creating clients.
+        """Search synchronized Analysis and built-in Runtime vocabulary offline.
 
         The local catalog is the complete execution boundary: this method never
         falls back to the online Analysis context when the snapshot is missing or
@@ -134,6 +135,7 @@ class MetadataSdkMixin:
                 query,
                 database=database,
                 kind=kind,
+                group=group,
                 limit=limit,
                 offset=offset,
             )
