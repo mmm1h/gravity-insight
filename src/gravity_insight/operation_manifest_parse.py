@@ -16,6 +16,7 @@ from typing import Any, Mapping, Sequence
 
 from .errors import ManifestError
 from .operation_input_field import (
+    input_field_schema,
     mapping_or_error as _mapping,
     parse_input_field,
     sequence_or_empty as _sequence_or_empty,

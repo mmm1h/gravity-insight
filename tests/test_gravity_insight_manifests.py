@@ -222,6 +222,36 @@ class GravityInsightManifestTests(unittest.TestCase):
         for operation_id in ids:
             self.assertRegex(operation_id, r"^[a-z][a-z0-9_.-]{2,127}$")
 
+    def test_user_event_query_items_publish_the_enforced_nested_grammar(self) -> None:
+        schema = self.by_id["analysis.user_event.list"]["input_fields"][
+            "query_item_list"
+        ]["item_schema"]
+        self.assertEqual(
+            {"event_name", "event_label", "conditions", "cond_logic"},
+            set(schema["properties"]),
+        )
+        condition = schema["properties"]["conditions"]["items"]
+        self.assertEqual(
+            {
+                "operator",
+                "field",
+                "type",
+                "value",
+                "by_list_index",
+                "list_index_val",
+                "segment_type",
+                "version_id",
+                "dim_using_table_name",
+            },
+            set(condition["properties"]),
+        )
+        self.assertEqual(
+            {"operator", "field", "type"}, set(condition["required"])
+        )
+        self.assertEqual(
+            {"AND", "OR"}, set(schema["properties"]["cond_logic"]["enum"])
+        )
+
     def test_all_25_promotion_platforms_have_a_stable_main_query(self) -> None:
         promotion = [
             item
@@ -270,6 +300,10 @@ class GravityInsightManifestTests(unittest.TestCase):
                         self.assertEqual("array", field["type"])
                         self.assertIsInstance(field["item_enum"], list)
                         self.assertTrue(field["item_enum"])
+                    if "item_schema" in field:
+                        self.assertEqual("array", field["type"])
+                        self.assertEqual("object", field["item_type"])
+                        self.assertEqual("object", field["item_schema"]["type"])
 
                 projection = item["response_projection"]
                 base_projection_fields = {

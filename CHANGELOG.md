@@ -13,7 +13,17 @@
 
 ## [Unreleased]
 
-Target release: `0.3.26`
+Target release: `0.3.27`
+
+### Breaking changes
+
+- None.
+
+### Added
+
+- `operations describe analysis.user_event.list` now exposes the complete nested `query_item_list` grammar, including event/property metadata bindings, condition keys, operators, condition types, list controls and logical composition. Agents no longer need to inspect installed source code to construct a governed event-history filter (#283).
+
+## [0.3.26] - 2026-10-14
 
 ### Breaking changes
 

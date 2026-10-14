@@ -22,6 +22,7 @@ from .errors import (
     is_success_status,
 )
 from .operation_manifest_parse import (
+    input_field_schema,
     load_operations,
     parse_input_field,
     parse_operation_spec,
@@ -340,6 +341,7 @@ class InputField:
     sensitive: bool = False
     item_type: str | None = None
     item_enum: tuple[Any, ...] = ()
+    item_schema: Mapping[str, Any] = field(default_factory=dict)
     min_items: int | None = None
     max_items: int | None = None
     max_length: int | None = None
@@ -362,31 +364,9 @@ class InputField:
         )
 
     def schema(self) -> dict[str, Any]:
-        result: dict[str, Any] = {
-            "type": self.type,
-            "required": self.required,
-            "nullable": self.nullable,
-            "sensitive": self.sensitive,
-        }
-        if self.enum:
-            result["enum"] = _thaw_json(self.enum)
-        if self.default is not _MISSING and not self.sensitive:
-            result["default"] = _thaw_json(self.default)
-        if self.description:
-            result["description"] = self.description
-        if self.item_type is not None:
-            result["item_type"] = self.item_type
-        if self.item_enum:
-            result["item_enum"] = _thaw_json(self.item_enum)
-        if self.min_items is not None:
-            result["min_items"] = self.min_items
-        if self.max_items is not None:
-            result["max_items"] = self.max_items
-        if self.max_length is not None:
-            result["max_length"] = self.max_length
-        if self.max_depth != 5:
-            result["max_depth"] = self.max_depth
-        return result
+        return input_field_schema(
+            self, thaw_json=_thaw_json, missing=_MISSING
+        )
 
 @dataclass(frozen=True)
 class RequestSpec:
