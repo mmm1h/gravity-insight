@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import hashlib
 import json
 import tempfile
 import unittest
@@ -24,7 +25,9 @@ class ResultOutputTests(unittest.TestCase):
             with patch("gravity_insight.cli.dispatch_command", return_value=partial), contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
                 self.assertEqual(3, cli.main(argv))
             self.assertEqual(partial, json.loads(output.read_text(encoding="utf-8")))
-            self.assertEqual({"ok": True, "status": "written", "output": str(output), "format": "json", "size_bytes": output.stat().st_size}, json.loads(stdout.getvalue()))
+            receipt = json.loads(stdout.getvalue())
+            self.assertEqual({"ok": True, "status": "written", "output": str(output), "format": "json", "size_bytes": output.stat().st_size, "sha256": hashlib.sha256(output.read_bytes()).hexdigest(), "preview_applied": False}, {key: value for key, value in receipt.items() if key != "obligations"})
+            self.assertEqual("not_applicable", receipt["obligations"]["data_completeness"]["state"])
             with patch("gravity_insight.cli.dispatch_command", return_value=terminal[1]), contextlib.redirect_stderr(stderr):
                 self.assertEqual(4, cli.main(argv))
             self.assertEqual(partial, json.loads(output.read_text(encoding="utf-8")))
@@ -47,6 +50,7 @@ class ResultOutputTests(unittest.TestCase):
             with contextlib.redirect_stdout(stdout):
                 self.assertEqual(3, _emit_query_result(envelope, None, None, str(output)))
             receipt = json.loads(stdout.getvalue())
-            self.assertEqual({"ok": True, "status": "written", "output": str(output), "format": "json", "size_bytes": output.stat().st_size}, receipt)
+            self.assertEqual({"ok": True, "status": "written", "output": str(output), "format": "json", "size_bytes": output.stat().st_size, "sha256": hashlib.sha256(output.read_bytes()).hexdigest(), "preview_applied": False}, {key: value for key, value in receipt.items() if key != "obligations"})
+            self.assertEqual("complete", receipt["obligations"]["execution_status"]["state"])
             payload = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(("partial", "caller_defined"), (payload["status"], payload["result_source"]["tier"]))

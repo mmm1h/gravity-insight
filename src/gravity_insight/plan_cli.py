@@ -6,6 +6,7 @@ from collections.abc import Callable, Mapping
 from typing import Any
 
 from .plan import PlanAdapter, PlanAdapters, execute_plan, plan_schema
+from .result_output import output_file
 
 
 def add_plan_commands(
@@ -31,7 +32,7 @@ def add_plan_commands(
     # Plan is a machine-facing surface: adapters report authentication failures
     # structurally, while fully local plans must never trigger an interactive
     # first-run prompt before their nodes are inspected.
-    run.set_defaults(network_required=False)
+    run.set_defaults(network_required=False, result_output_fail_closed=True)
     source = run.add_mutually_exclusive_group(required=True)
     source.add_argument(
         "--input", "-i",
@@ -68,6 +69,7 @@ def add_plan_commands(
         action="store_true",
         help="Validate the DAG and worst-case budgets without invoking adapters.",
     )
+    run.add_argument("--output", type=output_file, help="Atomically save the complete governed JSON result before stdout preview.")
     if handler is not None:
         schema.set_defaults(_gravity_handler=handler)
         run.set_defaults(_gravity_handler=handler)
