@@ -210,7 +210,7 @@ gravity multidim query --app main --input query.json --all-pages --output result
 ```
 
 入口只接受闭合物理输入。未知指标、维度、关系或 cohort horizon 在发网前失败；结果检查顶层状态、
-`query.status` 和分页完整性。
+`query.status` 和分页完整性。`--include-total` 的 `revenue_1day` 会在同次查询中补齐并实时验证两个登记基础指标 `standard_1day_pay_amount`、`ad_1day_amount`；缺列/空值时拒绝合计，可去掉该选项保留普通观察。
 
 ### Business Semantic 与 Semantic Compose
 
