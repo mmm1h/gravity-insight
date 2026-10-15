@@ -5,6 +5,7 @@ from collections.abc import Mapping
 import re
 from typing import Any
 
+from .contracts.user_event_export_scope import scope_failure_reason
 from .contracts.envelope_obligations import serialize_envelope
 from .errors import ErrorCategory, ErrorCode, ErrorDetail
 from .export_completion import (
@@ -145,12 +146,12 @@ def _failure_diagnostics(error: Any) -> dict[str, Any]:
         ("metadata", "EXPORT_COLUMNS_INVALID"): "metadata_field_mismatch",
         ("metadata", "EXPORT_METADATA_UNAVAILABLE"): "metadata_unavailable",
     }
-    reason = reasons.get((stage, code))
+    details = getattr(error, "details", {})
+    reason = reasons.get((stage, code), scope_failure_reason(stage, details))
     semantic_reasons = {
         "EXPORT_SEMANTIC_REJECTED": "unclassified_semantic_rejection",
         "EXPORT_RESPONSE_CONTRADICTED": "success_with_error_indicator",
     }
-    details = getattr(error, "details", {})
     if code in semantic_reasons:
         stage, reason = "semantic_response", semantic_reason(code, details, semantic_reasons[code])
     if code in {"BLOB_SIZE_MISMATCH", "BLOB_HASH_MISMATCH", "BLOB_MD5_MISMATCH"}:
@@ -198,6 +199,7 @@ def _public_export_error(
         "EXPORT_PRIVACY_DENIED", "EXPORT_SCHEMA_MISMATCH",
         "EXPORT_FORMAT_INVALID", "EXPORT_FORMAT_UNSUPPORTED",
         "EXPORT_TYPE_MISMATCH",
+        "EXPORT_SCOPE_MISMATCH",
         "EXPORT_PROTOCOL_ERROR",
         "BLOB_MIME_MISMATCH", "BLOB_TYPE_MISMATCH", "BLOB_MAGIC_MISMATCH",
     }

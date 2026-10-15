@@ -505,7 +505,7 @@ def validate_privacy_gate(
     if not schema:
         return False, False
     models = _sdk_module("export_models")
-    privacy = _sdk_module("export_privacy")
+    privacy = _sdk_module("export_file")
     narrow = schema[:-1] if len(schema) > 1 else ("__probe_no_actual_column__",)
     narrow_contract = models.ExportPrivacyContract(
         allowed_columns=narrow, required_columns=(),
@@ -531,7 +531,7 @@ def validate_privacy_gate(
 def _inspect_table(path: Path, extension: str) -> tuple[tuple[str, ...], int, int]:
     if extension != ".xlsx":
         raise ValueError("online export verification currently supports XLSX only")
-    privacy = _sdk_module("export_privacy")
+    privacy = _sdk_module("export_file")
     with zipfile.ZipFile(path) as archive:
         worksheets = privacy._xlsx_worksheet_names(archive)
         shared = privacy._xlsx_shared_strings(archive)

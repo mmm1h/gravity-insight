@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any, Mapping
 
+from .contracts.user_event_export_scope import is_user_event_completeness, scope_from_completeness
 from .agents.monetization_guard import MONETIZATION_DETAIL_RAW_SELECTOR
 from .export_completion import MONETIZATION_EXPORT_OPERATION, UPSTREAM_FILE_ROW_LIMIT
 from .export_models import _export_error
@@ -54,6 +55,10 @@ def classify_export_rows(
 
     if completeness is None:
         return None
+    if is_user_event_completeness(completeness):
+        if type(rows) is not int or rows < 0:
+            raise _export_error("invalid verified file row count", code="EXPORT_PROTOCOL_ERROR", stage="finalizer")
+        return scope_from_completeness(completeness).completeness(rows)
     total = completeness.get("known_total_items")
     if type(total) is not int or total < 0 or type(rows) is not int or rows < 0:
         raise _export_error(

@@ -31,7 +31,7 @@ from .export_results import (
     export_snapshot_envelope as _export_snapshot_envelope,
 )
 from .export_scope_total import pin_export_scope_total
-from .export_validation import validate_export_live_fields
+from .export_validation import prepare_user_event_scope, validate_export_live_fields, validate_user_event_resume
 from .field_metadata_override import use_field_metadata_loader
 from ._field_policy_operations import ANALYSIS_USER_PROPERTY
 from .export_state import ExportOrchestrator
@@ -421,7 +421,7 @@ class ExportClientMixin:
             return self._load_field_metadata(selector, inputs)
         with use_field_metadata_loader(load_metadata) if metadata is not None else nullcontext():
             request = replace(
-                request, completeness=pin_export_scope_total(self, operation_id, payload),
+                request, completeness=prepare_user_event_scope(self, operation_id, payload) or pin_export_scope_total(self, operation_id, payload),
             )
         return request, privacy
 
@@ -459,6 +459,7 @@ class ExportClientMixin:
 
 
 def _resume_projection(contract: Any, job_id: str, completeness: Mapping[str, Any] | None) -> tuple[str, ...] | None:
+    validate_user_event_resume(contract, job_id, completeness)
     if contract.privacy.get("column_order") != "request_code_lexicographic":
         return None
     if not isinstance(completeness, Mapping) or completeness.get("job_id") != job_id:

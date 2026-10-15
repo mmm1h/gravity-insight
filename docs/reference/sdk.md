@@ -278,7 +278,7 @@ Workspace Plan recipe 使用 `expand_plan_recipe()`、`validate_plan_recipe()`�
 
 `export_run(operation_id, payload, destination, *, requested_columns, idempotency_key,
 timeout_seconds=...)` 执行已登记导出状态机。destination 是最终文件，不是 JSON 输出路径；timeout 不
-自动取消。创建结果不确定且无可靠 job id 时先查询现有任务，不重复创建。
+自动取消。创建结果不确定且无可靠 job id 时先查询现有任务，不重复创建。用户事件导出的分阶段 `export_download(..., completeness=...)` 必须传原任务 start/run-error 的 `completeness` 对象；同一 run 自动携带。文件用户/日期/事件不符则发布前拒绝，条件、源内容和原生 snapshot/as-of 未证时仍未知；[迁移](../migration/0.3.27.md)。
 
 HTTP receipt 只保存 method、合同 path、operation、状态、时间、页/attempt/retry 和请求 shape
 fingerprint，不保存请求值、响应体或凭据。使用 `list_http_receipts()`、`get_http_receipt()`、

@@ -606,6 +606,18 @@
         "required_columns": ["客户(client_id)", "用户注册时间", "事件发生时间", "事件", "事件属性"],
         "allow_contracted_identifiers": true,
         "file_schema": {
+            "scope_contract": "gravity.user-event-export-scope.v1",
+            "scope_validation": {
+              "resume_requires_task_receipt": true,
+              "checks_before_atomic_publication": ["client_identity", "file_timestamp_date", "metadata_bound_event_basket"],
+              "date_check_basis": "file_timestamp_date_without_timezone_conversion",
+              "conditions_verification": "unavailable_when_not_projectable",
+              "source_completeness": "unknown",
+              "native_summary_reconciliation": "unavailable_without_snapshot_binding",
+              "snapshot_id_availability": "unavailable",
+              "dataset_as_of_availability": "unavailable",
+              "ordering_verification": "unavailable"
+            },
           "worksheet_count": 1,
           "worksheet_name": "Sheet1",
           "columns": [

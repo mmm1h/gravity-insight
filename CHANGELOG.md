@@ -17,7 +17,9 @@ Target release: `0.3.27`
 
 ### Breaking changes
 
-- None.
+- **Hard break:** staged user-event export downloads require the original task-bound `completeness` receipt. A workbook with another client, date or event scope fails before atomic publication; legacy tasks without comparable scope evidence cannot be certified. Committed transport remains distinct from unknown source content/snapshot completeness (#294).
+
+Migration guide: [0.3.27](docs/migration/0.3.27.md)
 
 ### Added
 
@@ -26,6 +28,7 @@ Target release: `0.3.27`
 
 ### Fixed
 
+- User-event export creation now freezes the caller's exact request scope and resolves event identity through fresh governed metadata. Run/resume validates each file row before publication, retains same-time multiplicities, and reports unprojectable conditions and absent native content-vintage/as-of evidence explicitly. Mismatch diagnostics contain fixed reasons without user values; semantic or uncertain creates retain the existing one-attempt recovery policy (#294).
 - Multidim and Semantic Compose now preserve each source component's valid timezone-aware `fetched_at` through Plan projection. Missing or invalid source time stays explicitly unavailable; v4/v5 timestamp-dependent claims are withheld while other supported boundaries remain. Fetch time never becomes a dataset as-of, settlement or maturity guarantee (#284).
 - User-event reads now expose typed `user_event_scope` metadata: query-item conditions filter timeline rows while native summary remains unfiltered; a filtered matching total is unavailable. Equal totals and empty final pages cannot certify content closure, and same-timestamp occurrences remain intact. SDK/CLI/Plan and user-journey continuation preserve this unknown boundary without changing rows, native counts, request volume or empty/error states (#286, #295). Order Directory failures distinguish native projection, envelope, row and pagination rejection with bounded paths/types and declared schema versions; missing native evidence stays unavailable (#281).
 - Multidim first-day revenue totals now request and live-validate the registered `standard_1day_pay_amount` and `ad_1day_amount` dependencies in the same query before calling native totals. Missing or null dependency columns fail explicitly; ordinary reads retain their selected metrics and no local monetary total is substituted (#279).

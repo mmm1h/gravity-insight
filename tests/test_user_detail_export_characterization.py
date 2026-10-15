@@ -17,7 +17,8 @@ import zipfile
 
 from gravity_insight.export_contracts import ExportContractRegistry
 from gravity_insight.export_models import ExportPrivacyContract, ExportRuntimeError
-from gravity_insight.export_privacy import ExportPrivacyFinalizer, _validate_actual_schema
+from gravity_insight.export_privacy import ExportPrivacyFinalizer
+from gravity_insight.export_file import _validate_actual_schema
 from gravity_insight.export_scope_total import pin_export_scope_total
 from gravity_insight.paths import CONTRACT_ROOT
 from gravity_insight.registry import PolicyEngine

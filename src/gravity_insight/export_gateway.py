@@ -20,6 +20,7 @@ from .export_models import (
 from .result_source import GOVERNED_PRODUCT, result_source
 from .export_policy import _AuthorizedEffectRequest
 from .export_recovery import rejected_creation_error, reviewed_semantic_rejection
+from .export_validation import bind_export_creation_receipt, validate_user_event_creation
 from .registry import PolicyEngine
 
 
@@ -87,6 +88,7 @@ class GravityExportGateway:
         *,
         timeout_seconds: float,
     ) -> ExportJobSnapshot:
+        validate_user_event_creation(self.create_contract.operation_id, request)
         try:
             _, payload, _ = self._call(
                 self.create_contract, request.payload,
@@ -103,9 +105,7 @@ class GravityExportGateway:
                 code="EXPORT_PROTOCOL_ERROR",
                 stage="creating",
             )
-        completeness = request.completeness
-        if completeness is not None and "requested_columns" in completeness:
-            completeness = {**completeness, "job_id": str(job_id)}
+        completeness = bind_export_creation_receipt(self.create_contract.operation_id, request, str(job_id))
         return ExportJobSnapshot(
             str(job_id),
             ExportState.QUEUED,
