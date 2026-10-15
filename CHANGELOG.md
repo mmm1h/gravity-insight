@@ -13,7 +13,13 @@
 
 ## [Unreleased]
 
-Target release: `0.3.27`
+Target release: `0.3.28`
+
+### Breaking changes
+
+- None.
+
+## [0.3.27] - 2026-10-16
 
 ### Breaking changes
 
@@ -25,6 +31,7 @@ Migration guide: [0.3.27](docs/migration/0.3.27.md)
 
 ### Added
 
+- Fill the confirmed gaps against official Gravity MCP read tasks through existing Runtime owners: typed App/event/property filters, safe App configuration fields, searchable user-report field definitions, expanded material metric/report choices, and monetization condition/segment controls. Existing equivalent reads are reused; this release does not claim a complete official MCP clone or native equivalence certification.
 - Finite MCP Journey reachability for the official read-task scope, discoverable owner input contracts, same-layer report/catalog Trust contracts, and one-execution complete JSON delivery through the existing atomic writer. Native equivalence and real Host/holdout/adopter acceptance remain unverified; MCP stays experimental.
 - `plan run --output` now publishes complete governed JSON before stdout preview through the shared locked atomic writer. File receipts include SHA-256, UTF-8 byte size and preview status; per-node provenance/completeness and Plan budgets remain intact. Dry-run invokes no adapters, partial results retain their nonzero exit, and terminal failures preserve existing destinations (#291).
 - Event Analysis now supports formula-only compact specs, typed `AnalysisFormula` dependencies, up to ten explicit date windows, same-App metadata-validated user filters, comparison controls and a bounded row limit through SDK, CLI, Plan and Agent. The row limit never establishes pagination or completeness.
