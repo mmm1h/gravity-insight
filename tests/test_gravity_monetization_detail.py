@@ -15,11 +15,14 @@ from gravity_insight.monetization_detail import (
     monetization_detail,
     sanitize_monetization_detail_result,
 )
+from gravity_insight.monetization_query import normalize_monetization_query
+from gravity_insight.contracts.envelope_obligations import EnvelopeObligations
 from gravity_insight.models import load_operation_manifest
 from gravity_insight.onboarding import command_requires_credentials
 from gravity_insight.plan import AdapterContext, execute_plan
 from gravity_insight.plan_adapters import build_plan_adapters
 from gravity_insight.sdk import GravitySDK
+from gravity_insight.registry import _analysis_monetization_detail_request_parts
 DAY = "2026-08-08"
 SAFE = {
     "CreateTime": "2026-08-08 12:00:00",
@@ -43,6 +46,17 @@ SAFE = {
     "user$ad_ltv": 77,
     "Name": "name-secret",
     "WXOpenID": "openid-secret",
+}
+DEFAULT_QUERY = normalize_monetization_query().receipt()
+DEFAULT_QUERY_OPTIONS = {
+    "fields": tuple(SAFE_ROW_FIELDS),
+    "global_conditions": (),
+    "cond_logic": "AND",
+    "local_conditions": (),
+    "local_cond_logic": "AND",
+    "order_by": (),
+    "segment_id": None,
+    "tmp_segment_id": None,
 }
 def _read(row, *, workers=2):
     rows = [] if row is None else [copy.deepcopy(row)]
@@ -101,6 +115,8 @@ class MonetizationDetailTests(unittest.TestCase):
         )
         self.assertEqual(("success", "7", [raw]),
                          (result["status"], result["app_id"], result["data"]["list"]))
+        self.assertEqual(DEFAULT_QUERY, result["query"])
+        self.assertEqual([{**RESTORED, "samount": 3}], result["data"]["total"])
         self.assertEqual(
             "Consume the complete contracted monetization rows.",
             result["next_action"],
@@ -115,8 +131,12 @@ class MonetizationDetailTests(unittest.TestCase):
         operation, inputs, options = client.calls[0]
         self.assertEqual((OPERATION_ID, list(SAFE_ROW_FIELDS), 1, 100),
                          (operation, inputs["fields"], inputs["page"], inputs["page_size"]))
+        self.assertEqual(("AND", "AND"), (inputs["cond_logic"], inputs["local_cond_logic"]))
         self.assertEqual({"max_workers": 2, "max_pages": 5, "max_items": 10}, options)
         self.assertEqual(1, result["page"]["pages_fetched"])
+        obligations = EnvelopeObligations.from_dict(result["obligations"])
+        self.assertEqual("complete", obligations.data_completeness.state.value)
+        self.assertEqual("valid", obligations.semantic_validity.state.value)
     def test_failure_envelopes_do_not_copy_exception_or_error_values(self):
         secrets = ("exception-secret", "error-secret")
         results = [
@@ -141,6 +161,7 @@ class MonetizationDetailTests(unittest.TestCase):
             (("limits", "max_items"), 11),
             (("page", "pages_fetched"), 2),
             (("data", "list", 0, "UnregisteredField"), "public-secret"),
+            (("query", "cond_logic"), "OR"),
         ):
             forged = copy.deepcopy(result)
             target = forged
@@ -192,6 +213,124 @@ class MonetizationDetailTests(unittest.TestCase):
             operation.validate_inputs(
                 {**base, "fields": list(SAFE_ROW_FIELDS), "future_control": True}
             )
+    def test_query_profile_binds_conditions_order_segment_and_projection(self):
+        client = Client(_read(SAFE, workers=1))
+        global_condition = {
+            "operator": "GREATER", "field": "samount", "type": "event",
+            "value": [0],
+        }
+        local_condition = {
+            "operator": "EQUALS", "field": "AdPlatform", "type": "event",
+            "value": ["demo-platform"],
+        }
+        result = monetization_detail(
+            client, 7, DAY,
+            fields=("AdEventTime", "samount"),
+            global_conditions=(global_condition,), cond_logic="OR",
+            local_conditions=(local_condition,), local_cond_logic="AND",
+            order_by=({"field": "samount", "sort": 1},),
+            segment_id="42", max_workers=1, max_pages=5, max_items=10,
+        )
+        inputs = client.calls[0][1]
+        self.assertEqual(("42", "42"), (inputs["segment_id"], inputs["tmp_segment_id"]))
+        self.assertEqual(("OR", [global_condition]),
+                         (inputs["cond_logic"], inputs["global_conditions"]))
+        self.assertEqual([{"AdEventTime": SAFE["AdEventTime"], "samount": 3}],
+                         result["data"]["list"])
+        self.assertEqual([{"samount": 3}], result["data"]["total"])
+        self.assertEqual(inputs["fields"], result["query"]["fields"])
+
+        for options in (
+            {"fields": ("unknown",)},
+            {"global_conditions": ({"field": "create_time"},)},
+            {"tmp_segment_id": "42"},
+            {"segment_id": "42", "tmp_segment_id": "43"},
+        ):
+            blocked = Client(_read(SAFE))
+            with self.subTest(options=options), self.assertRaises(ValueError):
+                monetization_detail(blocked, 7, DAY, **options)
+            self.assertEqual([], blocked.calls)
+
+    def test_wire_codec_preserves_query_controls_and_owns_the_day_boundary(self):
+        global_condition = {
+            "operator": "GREATER",
+            "field": "samount",
+            "type": "event",
+            "value": [0],
+        }
+        local_condition = {
+            "operator": "EQUALS",
+            "field": "AdPlatform",
+            "type": "event",
+            "value": ["demo-platform"],
+        }
+        with patch("gravity_insight.registry.time.time", return_value=1_723_000_000.0), \
+             patch("gravity_insight.registry.secrets.token_hex", return_value="a" * 20):
+            query, body = _analysis_monetization_detail_request_parts({
+                "app_id": "7",
+                "date": DAY,
+                "fields": ["AdEventTime", "samount"],
+                "global_conditions": [global_condition],
+                "cond_logic": "OR",
+                "local_conditions": [local_condition],
+                "local_cond_logic": "AND",
+                "order_by_list": [{"field": "samount", "sort": 1}],
+                "segment_id": "42",
+                "tmp_segment_id": "42",
+                "page": 2,
+                "page_size": 100,
+            })
+        self.assertEqual({}, query)
+        self.assertEqual("1723000000000" + "a" * 19, body["query_id"])
+        self.assertEqual((7, 42, 42), (
+            body["app_id"], body["segment_id"], body["tmp_segment_id"]
+        ))
+        self.assertEqual(("OR", "AND"), (
+            body["cond_logic"], body["local_cond_logic"]
+        ))
+        self.assertEqual([local_condition], body["local_conditions"])
+        self.assertEqual([{"field": "samount", "sort": 1}], body["order_by_list"])
+        self.assertEqual(["AdEventTime", "samount"], body["field_map"])
+        self.assertEqual(global_condition, body["global_conditions"][0])
+        self.assertEqual([{
+            "operator": "RANGE_IN",
+            "field": "create_time",
+            "type": "event",
+            "value": [f"{DAY} 00:00:00", f"{DAY} 23:59:59"],
+        }], [
+            item for item in body["global_conditions"]
+            if item.get("field") == "create_time"
+        ])
+
+    def test_field_policy_validates_same_app_segment_and_rejects_time_override(self):
+        root = Path(__file__).resolve().parents[1]
+        operation = next(
+            item for item in load_operation_manifest(
+                root / "src" / "gravity_insight" / "manifests" / "analysis.json"
+            ) if item.operation_id == OPERATION_ID
+        )
+        def loader(operation_id, _inputs):
+            rows = [{"segment_id": 42}] if operation_id == "analysis.segment.list" else []
+            return {"status": "success" if rows else "empty", "data": {"list": rows}}
+        base = {
+            "app_id": "7", "date": DAY, "fields": list(SAFE_ROW_FIELDS),
+            "page": 1, "page_size": 100,
+            "segment_id": "42", "tmp_segment_id": "42",
+        }
+        validate_analysis_detail(operation, base, loader)
+        with self.assertRaisesRegex(ValueError, "absent from live metadata"):
+            validate_analysis_detail(
+                operation, {**base, "segment_id": "43", "tmp_segment_id": "43"}, loader
+            )
+        with self.assertRaisesRegex(ValueError, "cannot contain create_time"):
+            validate_analysis_detail(
+                operation,
+                {**base, "global_conditions": [{
+                    "operator": "RANGE_IN", "field": "create_time",
+                    "type": "event", "value": [DAY, DAY],
+                }]},
+                loader,
+            )
     def test_cli_sdk_and_plan_share_one_preflighted_product(self):
         base = [
             "analysis", "monetization", "detail", "--app", "main",
@@ -219,7 +358,8 @@ class MonetizationDetailTests(unittest.TestCase):
              patch("gravity_insight.monetization_detail.monetization_detail", return_value=_product_result()) as core:
             selected._gravity_handler(selected, lambda _value: {})
         core.assert_called_once_with(
-            client, "7", DAY, max_workers=6, max_pages=5, max_items=10
+            client, "7", DAY, **DEFAULT_QUERY_OPTIONS,
+            max_workers=6, max_pages=5, max_items=10
         )
         lazy = Mock(return_value=client)
         sdk = GravitySDK(insight_factory=lazy, workspace=Workspace())
@@ -229,7 +369,8 @@ class MonetizationDetailTests(unittest.TestCase):
         with patch("gravity_insight.monetization_detail.monetization_detail", return_value=_product_result()) as core:
             sdk.monetization_detail("main", DAY, max_pages=5, max_items=10)
         core.assert_called_once_with(
-            client, "7", DAY, max_workers=6, max_pages=5, max_items=10
+            client, "7", DAY, **DEFAULT_QUERY_OPTIONS,
+            max_workers=6, max_pages=5, max_items=10
         )
         self.assertLessEqual(
             {"monetization_detail", "validate_monetization_detail_request"},

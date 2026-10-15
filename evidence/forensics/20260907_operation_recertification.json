@@ -6225,62 +6225,6 @@
       },
       {
         "conclusion": "drift_cleared_validation_recorded",
-        "current_validation": {
-          "completeness": "unknown",
-          "contract_digest": "e15a8d7124433262c9a68337c02f7248d560b4fbba9ee6e228a4818fbcaa9f21",
-          "contract_version": "3",
-          "data_quality": {
-            "checks": [
-              {
-                "check_id": "execution.receipt",
-                "scope": "analysis.monetization_detail.list",
-                "status": "pass"
-              },
-              {
-                "check_id": "execution.semantic-status",
-                "scope": "analysis.monetization_detail.list",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.nonempty",
-                "scope": "analysis.monetization_detail.list",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.schema-and-type",
-                "scope": "analysis.monetization_detail.list",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.freshness",
-                "scope": "analysis.monetization_detail.list",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.no-drift",
-                "scope": "analysis.monetization_detail.list",
-                "status": "pass"
-              }
-            ],
-            "reason_codes": [],
-            "schema_version": "gravity.data-quality-result.v1",
-            "status": "pass"
-          },
-          "evidence_references": [
-            {
-              "kind": "receipt",
-              "reference": "receipt:eff19299c64b49cc991d7f290b0a1cd6"
-            }
-          ],
-          "expires_at": "2026-09-08T12:37:24Z",
-          "identity_kind": "operation",
-          "provider_fingerprint": "5dcb33184a1fb2f41c82cb87f303ab2e633afefe11e4adeecf96bbd2f14d92e2",
-          "reason_codes": [],
-          "schema_version": "gravity.capability-validation.v1",
-          "selector": "analysis.monetization_detail.list",
-          "trust_status": "stable",
-          "validated_at": "2026-09-07T12:37:24Z"
-        },
         "outcome": {
           "attempted": true,
           "category": "validated",
@@ -13235,7 +13179,7 @@
       "report.multidim.media_enum.list"
     ]
   },
-  "stage_171_current_validations": 17,
+  "stage_171_current_validations": 16,
   "validations": [
     {
       "completeness": "unknown",
