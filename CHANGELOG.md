@@ -23,6 +23,7 @@ Migration guide: [0.3.27](docs/migration/0.3.27.md)
 
 ### Added
 
+- `plan run --output` now publishes complete governed JSON before stdout preview through the shared locked atomic writer. File receipts include SHA-256, UTF-8 byte size and preview status; per-node provenance/completeness and Plan budgets remain intact. Dry-run invokes no adapters, partial results retain their nonzero exit, and terminal failures preserve existing destinations (#291).
 - Event Analysis now supports formula-only compact specs, typed `AnalysisFormula` dependencies, up to ten explicit date windows, same-App metadata-validated user filters, comparison controls and a bounded row limit through SDK, CLI, Plan and Agent. The row limit never establishes pagination or completeness.
 - `operations describe analysis.user_event.list` now exposes the complete nested `query_item_list` grammar, including event/property metadata bindings, condition keys, operators, condition types, list controls and logical composition. Agents no longer need to inspect installed source code to construct a governed event-history filter (#283).
 

@@ -28,10 +28,10 @@ composite 组织为有界 DAG。产品契约不在本页复制；精确 operatio
 ```powershell
 gravity plan schema
 gravity plan run --input plan.json --dry-run
-gravity plan run --input plan.json --concurrency 4
+gravity plan run --input plan.json --concurrency 4 --output plan-result.json
 ```
 
-`--dry-run` 走完整结构校验和 adapter preflight，但不执行节点请求。
+`--dry-run` 走完整结构校验和 adapter preflight，但不执行节点请求。`--output` 在 stdout 预览前原子保存完整 JSON，回执带字节数、SHA-256 和 `preview_applied=false`；节点原生完整性不因写文件提升，partial 保留结果和非零退出码，终止 error/capability_gap 不发布也不覆盖已有文件。
 
 ## 机器 schema 的范围
 

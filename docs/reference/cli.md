@@ -146,7 +146,7 @@ gravity --workspace <gravity.toml-or-directory> <command> [options]
 | `--all-pages` | 按 operation 分页合同读取完整结果 |
 | `--max-pages` / `--max-items` | 显式限制页数和结果项数 |
 | `--concurrency` | 选择当前命令允许的 worker 数；不增加请求总量 |
-| `--output` | 原子写入完整结果或 artifact |
+| `--output` | 原子写入完整结果或 artifact；`plan run` 的完整 JSON 与原有共享结果写入面返回字节数/SHA-256，JSON 回执标明 `preview_applied=false` |
 | `--format json\|ndjson` | 支持该编码的命令使用 |
 | `--fields` | 本地裁剪为合同允许字段；可重复 |
 | `--dry-run` / `--execute` | 预览与显式执行；只用于声明该效果边界的命令 |

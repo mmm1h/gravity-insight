@@ -51,7 +51,7 @@
 - issue #110 将 registered SQL verification 固定为登记顺序单并发，并用严格前缀 checkpoint 续跑最终 429；不能选择或跳过产品。新 Evidence v2 记录单次或分段完成，reader 继续接受已发布 v1，因此六个产品的读取与历史 readiness 能力均未删除；变化只移除 verification 的并发调度并增加可审计续跑。issue #115 又将执行状态与数据完整性拆开：结果加性返回 cap 命中、`complete|unknown` 和判定原因；正好命中 cap 且无独立总数时是 `possible_truncation`，N+1 多出一行仍失败关闭；本地传输不裁行，但上游是否另有响应行上限无合同证据，readiness 和正好 N 行均不提升 cohort 完整性。
 - `analysis.event.query` 的输入收窄只依据生产成对对照且不损失读取能力：`$device_id + Count` 始终被拒，而同字段 `DistinctCount` 与 `PresetAllCount` 可读；#247/#239/#244 证实 Event 拒绝 `GT/GTE/LT/LTE` 而长名同口径成功、无值条件须带 `value=[]`、`Quantile_N` 须编为 `Quantile + quantile_level`，故只对 Event 拒绝短别名并由编译器补编码，其他 kind 不从 Event 证据外推。已审阅的确定性拒绝不可重试，未绑定分组属性保持未知；未审阅原句保留 #23/#24 的瞬态重试策略，避免 Agent 把 caller 输入错误当作 retryable upstream 故障。
 - Funnel 上游只按第一个非时间分组维度出组：#94 复现中 user+user、event+user 都只返回首维且 `success` 无警告，故多维 Funnel 在派发前拒绝，其余维度改为逐值过滤请求或 Event 分析，未损失读取能力。DATETIME 用户属性条件须为 `yyyy-MM-dd HH:mm:ss`（Event 与 Segment 均复现），按已审阅原句给出不可重试的精确补救。
-- 宽泛 Analysis 导出只返回不可执行的七族选择交接；每族暴露自己的 selector 和必填输入，不建立统一 dispatcher 或合并异构合同。
+- 宽泛 Analysis 导出只返回不可执行的七族选择交接；每族暴露自己的 selector 和必填输入，不建立统一 dispatcher 或合并异构合同。#291 为 `plan run` 复用既有完整 JSON、路径校验、锁和原子写入 owner，返回实际字节 SHA-256 与预览状态；原节点行/审计/完整性/预算不变，partial 仍非零退出，终止失败不覆盖文件，不新增执行器或流式实现。共享文件回执使用 typed facts，原读取/写入面能力不丢失。
 - 离线 `doctor` 必须绑定当前源码、editable metadata 与实际 import 来源；任一版本或根目录不一致均在 live probe 前以稳定 `INSTALL_*` 原因失败并给出重装命令。
 - 当前表 schema gap 只由明确的当前态 schema，或表语境中的当前态字段加版本触发；已同步沿革仍归 `metadata:table_lineage`，两者显式并列时返回带附属 gap 的 `MULTIPLE_INTENTS`。
 - 媒体报表 gap owner 仅在紧邻“报表/投放报表”的领域短语内将“煤体”归一为“媒体”；明确“不要/别混入素材表现”时仍由 `MEDIA_REPORT_ITEM_SCHEMA_MISSING` 优先交接，不扩展全局模糊匹配。

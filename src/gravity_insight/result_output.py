@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import hashlib
 import tempfile
 from contextlib import contextmanager
 from collections.abc import Mapping
@@ -15,6 +16,11 @@ from .errors import (
     InputValidationError,
     LocalIOError,
     exit_code_for_category,
+)
+from .contracts.envelope_obligations import (
+    CompletenessState, DataCompleteness, DiagnosticEvidence, DiagnosticState,
+    EnvelopeObligations, ExecutionState, ExecutionStatus, MutationCertainty,
+    MutationState, SemanticState, SemanticValidity, serialize_envelope,
 )
 from .support.documents import replace_atomic_durable
 from .support.process_lock import (
@@ -151,13 +157,27 @@ def write_rendered_result(
         finally:
             if temporary is not None:
                 temporary.unlink(missing_ok=True)
-    return {
+    obligations = _publication_obligations(len(encoded))
+    return serialize_envelope({
         "ok": True,
         "status": "written",
         "output": str(path),
         "format": output_format,
         "size_bytes": len(encoded),
-    }
+        "sha256": hashlib.sha256(encoded).hexdigest(),
+        "preview_applied": False if output_format == "json" else None,
+    }, obligations)
+
+
+def _publication_obligations(size_bytes: int) -> EnvelopeObligations:
+    """A file-publication receipt makes no assertion about its native dataset."""
+    return EnvelopeObligations(
+        ExecutionStatus(ExecutionState.COMPLETE, "RESULT_FILE_COMMITTED"),
+        DataCompleteness(CompletenessState.NOT_APPLICABLE, "RESULT_FILE_BYTES_ONLY", {"size_bytes": size_bytes}),
+        SemanticValidity(SemanticState.NOT_APPLICABLE, ()),
+        DiagnosticEvidence(DiagnosticState.NONE),
+        MutationCertainty(MutationState.NOT_APPLICABLE, "RESULT_FILE_HAS_NO_BUSINESS_MUTATION"),
+    )
 
 
 __all__ = [
