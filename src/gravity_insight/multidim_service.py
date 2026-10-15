@@ -39,6 +39,7 @@ CUSTOM_METRIC_OPERATIONS = (
     REPORT_MULTIDIM_SHARED_METRIC,
 )
 MAX_MULTIDIM_WORKERS = 24
+_FIRST_DAY_REVENUE_DEPENDENCIES = ("standard_1day_pay_amount", "ad_1day_amount")
 _SUCCESS_RESULT_STATUSES = frozenset({"success", "empty"})
 _FAILURE_RESULT_STATUSES = frozenset(
     {
@@ -106,7 +107,7 @@ class MultidimService:
         _boolean(read_all, "read_all")
         pages, items = validate_composite_bounds(max_pages, max_items, minimum_items=1)
         workers = _workers(max_workers)
-        supplied = dict(inputs)
+        supplied, required_metrics = _resolve_total_dependencies(inputs, include_total)
         validation = self.validate(
             supplied,
             metadata_inputs or {},
@@ -129,7 +130,7 @@ class MultidimService:
             label="query",
         )
         if query["status"] in _SUCCESS_RESULT_STATUSES:
-            _enforce_query_item_budget(query, items)
+            _enforce_query_result_bounds(query, items, required_metrics)
         total: dict[str, Any] | None = None
         if include_total and query["status"] == "success":
             calc_schema = self._client.schema(MULTIDIM_TOTAL_OPERATION)
@@ -414,9 +415,32 @@ def _validate_result_component(
         )
 
 
-def _enforce_query_item_budget(envelope: Mapping[str, Any], max_items: int) -> None:
+def _enforce_query_result_bounds(
+    envelope: Mapping[str, Any], max_items: int, required_metrics: Sequence[str]
+) -> None:
     if _query_item_count(envelope) > max_items:
         raise PaginationError("multidimensional query exceeded its item safety bound")
+    if any(row.get(metric) is None for row in _rows(envelope) for metric in required_metrics):
+        raise ContractChangedError(
+            "actual value: missing or null first-day total dependencies; native "
+            "totals require standard_1day_pay_amount and ad_1day_amount in every row; "
+            "retry without include_total to retain the ordinary observation",
+            field="data.list",
+        )
+
+
+def _resolve_total_dependencies(
+    inputs: Mapping[str, Any], include_total: bool
+) -> tuple[dict[str, Any], tuple[str, ...]]:
+    supplied = dict(inputs)
+    metrics = _string_values(supplied.get("metrics_list", []), "metrics_list")
+    required = (
+        _FIRST_DAY_REVENUE_DEPENDENCIES
+        if include_total and "revenue_1day" in metrics else ()
+    )
+    if required:
+        supplied["metrics_list"] = [*metrics, *(name for name in required if name not in metrics)]
+    return supplied, required
 
 
 def _string_values(value: Any, label: str) -> list[str]:
