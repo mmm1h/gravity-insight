@@ -1,8 +1,13 @@
 """Offline input checks and live projection binding for governed exports."""
 from __future__ import annotations
 
+from dataclasses import replace
 from typing import Any, Mapping
 
+from .contracts.user_event_export_scope import (
+    COMPLETENESS_SCHEMA, OPERATION as USER_EVENT_EXPORT, SCHEMA_VERSION as USER_EVENT_SCOPE_SCHEMA,
+    UserEventExportScope, UserEventScopeError, scope_from_completeness,
+)
 from .errors import (
     ErrorCode,
     ErrorDetail,
@@ -11,9 +16,9 @@ from .errors import (
     error_detail_from_exception,
 )
 from .export_contracts import validate_export_payload
-from .export_models import _export_error
+from .export_models import _export_error, _user_event_scope_error
 from ._field_policy_metadata import rows
-from ._field_policy_operations import ANALYSIS_USER_PROPERTY
+from ._field_policy_operations import ANALYSIS_EVENT, ANALYSIS_USER_PROPERTY
 
 
 def validate_export_live_fields(client: Any, contract: Any, payload: Mapping[str, Any]) -> Mapping[str, Any] | None:
@@ -27,7 +32,7 @@ def validate_export_live_fields(client: Any, contract: Any, payload: Mapping[str
     selected = {code: bindings[code] for code in field_map if code in bindings}
     if not selected:
         return
-    envelope = _live_user_properties(client, str(payload["app_id"]))
+    envelope = _live_export_metadata(client, str(payload["app_id"]), ANALYSIS_USER_PROPERTY)
     observed: dict[str, list[Mapping[str, Any]]] = {}
     for row in rows(envelope):
         name = row.get("name")
@@ -55,14 +60,14 @@ def _matches_metadata(candidates: list[Mapping[str, Any]], binding: Mapping[str,
     )
 
 
-def _live_user_properties(client: Any, app_id: str) -> Mapping[str, Any]:
+def _live_export_metadata(client: Any, app_id: str, operation_id: str) -> Mapping[str, Any]:
     # The executor still owns auth, policy, projection and retries. Bypass only
     # the persisted metadata cache; do not toggle a shared client's cache mode.
     all_rows: list[Mapping[str, Any]] = []
     try:
-        client._operation_catalog.guard(ANALYSIS_USER_PROPERTY)
+        client._operation_catalog.guard(operation_id)
         for page_number in range(1, 51):
-            envelope = client._executor.execute(ANALYSIS_USER_PROPERTY, {
+            envelope = client._executor.execute(operation_id, {
                 "app_id": app_id, "page": page_number, "page_size": 2000,
             }).to_dict()
             page = envelope.get("page")
@@ -79,10 +84,60 @@ def _live_user_properties(client: Any, app_id: str) -> Mapping[str, Any]:
             raise ValueError("metadata page budget exhausted")
     except (GravityInsightError, ValueError):
         raise _export_error(
-            "complete live user-property metadata is required before create",
+            "complete live user-property metadata is required before create" if operation_id == ANALYSIS_USER_PROPERTY else "complete live event metadata is required before create",
             code="EXPORT_METADATA_UNAVAILABLE", stage="metadata",
         ) from None
     return {**envelope, "data": {"list": all_rows}}
+
+
+def prepare_user_event_scope(client: Any, operation_id: str, payload: Mapping[str, Any]) -> Mapping[str, Any] | None:
+    if operation_id != USER_EVENT_EXPORT:
+        return None
+    try:
+        metadata = _live_export_metadata(client, str(payload["app_id"]), ANALYSIS_EVENT) if payload.get("event_list") or payload.get("query_item_list") else None
+        return UserEventExportScope.capture(payload, rows(metadata) if metadata is not None else ()).completeness()
+    except UserEventScopeError as exc:
+        raise _user_event_scope_error(exc, "metadata" if exc.reason.startswith("event_") else "scope_receipt") from None
+
+
+def validate_user_event_creation(operation_id: str, request: Any) -> None:
+    if operation_id == USER_EVENT_EXPORT:
+        try:
+            scope = scope_from_completeness(request.completeness, payload=request.payload)
+            if scope.job_id is not None:
+                raise UserEventScopeError("task_binding_mismatch")
+        except UserEventScopeError as exc:
+            raise _user_event_scope_error(exc, "scope_receipt") from None
+
+
+def bind_export_creation_receipt(operation_id: str | None, request: Any, job_id: str | None) -> Mapping[str, Any] | None:
+    completeness = request.completeness
+    if operation_id == USER_EVENT_EXPORT or isinstance(completeness, Mapping) and completeness.get("schema_version") == COMPLETENESS_SCHEMA:
+        try:
+            scope = scope_from_completeness(completeness, payload=request.payload)
+            return (scope.bind_job(job_id) if job_id is not None else scope).completeness()
+        except UserEventScopeError as exc:
+            raise _user_event_scope_error(exc, "scope_receipt") from None
+    if operation_id is None:
+        return None
+    return {**completeness, "job_id": job_id} if completeness is not None and "requested_columns" in completeness else completeness
+
+
+def validate_user_event_resume(contract: Any, job_id: str, completeness: Mapping[str, Any] | None) -> None:
+    if contract.operation_id == USER_EVENT_EXPORT:
+        try:
+            scope_from_completeness(completeness, job_id=job_id)
+        except UserEventScopeError as exc:
+            raise _user_event_scope_error(exc, "scope_receipt") from None
+
+
+def bind_file_scope(privacy: Any, completeness: Mapping[str, Any] | None, job_id: str) -> Any:
+    if privacy.scope_contract != USER_EVENT_SCOPE_SCHEMA:
+        return privacy
+    try:
+        return replace(privacy, user_event_scope=scope_from_completeness(completeness, job_id=job_id))
+    except UserEventScopeError as exc:
+        raise _user_event_scope_error(exc, "scope_receipt") from None
 
 
 def validate_export_input(

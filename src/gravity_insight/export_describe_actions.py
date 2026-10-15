@@ -6,7 +6,7 @@ from typing import Any
 
 
 def download_receipt_argument(operation_id: str | None) -> str:
-    return " --completeness <receipt.json>" if operation_id == "export.analysis.user_detail.start" else ""
+    return " --completeness <receipt.json>" if operation_id in {"export.analysis.user_detail.start", "export.analysis.user_event.start"} else ""
 
 
 def describe_next_action(operation_id: str, effect: str, currently_callable: bool) -> str:

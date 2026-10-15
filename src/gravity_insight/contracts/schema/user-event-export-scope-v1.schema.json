@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.user-event-export-scope.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "operation_id", "job_id", "salt", "request_fingerprint", "client_fingerprint", "date_list", "event_aliases", "ambiguous_aliases", "conditions_verification", "integrity_sha256"],
+  "properties": {
+    "schema_version": {"const": "gravity.user-event-export-scope.v1"},
+    "operation_id": {"const": "export.analysis.user_event.start"},
+    "job_id": {"type": ["string", "null"], "minLength": 1, "maxLength": 256},
+    "salt": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+    "request_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "client_fingerprint": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "date_list": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"}},
+    "event_aliases": {"type": ["array", "null"], "maxItems": 4200, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 4096}},
+    "ambiguous_aliases": {"type": "array", "maxItems": 4200, "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 4096}},
+    "conditions_verification": {"enum": ["not_requested", "unavailable"]},
+    "integrity_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

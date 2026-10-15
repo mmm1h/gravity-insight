@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+from .contracts.user_event_export_scope import is_user_event_completeness
 from .contracts.envelope_obligations import (
     CompletenessState, DataCompleteness, EnvelopeObligations,
     ExecutionState, ExecutionStatus, MutationCertainty, MutationState,
@@ -54,18 +55,19 @@ def export_result_obligations(
     committed = result.error is None and receipt is not None
     execution = ExecutionState.COMPLETE if committed else ExecutionState.FAILED
     completeness = CompletenessState.UNKNOWN
+    user_events = is_user_event_completeness(getattr(result, "completeness", None))
     facts: dict[str, Any] = {}
     if committed:
         facts["file_rows"] = receipt.finalization.rows_processed
         status = result_completion_status(result)
-        if status in {ExportCompletionStatus.COMPLETE.value, ExportCompletionStatus.EMPTY.value}:
+        if not user_events and status in {ExportCompletionStatus.COMPLETE.value, ExportCompletionStatus.EMPTY.value}:
             completeness = CompletenessState.COMPLETE
         elif status == ExportCompletionStatus.TRUNCATED.value:
             completeness = CompletenessState.PREFIX
     return EnvelopeObligations(
         ExecutionStatus(execution, "EXPORT_FILE_COMMITTED" if committed else "EXPORT_FILE_NOT_COMMITTED"),
-        DataCompleteness(completeness, "EXPORT_FILE_COMPLETENESS", facts),
-        SemanticValidity(SemanticState.NOT_APPLICABLE, ()),
+        DataCompleteness(completeness, "USER_EVENT_EXPORT_CONTENT_CLOSURE_UNPROVEN" if user_events else "EXPORT_FILE_COMPLETENESS", facts),
+        SemanticValidity(SemanticState.UNKNOWN, ("USER_EVENT_EXPORT_SNAPSHOT_UNAVAILABLE",)) if user_events else SemanticValidity(SemanticState.NOT_APPLICABLE, ()),
         diagnostic_evidence(error),
         MutationCertainty(MutationState.NOT_APPLICABLE, "EXPORT_HAS_NO_BUSINESS_MUTATION"),
     )
@@ -74,6 +76,10 @@ def export_result_obligations(
 def _committed_status(result: Any, receipt: Any) -> str:
     rows = int(receipt.finalization.rows_processed)
     snapshot = getattr(result, "completeness", None)
+    if is_user_event_completeness(snapshot):
+        if snapshot.get("file_scope_verification") != "verified" or getattr(receipt.finalization, "details", {}).get("user_event_scope_verification") != "verified":
+            return ExportCompletionStatus.PARTIAL.value
+        return ExportCompletionStatus.EMPTY.value if rows == 0 else ExportCompletionStatus.COMPLETE.value
     if rows == 0:
         if isinstance(snapshot, Mapping) and snapshot.get("known_total_items") != 0:
             return ExportCompletionStatus.PARTIAL.value

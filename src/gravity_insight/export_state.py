@@ -19,6 +19,7 @@ from .export_models import (
 from .export_privacy import ExportPrivacyFinalizer
 from .export_scope_total import classify_export_rows
 from .export_recovery import recovery_fields
+from .export_validation import bind_export_creation_receipt, bind_file_scope
 
 class ExportOrchestrator:
     def __init__(
@@ -65,7 +66,8 @@ class ExportOrchestrator:
             tracker.move(ExportState.FAILED)
             recovered = recovery_fields(exc)
             return _result(tracker, job_id=recovered.get("job_id"), error=exc,
-                           resumable=recovered.get("resumable", False))
+                           resumable=recovered.get("resumable", False),
+                           completeness=bind_export_creation_receipt(None, request, recovered.get("job_id")))
         except Exception:
             error = _export_error(
                 "export creation failed and was not retried",
@@ -78,6 +80,9 @@ class ExportOrchestrator:
         try:
             state = _validate_snapshot(snapshot)
             tracker.move(state)
+            privacy_contract = bind_file_scope(privacy_contract, snapshot.completeness, snapshot.job_id)
+            if privacy_contract.user_event_scope is not None:
+                snapshot = _with_completeness(snapshot, privacy_contract.user_event_scope.completeness())
         except BlobTransferError as exc:
             tracker.move(ExportState.FAILED)
             raw_job_id = getattr(snapshot, "job_id", None)
@@ -109,6 +114,9 @@ class ExportOrchestrator:
                 stage="resume",
             )
         _assert_exportable_classification(privacy_contract)
+        privacy_contract = bind_file_scope(privacy_contract, completeness, job_id)
+        if privacy_contract.user_event_scope is not None:
+            completeness = privacy_contract.user_event_scope.completeness()
         timeout = _validated_timeout(timeout_seconds, self._polling.timeout_seconds)
         deadline = self._clock() + timeout
         try:
@@ -293,6 +301,7 @@ class ExportOrchestrator:
             tracker.move(ExportState.VERIFIED)
 
         try:
+            privacy_contract = bind_file_scope(privacy_contract, snapshot.completeness, job_id)
             receipt = self._transfer.download(
                 source,
                 destination,
@@ -309,7 +318,7 @@ class ExportOrchestrator:
                 receipt=receipt,
                 completeness=classify_export_rows(
                     int(receipt.finalization.rows_processed),
-                    getattr(snapshot, "completeness", None),
+                    privacy_contract.user_event_scope.completeness() if privacy_contract.user_event_scope is not None else getattr(snapshot, "completeness", None),
                 ),
             )
         except BlobTransferError as exc:

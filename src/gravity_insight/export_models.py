@@ -1,6 +1,7 @@
 """Export protocol values, state vocabulary, and policy predicates."""
 from __future__ import annotations
 
+from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum
 import math
@@ -9,6 +10,7 @@ from types import MappingProxyType
 from typing import Any, Mapping, Protocol
 
 from .blob import AuthorizedBlobSource, BlobReceipt, BlobTransferError
+from .contracts.user_event_export_scope import SCHEMA_VERSION as USER_EVENT_SCOPE_SCHEMA, UserEventExportScope, UserEventScopeError
 
 _IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9._:-]{16,128}$")
 _NON_EXPORTABLE_CLASSIFICATIONS = frozenset({"restricted"})
@@ -127,8 +129,11 @@ class ExportPrivacyContract:
     column_order: tuple[str, ...] = ()
     column_types: Mapping[str, Mapping[str, Any]] = field(default_factory=dict)
     temporal_semantics: str | None = None
+    scope_contract: str | None = None
+    user_event_scope: UserEventExportScope | None = None
 
     def __post_init__(self) -> None:
+        _validate_scope_contract(self)
         if not self.allowed_columns:
             raise ValueError("export privacy contract requires allowed columns")
         if len(set(self.allowed_columns)) != len(self.allowed_columns):
@@ -161,6 +166,15 @@ class ExportPrivacyContract:
         )
 
 
+def _validate_scope_contract(contract: ExportPrivacyContract) -> None:
+    if contract.scope_contract not in (None, USER_EVENT_SCOPE_SCHEMA):
+        raise ValueError("unsupported export scope contract")
+    if contract.scope_contract is not None and contract.format != "xlsx":
+        raise ValueError("user-event scope requires the registered XLSX projection")
+    if contract.user_event_scope is not None and not isinstance(contract.user_event_scope, UserEventExportScope):
+        raise ValueError("invalid typed export scope")
+
+
 @dataclass(frozen=True)
 class ExportCreationRequest:
     payload: Mapping[str, Any]
@@ -169,10 +183,10 @@ class ExportCreationRequest:
     completeness: Mapping[str, Any] | None = None
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "payload", MappingProxyType(dict(self.payload)))
+        object.__setattr__(self, "payload", MappingProxyType(deepcopy(dict(self.payload))))
         if self.completeness is not None:
             object.__setattr__(
-                self, "completeness", MappingProxyType(dict(self.completeness))
+                self, "completeness", MappingProxyType(deepcopy(dict(self.completeness)))
             )
 
 
@@ -297,6 +311,19 @@ def _export_error(
         field=field,
         category=category,
         next_action=next_action,
+    )
+
+
+def _user_event_scope_error(error: UserEventScopeError, stage: str) -> ExportRuntimeError:
+    code = "EXPORT_SCOPE_MISMATCH" if stage == "scope_validation" else "EXPORT_METADATA_UNAVAILABLE" if stage == "metadata" else "EXPORT_JOB_INVALID"
+    return _export_error(
+        "user-event export requires a verifiable task scope; the file was not published",
+        code=code, stage=stage, details={"reason": error.reason},
+        field="file" if stage == "scope_validation" else "event_list" if stage == "metadata" else "completeness",
+        category="upstream" if stage in {"scope_validation", "metadata"} else "caller",
+        next_action=("Keep the existing task and original task receipt. Inspect `gravity export describe "
+                     "export.analysis.user_event.start` and use governed native reads when scope evidence "
+                     "is unavailable; do not re-create the task or trim/substitute rows."),
     )
 
 

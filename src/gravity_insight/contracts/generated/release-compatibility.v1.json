@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "b4b8af1fbb30ccae32a39ffd834d2296c711580a0eeac71e4738f3bb99cba4c4"
+    "compatibility_sha256": "0eddc2b8fee0aebc0af2a84d5f3b693517262b4883f4bec8aa0357747128e7cb"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -486,11 +486,17 @@
       "version": "0.3.27",
       "release_status": "unreleased",
       "release_date": null,
-      "breaking_status": "none",
-      "breaking_status_reason": "explicitly_recorded_none",
-      "hard_breaks": [],
+      "breaking_status": "breaking",
+      "breaking_status_reason": "breaking_changes_recorded",
+      "hard_breaks": [
+        {
+          "id": "0.3.27-hard-break-1",
+          "description": "staged user-event export downloads require the original task-bound `completeness` receipt. A workbook with another client, date or event scope fails before atomic publication; legacy tasks without comparable scope evidence cannot be certified. Committed transport remains distinct from unknown source content/snapshot completeness (#294). Migration guide: [0.3.27](docs/migration/0.3.27.md)",
+          "migration_guide": "docs/migration/0.3.27.md"
+        }
+      ],
       "soft_breaks": [],
-      "migration_guide": null
+      "migration_guide": "docs/migration/0.3.27.md"
     }
   ]
 }
