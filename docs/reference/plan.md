@@ -108,7 +108,7 @@ preflight 决定；先用 Agent 产品卡生成节点，不手写猜测。
 | <a id="dashboard-snapshot-composite"></a>`dashboard_snapshot` | 产品行为见 [Dashboard snapshot](cli.md#dashboard-control-plane-snapshot)。 |
 | <a id="dashboard-analysis-composite"></a>`dashboard_analysis` | 产品行为见 [Dashboard Analysis Replay v2](cli.md#dashboard-analysis-replay-v2)。 |
 | <a id="user-journey-composite"></a>`user_journey` | 产品行为见 [Single-user journey](cli.md#single-user-journey)。 |
-| <a id="order-directory-composite"></a>`order_directory` | 产品行为见 [Order Directory v1](cli.md#order-directory-v1)。 |
+| <a id="order-directory-composite"></a>`order_directory` | 产品行为见 [Order Directory v1](cli.md#order-directory-v1)；失败投影保留 `contract_diagnostic` 与类型化结果事实，旧合法 envelope 可重建但不补造字段证据。 |
 | <a id="order-split-trace-composite"></a>`order_split_trace` | 产品行为见 [Order Split Trace v1](cli.md#order-split-trace-v1)。 |
 | <a id="segment-rule-composite"></a>`segment_evaluate` | 接受显式 Segment Rule Spec；聚合人数/占比、自然语言和不保存分群的边界见 [Segment Rule Spec v2](cli.md#segment-rule-spec-v2)。 |
 | <a id="multidim-composite"></a>`multidim` | 要求 `input_schema_version`；闭合物理输入、预检和结果状态规则见 [Multidim](cli.md#multidim)。 |

@@ -193,7 +193,7 @@ gravity insight run analysis.event.list --input <request.json> --all-pages
 | <a id="derived-metrics"></a>Derived Metrics | `gravity derive --input <request.json>` 对已有 result envelope 做本地确定性算术，不访问网络。 request 使用 `source/spec`；结果保留来源状态，输入为 partial 时不会把派生值包装成完整上游事实；派生 provenance 标为 caller-defined，不改写上游来源。 |
 | <a id="single-user-journey"></a>Single-user journey | `gravity analysis user journey` 只接受调用方明确给出的 client id、App 和日期/日期窗；返回固定受管 字段，不用于发现任意用户。 |
 | <a id="app-configuration-snapshot"></a>App configuration snapshot | `gravity apps snapshot --app <app>` 返回 App 安全配置与五个治理来源。`app.detail` v3 只开放逐叶白名单中的元数据、预约状态、演练开关、额外归因开关和有限回传模式；凭据、任意属性对象、回调/下载/签名 URL 及未知新增字段均不会穿过投影边界。 |
-| <a id="order-directory-v1"></a>Order Directory v1 | `gravity analysis order directory --app <app> --date <date>` 完整读取单日受管订单目录。额外身份、字段或不完整分页失败关闭。 |
+| <a id="order-directory-v1"></a>Order Directory v1 | `gravity analysis order directory --app <app> --date <date>` 完整读取单日受管订单目录。额外身份、字段或不完整分页失败关闭；拒绝时查看 `contract_diagnostic` 的层级、登记路径/类型与版本，未观察的叶子字段证据显式 unavailable，不据诊断推定订单读取已恢复。 |
 | <a id="order-split-trace-v1"></a>Order Split Trace v1 | `gravity analysis order trace --app <app> --date <date> --trace-id <id>` 先在单日父目录唯一匹配显式 TraceID，再读取一次 child 安全投影；结果、错误或 receipt 不回显 TraceID。 |
 | <a id="dashboard-control-plane-snapshot"></a>Dashboard control-plane snapshot | `gravity analysis dashboard snapshot --app <app> --ref <id-or-exact-name>` 读取控制面，不执行图表，也不 模拟 layout、favourite 或页面 global filter。 |
 | <a id="dashboard-analysis-replay-v2"></a>Dashboard Analysis Replay v2 | `prepare` 编译可支持图表，`run` 执行；单图失败隔离，结果按看板顺序返回。引用必须是稳定 ID 或 精确名称，日期窗和 `max_charts` 由调用方显式提供。 |
