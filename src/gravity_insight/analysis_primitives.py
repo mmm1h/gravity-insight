@@ -15,6 +15,8 @@ from typing import Any
 
 from ._field_policy_conditions import validate_analysis_conditions
 from ._field_policy_shared import (
+    ANALYSIS_EVENT_TARGET_METHODS,
+    ANALYSIS_FORMULA_RE,
     ANALYSIS_TARGET_METHODS,
     ANALYSIS_USER_TYPES,
     new_analysis_references,
@@ -30,7 +32,7 @@ _SEGMENT_TYPES = frozenset({"LATEST", "DYNAMIC_MATCHING", "FIXED_VERSION"})
 _QUANTILE_METHOD = re.compile(r"^Quantile(?:_(?:[1-9]|[1-9][0-9]|100))?$")
 _DATED_KINDS = frozenset({"event", "funnel", "retention", "scatter"})
 _STEP_LIMITS = {
-    "event": (1, 50),
+    "event": (0, 100),
     "funnel": (2, 20),
     "retention": (2, 2),
     "scatter": (1, 1),
@@ -138,7 +140,7 @@ class AnalysisMetric:
     def __post_init__(self) -> None:
         bounded_string(self.field, "metric.field")
         bounded_string(self.aggregation, "metric.aggregation")
-        if self.aggregation not in ANALYSIS_TARGET_METHODS and not _QUANTILE_METHOD.fullmatch(
+        if self.aggregation not in ANALYSIS_EVENT_TARGET_METHODS and not _QUANTILE_METHOD.fullmatch(
             self.aggregation
         ):
             raise InputValidationError(
@@ -242,6 +244,58 @@ class AnalysisStep:
         return result
 
 
+@dataclass(frozen=True)
+class AnalysisFormula:
+    """One governed Event formula and its metadata-validated dependencies."""
+
+    name: str
+    formula: str
+    steps: tuple[AnalysisStep, ...]
+    precision: str = "two_point"
+
+    def __post_init__(self) -> None:
+        bounded_string(self.name, "formula.name")
+        if len(self.name) > 200:
+            raise InputValidationError(
+                f"actual value: {actual_value(self.name)}; formula name must contain "
+                "at most 200 characters",
+                field="formula.name",
+            )
+        if not isinstance(self.formula, str) or ANALYSIS_FORMULA_RE.fullmatch(
+            self.formula
+        ) is None:
+            raise InputValidationError(
+                f"actual value: {actual_value(self.formula)}; formula must use 1 "
+                "through 1000 supported characters",
+                field="formula.formula",
+            )
+        if not isinstance(self.steps, tuple):
+            object.__setattr__(self, "steps", tuple(self.steps))
+        if not 1 <= len(self.steps) <= 100 or any(
+            not isinstance(item, AnalysisStep) for item in self.steps
+        ):
+            raise InputValidationError(
+                f"actual value: {actual_value(self.steps)}; formula requires 1 through "
+                "100 typed Analysis steps",
+                field="formula.steps",
+            )
+        if self.formula.casefold().count("x") != len(self.steps):
+            raise InputValidationError(
+                "actual value: formula placeholder count does not match dependencies",
+                field="formula.formula",
+                next_action="Use one x placeholder per formula step, in dependency order.",
+            )
+        choice(self.precision, {"two_point", "three_point", "four_point"}, "formula.precision")
+
+    def to_spec(self) -> dict[str, Any]:
+        return {
+            "name": self.name,
+            "formula": self.formula,
+            "steps": [item.to_spec() for item in self.steps],
+            "precision": self.precision,
+        }
+
+
 class AnalysisSpec(Mapping[str, Any]):
     """Immutable Mapping wrapper supporting typed construction and narrow edits."""
 
@@ -283,9 +337,31 @@ class AnalysisSpec(Mapping[str, Any]):
 
     @classmethod
     def event(
-        cls, start: str, end: str, steps: Sequence[AnalysisStep], **identity: Any
+        cls,
+        start: str,
+        end: str,
+        steps: Sequence[AnalysisStep] = (),
+        *,
+        formulas: Sequence[AnalysisFormula] = (),
+        **identity: Any,
     ) -> AnalysisSpec:
-        return cls("event", _dated_spec("event", start, end, steps, identity))
+        spec = _dated_spec("event", start, end, steps, identity)
+        selected_formulas = tuple(formulas)
+        if any(not isinstance(item, AnalysisFormula) for item in selected_formulas):
+            raise InputValidationError(
+                f"actual value: {actual_value(selected_formulas)}; event formulas must "
+                "be AnalysisFormula objects",
+                field="formulas",
+            )
+        if not steps and not selected_formulas:
+            raise InputValidationError(
+                "actual value: no Event metrics; add steps or formulas",
+                field="steps/formulas",
+                next_action="Use at least one typed step or AnalysisFormula.",
+            )
+        if selected_formulas:
+            spec["formulas"] = [item.to_spec() for item in selected_formulas]
+        return cls("event", spec)
 
     @classmethod
     def funnel(
@@ -484,6 +560,7 @@ def _step_at(spec: dict[str, Any], index: int) -> dict[str, Any]:
 __all__ = [
     "AnalysisCohort",
     "AnalysisFilter",
+    "AnalysisFormula",
     "AnalysisMetric",
     "AnalysisSpec",
     "AnalysisStep",

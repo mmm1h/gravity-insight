@@ -1733,8 +1733,8 @@
   "privacy": {
     "business_values_persisted": true,
     "business_values_present_in_final_artifact": false,
-    "precommit_remediation": "Business date bucket keys in drift paths were normalized to {dynamic_key}; the original persistence redline was violated before correction.",
-    "credentials_persisted": false
+    "credentials_persisted": false,
+    "precommit_remediation": "Business date bucket keys in drift paths were normalized to {dynamic_key}; the original persistence redline was violated before correction."
   },
   "production_requests": 106,
   "production_requests_by_stage": {
@@ -6142,62 +6142,6 @@
       },
       {
         "conclusion": "drift_cleared_validation_recorded",
-        "current_validation": {
-          "completeness": "unknown",
-          "contract_digest": "d2a62a93cb1b7832bde4489a8417c1c2ff023e58fcf9ca2d44ecb46ac06c8aed",
-          "contract_version": "1",
-          "data_quality": {
-            "checks": [
-              {
-                "check_id": "execution.receipt",
-                "scope": "analysis.event.query",
-                "status": "pass"
-              },
-              {
-                "check_id": "execution.semantic-status",
-                "scope": "analysis.event.query",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.nonempty",
-                "scope": "analysis.event.query",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.schema-and-type",
-                "scope": "analysis.event.query",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.freshness",
-                "scope": "analysis.event.query",
-                "status": "pass"
-              },
-              {
-                "check_id": "response.no-drift",
-                "scope": "analysis.event.query",
-                "status": "pass"
-              }
-            ],
-            "reason_codes": [],
-            "schema_version": "gravity.data-quality-result.v1",
-            "status": "pass"
-          },
-          "evidence_references": [
-            {
-              "kind": "receipt",
-              "reference": "receipt:322dabbac653494eb81d31be819a28fd"
-            }
-          ],
-          "expires_at": "2026-09-08T12:36:18Z",
-          "identity_kind": "operation",
-          "provider_fingerprint": "0031db8d3bd520d4e8a430e464129d1fb386801ed79ac6eb48307fa36f1189ab",
-          "reason_codes": [],
-          "schema_version": "gravity.capability-validation.v1",
-          "selector": "analysis.event.query",
-          "trust_status": "stable",
-          "validated_at": "2026-09-07T12:36:18Z"
-        },
         "outcome": {
           "attempted": true,
           "category": "validated",
@@ -6220,7 +6164,7 @@
           "validation_recorded": true
         },
         "production_requests": 3,
-        "reason": "validated",
+        "reason": "Historical v1 production read retained; contract v2 Event options are not certified by this earlier receipt.",
         "selector": "analysis.event.query"
       },
       {
@@ -13179,7 +13123,7 @@
       "report.multidim.media_enum.list"
     ]
   },
-  "stage_171_current_validations": 16,
+  "stage_171_current_validations": 15,
   "validations": [
     {
       "completeness": "unknown",

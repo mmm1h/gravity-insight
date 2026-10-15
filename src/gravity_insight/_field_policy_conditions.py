@@ -35,6 +35,8 @@ def validate_analysis_target(
     value: Any,
     field_references: set[str],
     dimension_references: set[tuple[str, str]],
+    *,
+    methods: frozenset[str] = ANALYSIS_TARGET_METHODS,
 ) -> None:
     require_exact_mapping(
         value,
@@ -44,12 +46,12 @@ def validate_analysis_target(
     method = value.get("name")
     field = value.get("field")
     if not isinstance(method, str) or not (
-        method in ANALYSIS_TARGET_METHODS
+        method in methods
         or re.fullmatch(r"Quantile(?:_(?:[1-9]|[1-9][0-9]|100))?", method)
     ):
         raise InputValidationError(
             f"actual value: {actual_value(method)}; allowed methods: "
-            f"{allowed_values(ANALYSIS_TARGET_METHODS)} or Quantile_1 through "
+            f"{allowed_values(methods)} or Quantile_1 through "
             "Quantile_100",
             field="target.name",
         )

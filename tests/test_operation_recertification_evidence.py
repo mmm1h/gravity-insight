@@ -64,12 +64,12 @@ class OperationRecertificationEvidenceTests(unittest.TestCase):
         # Later contract changes retain these receipts as historical evidence,
         # but they cannot certify the current contract digests.
         expected = set(evidence["scope"]["171"]) - {
-            "analysis.default_val.list", "analysis.order_detail.list",
+            "analysis.default_val.list", "analysis.order_detail.list", "analysis.event.query",
             "analysis.monetization_detail.list", "analysis.scatter.query",
             "material.local.list", "material.report.query",
         }
         actual = {r["selector"] for r in evidence["records"]["171"] if r.get("current_validation")}
-        self.assertEqual(16, evidence["stage_171_current_validations"])
+        self.assertEqual(15, evidence["stage_171_current_validations"])
         self.assertEqual(expected, actual)
         for row in evidence["records"]["171"]:
             validation = row.get("current_validation")

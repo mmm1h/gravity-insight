@@ -1089,8 +1089,8 @@
     {
       "action": "query",
       "auth_profile": "gravity_authorization",
-      "contract_version": 1,
-      "description": "事件分析结构化聚合；不是自由 SQL。输入经实时元数据和深层结构策略校验，响应按受控聚合投影脱敏。",
+      "contract_version": 2,
+      "description": "事件分析结构化聚合；支持普通/公式指标、最多十个显式日期窗、受治理用户筛选、同比控制和有界行上限。page_size 不是分页或完整性证明；输入经实时元数据和深层结构策略校验，响应按受控聚合投影脱敏。",
       "domain": "analysis",
       "effect": "read",
       "input_fields": {
@@ -1106,15 +1106,19 @@
           "default": false,
           "type": "boolean"
         },
+        "calc_y": {
+          "default": false,
+          "type": "boolean"
+        },
         "custom_query_item_list": {
           "default": [],
           "item_type": "object",
-          "max_items": 50,
+          "max_items": 100,
           "type": "array"
         },
         "date_list": {
           "item_type": "object",
-          "max_items": 2,
+          "max_items": 10,
           "min_items": 1,
           "required": true,
           "type": "array"
@@ -1143,14 +1147,17 @@
           "max_items": 20,
           "type": "array"
         },
+        "page_size": {
+          "type": "integer"
+        },
         "query_id": {
           "required": true,
           "type": "string"
         },
         "query_item_list": {
+          "default": [],
           "item_type": "object",
-          "max_items": 50,
-          "required": true,
+          "max_items": 100,
           "type": "array"
         },
         "return_hierarchy_list": {
@@ -1158,6 +1165,10 @@
           "type": "boolean"
         },
         "split_event": {
+          "default": {},
+          "type": "object"
+        },
+        "user_filtering": {
           "default": {},
           "type": "object"
         }
@@ -1241,20 +1252,26 @@
           "global_cond_logic",
           "date_list",
           "return_hierarchy_list",
+          "calc_y",
           "calc_layer_y",
+          "user_filtering",
+          "page_size",
           "aggregate_config",
           "extra_data"
         ],
         "defaults": {
           "aggregate_config": {},
           "calc_layer_y": false,
+          "calc_y": false,
           "custom_query_item_list": [],
           "extra_data": {},
           "global_cond_logic": "AND",
           "global_conditions": [],
           "group_by_list": [],
+          "query_item_list": [],
           "return_hierarchy_list": false,
-          "split_event": {}
+          "split_event": {},
+          "user_filtering": {}
         },
         "fixed_body": {},
         "fixed_query": {},

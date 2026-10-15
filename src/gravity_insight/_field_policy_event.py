@@ -14,6 +14,7 @@ from ._field_policy_conditions import (
 from ._field_policy_shared import (
     ANALYSIS_CONTROL_ID_RE,
     ANALYSIS_EVENT_TYPES,
+    ANALYSIS_EVENT_TARGET_METHODS,
     ANALYSIS_FORMULA_RE,
     ANALYSIS_TARGET_METHODS,
     AnalysisReferences,
@@ -36,6 +37,7 @@ def validate_analysis_event_items(
     *,
     minimum: int,
     maximum: int,
+    methods: frozenset[str] = ANALYSIS_TARGET_METHODS,
 ) -> None:
     if not isinstance(value, (list, tuple)) or not minimum <= len(value) <= maximum:
         raise InputValidationError(
@@ -44,10 +46,15 @@ def validate_analysis_event_items(
             field="query_item_list",
         )
     for item in value:
-        _validate_analysis_event_item(item, references)
+        _validate_analysis_event_item(item, references, methods=methods)
 
 
-def _validate_analysis_event_item(item: Any, references: AnalysisReferences) -> None:
+def _validate_analysis_event_item(
+    item: Any,
+    references: AnalysisReferences,
+    *,
+    methods: frozenset[str],
+) -> None:
     require_exact_mapping(
         item,
         {
@@ -79,7 +86,10 @@ def _validate_analysis_event_item(item: Any, references: AnalysisReferences) -> 
             f"actual value: {actual_value(cond_logic)}; allowed values: \"AND\", \"OR\"",
             field="query_item_list[].cond_logic",
         )
-    _validate_event_index(item.get("event_index"))
+    _validate_event_index(
+        item.get("event_index"),
+        maximum=99 if methods == ANALYSIS_EVENT_TARGET_METHODS else 49,
+    )
     if item.get("split_event") is not None and item.get("split_event") not in {
         0,
         1,
@@ -95,22 +105,23 @@ def _validate_analysis_event_item(item: Any, references: AnalysisReferences) -> 
         item.get("target"),
         references.event_fields,
         references.event_dimension_tables,
+        methods=methods,
     )
     validate_analysis_conditions(
         item.get("conditions", ()), references, "query item conditions"
     )
 
 
-def _validate_event_index(value: Any) -> None:
+def _validate_event_index(value: Any, *, maximum: int = 49) -> None:
     if value is not None and (
         not isinstance(value, int)
         or isinstance(value, bool)
         or value < 0
-        or value > 49
+        or value > maximum
     ):
         raise InputValidationError(
             f"actual value: {actual_value(value)}; allowed range: null or an integer "
-            "from 0 through 49",
+            f"from 0 through {maximum}",
             field="query_item_list[].event_index",
         )
 
@@ -227,12 +238,12 @@ def validate_analysis_custom_items(
 ) -> None:
     if (
         not isinstance(value, (list, tuple))
-        or not minimum <= len(value) <= 50
+        or not minimum <= len(value) <= 100
     ):
         allowed = (
-            "a non-empty array with at most 50 custom query items"
+            "a non-empty array with at most 100 custom query items"
             if minimum
-            else "an array with at most 50 custom query items"
+            else "an array with at most 100 custom query items"
         )
         raise InputValidationError(
             f"actual value: {len(value) if isinstance(value, (list, tuple)) else actual_value(type(value).__name__)}; "
@@ -253,12 +264,18 @@ def _validate_analysis_custom_item(item: Any, references: AnalysisReferences) ->
     formula = item.get("formula")
     if not isinstance(formula, str) or not ANALYSIS_FORMULA_RE.fullmatch(formula):
         raise InputValidationError(
-            f"actual value: {actual_value(formula)}; allowed value: 1 through 256 "
+            f"actual value: {actual_value(formula)}; allowed value: 1 through 1000 "
             "characters containing only x placeholders, digits, whitespace, and + - * / ( ) .",
             field="custom_query_item_list[].formula",
         )
     nested = item.get("query_item_list")
-    validate_analysis_event_items(nested, references, minimum=1, maximum=20)
+    validate_analysis_event_items(
+        nested,
+        references,
+        minimum=1,
+        maximum=100,
+        methods=ANALYSIS_EVENT_TARGET_METHODS,
+    )
     if formula.lower().count("x") != len(nested):
         raise InputValidationError(
             f"actual value: {formula.lower().count('x')} placeholders; allowed value: "
@@ -272,7 +289,7 @@ def _validate_analysis_custom_item(item: Any, references: AnalysisReferences) ->
             f"{allowed_values(_DECIMAL_POINTS)}",
             field="custom_query_item_list[].decimal_point",
         )
-    _validate_event_index(item.get("event_index"))
+    _validate_event_index(item.get("event_index"), maximum=99)
 
 
 def validate_analysis_window(value: Any) -> None:

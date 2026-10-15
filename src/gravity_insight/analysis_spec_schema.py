@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from typing import Any
 from .analysis_spec_validation import (
     VALUELESS_CONDITION_OPERATORS,
-    dated_spec_notes,
-    event_input_definitions,
+)
+from .analysis_spec_event_schema import event_definitions, event_schema
+from .analysis_spec_schema_support import (
+    ANALYSIS_TIME_GROUPS_BY_KIND,
+    array_ref as _array_ref,
+    base_spec as _base_spec,
+    dated_spec as _dated_spec,
+    enum as _enum,
+    integer as _integer,
 )
 
 from ._field_policy_shared import (
@@ -14,9 +21,7 @@ from ._field_policy_shared import (
     ANALYSIS_CONDITION_OPERATORS,
     ANALYSIS_EVENT_TYPES,
     ANALYSIS_PROPERTY_GROUP_OPERATORS,
-    ANALYSIS_QUERY_ID_RE,
     ANALYSIS_TARGET_METHODS,
-    ANALYSIS_TIME_GROUPS,
     ANALYSIS_USER_TYPES,
     RETENTION_ADDITIVE_FOLLOWUP_GAP_CODE,
     RETENTION_ADDITIVE_FOLLOWUP_JOURNEY,
@@ -30,12 +35,6 @@ SPEC_SCHEMA_VERSION = "gravity-insight.analysis-query-spec.v1"
 ANALYSIS_SPEC_KINDS = frozenset(
     {"event", "funnel", "retention", "property", "scatter"}
 )
-ANALYSIS_TIME_GROUPS_BY_KIND = {
-    "event": ANALYSIS_TIME_GROUPS - {"hour", "minute"},
-    "funnel": ANALYSIS_TIME_GROUPS,
-    "retention": ANALYSIS_TIME_GROUPS,
-    "scatter": ANALYSIS_TIME_GROUPS,
-}
 FUNNEL_RESULT_NOTES = {
     "returns_conversion_rate": False,
     "count_meaning": (
@@ -78,18 +77,7 @@ def analysis_query_spec_schema() -> dict[str, Any]:
 
 def _kind_schemas() -> dict[str, Any]:
     return {
-            "event": _dated_spec(
-                "event",
-                required=("start", "end", "steps"),
-                properties={
-                    "steps": _array_ref("event_query_step", 1, 50),
-                    "global_filters": _array_ref("event_global_condition", 0, 100),
-                    "global_logic": _enum("AND", "OR"),
-                    "calculate_layer_y": {"type": "boolean", "default": False},
-                    "return_hierarchy_list": {"type": "boolean", "default": False},
-                    "aggregate": {"$ref": "#/definitions/aggregate"},
-                },
-            ),
+            "event": event_schema(),
             "funnel": _dated_spec(
                 "funnel",
                 required=("start", "end", "steps", "window"),
@@ -156,7 +144,7 @@ def _definitions() -> dict[str, Any]:
         **_retention_definitions(),
         "aggregate": _aggregate_definition(),
     }
-    definitions.update(event_input_definitions(definitions))
+    definitions.update(event_definitions(definitions))
     return definitions
 
 
@@ -419,61 +407,12 @@ def _aggregate_definition() -> dict[str, Any]:
     }
 
 
-def _base_spec(*, required: tuple[str, ...], properties: dict[str, Any]) -> dict[str, Any]:
-    common = {
-        "app": {"type": ["string", "integer"]},
-        "query_id": {
-            "type": "string",
-            "pattern": ANALYSIS_QUERY_ID_RE.pattern,
-        },
-        "group_by": _array_ref("group_by", 0, 20),
-    }
-    return {
-        "type": "object",
-        "required": list(required),
-        "additionalProperties": False,
-        "properties": {**common, **properties},
-    }
-
-
-def _dated_spec(
-    kind: str,
-    *,
-    required: tuple[str, ...],
-    properties: dict[str, Any],
-    notes: Mapping[str, Any] | None = None,
-) -> dict[str, Any]:
-    spec = _base_spec(
-        required=required,
-        properties={
-            "start": {"type": "string", "format": "date"},
-            "end": {"type": "string", "format": "date"},
-            "time_grain": {
-                "type": "string",
-                "enum": sorted(ANALYSIS_TIME_GROUPS_BY_KIND[kind]),
-            },
-            **properties,
-        },
-    )
-    spec["notes"] = {**dated_spec_notes(), **dict(notes or {})}
-    return spec
-
-
 def _shared_filter_properties() -> dict[str, Any]:
     return {
         "user_filters": {"type": "object"},
         "user_reattribute_filters": {"type": "object"},
         "user_logic": _enum("AND", "OR"),
         "property_conditions": _array_ref("condition", 0, 100),
-    }
-
-
-def _array_ref(name: str, minimum: int, maximum: int) -> dict[str, Any]:
-    return {
-        "type": "array",
-        "minItems": minimum,
-        "maxItems": maximum,
-        "items": {"$ref": f"#/definitions/{name}"},
     }
 
 
@@ -521,14 +460,6 @@ def _scalar() -> dict[str, Any]:
 
 def _bounded_string() -> dict[str, Any]:
     return {"type": "string", "minLength": 1, "maxLength": 256}
-
-
-def _integer(minimum: int, maximum: int) -> dict[str, Any]:
-    return {"type": "integer", "minimum": minimum, "maximum": maximum}
-
-
-def _enum(*values: str) -> dict[str, Any]:
-    return {"type": "string", "enum": list(values)}
 
 
 __all__ = [

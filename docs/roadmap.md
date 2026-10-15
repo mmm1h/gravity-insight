@@ -1,6 +1,6 @@
 # 路线图
 
-产品目标：任何数据分析任务都能在不打开 Gravity Web 的前提下，仅用本仓库完成；Agent 能机器判定发现、执行、空结果、部分失败和能力缺口。衡量单位是[分析动线](analysis-journeys.md)，不是 operation 数量；动态目录规模只从 `gravity agent-catalog` 与 compiler 获取，不在路线图手写。官方 MCP 补全复用现有 Runtime owner：U1 提供受控元数据筛选，U2 以逐叶白名单提供 App 安全配置，U3 在保留预置/个人/共享指标身份的同时提供版本化用户报表字段目录；未进入静态投影的字段仍由实时 metadata 失败关闭。凭据、任意属性对象、敏感 URL、未知字段和收藏失败关闭，应用创建及远程托管排除；canonical `work-dashboard` 无 `app_snapshot` 消费者，现有读取能力未删除。
+产品目标：任何数据分析任务都能在不打开 Gravity Web 的前提下，仅用本仓库完成；Agent 能机器判定发现、执行、空结果、部分失败和能力缺口。衡量单位是[分析动线](analysis-journeys.md)，不是 operation 数量；动态目录规模只从 `gravity agent-catalog` 与 compiler 获取，不在路线图手写。官方 MCP 补全复用现有 Runtime owner：U1 提供受控元数据筛选，U2 以逐叶白名单提供 App 安全配置，U3 在保留预置/个人/共享指标身份的同时提供版本化用户报表字段目录；未进入静态投影的字段仍由实时 metadata 失败关闭。凭据、任意属性对象、敏感 URL、未知字段和收藏失败关闭，应用创建及远程托管排除；canonical `work-dashboard` 无 `app_snapshot` 消费者，现有读取能力未删除。U4–U6 补齐素材指标/报表、变现条件/分群和事件公式/多日期窗/用户筛选/行上限，保留原平台和查询能力；未知完整性及旧版验证不提级。U7 实时诊断、U8 MCP 最终验收待完成。
 
 ## 当前优先级
 

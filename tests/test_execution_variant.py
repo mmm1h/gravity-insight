@@ -59,7 +59,7 @@ _EVIDENCE_FIELDS = {
     "request_count": "request_count",
     "journey_regression": "journey_sha256",
 }
-_PRODUCT_DIGEST = "b3ab63fafbb6a54f83af7b8dbef070aea154ff1c8800479a68045b5c104e2fc9"
+_PRODUCT_DIGEST = "b2c83dd7f61a922cc57de9341e35bb392afbb5b0aba65561fd8f05576857aae2"
 
 
 def _selection_service(status="stable", reasons=()):
@@ -155,7 +155,7 @@ class ExecutionVariantCharacterizationTests(unittest.TestCase):
         self.assertEqual(
             artifact, validate_execution_variant_characterization(artifact)
         )
-        self.assertEqual((4, True, True, []), (
+        self.assertEqual((8, True, True, []), (
             artifact["corpus"]["case_count"], artifact["equivalent"],
             artifact["fixed"], artifact["mismatches"],
         ))

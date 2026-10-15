@@ -200,15 +200,11 @@ class AnalysisSdkMixin:
             "compare_start": compare_start,
             "compare_end": compare_end,
         }
+        page_size = spec.get("page_size")
+        item_budget = max(200, page_size) if type(page_size) is int else 200
         context = AdapterContext(
-            "execution_variant",
-            "execution_variant",
-            "composite",
-            selected_workspace,
-            tuple(output_fields or ()),
-            (),
-            5,
-            200,
+            "execution_variant", "execution_variant", "composite",
+            selected_workspace, tuple(output_fields or ()), (), 5, item_budget,
         )
         return execute_analysis_query_plan(self, request, context)
 

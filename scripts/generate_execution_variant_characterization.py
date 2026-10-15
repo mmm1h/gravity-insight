@@ -67,7 +67,17 @@ def build_artifact() -> dict[str, Any]:
     request = _request()
     cases = []
     product = product_reference()
-    for case_id in ("success", "empty", "contract_drift", "runtime_failure"):
+    outcomes = ("success", "empty", "contract_drift", "runtime_failure")
+    for case_id in (*outcomes, *(f"extended_{item}" for item in outcomes)):
+        request = _request()
+        if case_id.startswith("extended_"):
+            spec = request["spec"]
+            spec["date_ranges"] = [
+                {"start": spec.pop("start"), "end": spec.pop("end")},
+                {"start": "2026-08-03", "end": "2026-08-04"},
+            ]
+            spec["formulas"] = [{"name": "ratio", "formula": "x1", "steps": spec.pop("steps")}]
+            spec.update(user_filters={"country": ["CN"]}, calculate_y=True, page_size=500)
         baseline = _execute(case_id, DIRECT_VARIANT_URI, request, workspace, product)
         candidate = _execute(case_id, PLAN_VARIANT_URI, request, workspace, product)
         cases.append(
@@ -86,11 +96,13 @@ def _execute(
     workspace: Any,
     product: dict[str, str],
 ) -> dict[str, Any]:
-    raw = _result(case_id)
+    raw = _result(case_id.removeprefix("extended_"))
+    if case_id.startswith("extended_"):
+        raw["completeness"] = "unknown"
     insight = _FixtureInsight(raw)
     sdk = GravitySDK(insight=insight, workspace=workspace)
     context = AdapterContext(
-        "variant", "variant", "composite", workspace, (), (), 5, 200
+        "variant", "variant", "composite", workspace, (), (), 5, 500
     )
     output = execute_fixed_analysis_query_event_variant(
         sdk, copy.deepcopy(request), context, variant_uri

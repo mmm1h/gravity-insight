@@ -356,7 +356,7 @@ gravity analysis query batch --input d0-cohorts.json --concurrency 4
 ```
 
 Analysis Spec 是紧凑、显式输入，不接受自然语言补业务字段。编译预览会脱敏条件值；event、funnel、
-retention、property、scatter 的精确 schema 由 `--spec-schema` 返回。
+retention、property、scatter 的精确 schema 由 `--spec-schema` 返回。Event 支持公式、最多十个 date_ranges 与用户筛选；page_size 仅限制行数，不证明完整。
 
 `batch` 保留每个 spec 的独立时间窗和筛选语义，适合把每个注册日写成一个 D0 cohort event spec。
 实际执行从 `--concurrency` 开始；组件若返回 `category=upstream` 且 `retryable=true`，只重试这些组件，

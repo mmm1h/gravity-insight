@@ -1,12 +1,12 @@
 {
-  "classification_policy_sha256": "a15e723ccd74a4c25dfa2bc31e3ac49e1b88138e8f004df951a63e28e2b4fe3f",
+  "classification_policy_sha256": "6ba930c7d6a0723546f43df76c8488c41ee6c5ff97449bcdbb8eadfc13d3ef5a",
   "graph_definition_id": "gravity-insight-runtime-possible-module-dependency-graph.v1",
   "graph_definition_sha256": "b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326",
   "maximum_ast_only_scc_size": 17,
   "maximum_direction_violation_count": 10,
   "minimum_classification_coverage": {
-    "classified_module_count": 223,
-    "module_count": 736
+    "classified_module_count": 226,
+    "module_count": 739
   },
   "protected_non_root_unclassified_modules": [
     "gravity_insight.operators",
@@ -81,8 +81,11 @@
     "gravity_insight.analysis_spec",
     "gravity_insight.analysis_spec_cli",
     "gravity_insight.analysis_spec_controls",
+    "gravity_insight.analysis_spec_event_schema",
+    "gravity_insight.analysis_spec_input",
     "gravity_insight.analysis_spec_preview",
     "gravity_insight.analysis_spec_schema",
+    "gravity_insight.analysis_spec_schema_support",
     "gravity_insight.analysis_spec_validation",
     "gravity_insight.app_snapshot",
     "gravity_insight.artifact_transfer",

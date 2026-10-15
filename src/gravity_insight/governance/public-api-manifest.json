@@ -477,6 +477,11 @@
       "attribute": "AnalysisFilter"
     },
     {
+      "name": "AnalysisFormula",
+      "module": ".analysis_primitives",
+      "attribute": "AnalysisFormula"
+    },
+    {
       "name": "AnalysisMetric",
       "module": ".analysis_primitives",
       "attribute": "AnalysisMetric"

@@ -39,6 +39,8 @@ from ._field_policy_operations import (
 from ._field_policy_retention import validate_retention_before_after
 from ._field_policy_segment import validate_analysis_segment_rule_shape
 from ._field_policy_shared import (
+    ANALYSIS_EVENT_TARGET_METHODS,
+    ANALYSIS_TARGET_METHODS,
     ANALYSIS_QUERY_ID_RE,
     ANALYSIS_FIXED_EVENT_FIELDS,
     AnalysisReferences,
@@ -229,14 +231,22 @@ def _validate_query_items(
         minimum = 0
     else:
         minimum = 1
-    maximum = 2 if query_kind == "retention" else 50
+    maximum = 2 if query_kind == "retention" else (100 if query_kind == "event" else 50)
     if query_kind == "scatter":
         validate_analysis_scatter_items(
             value, references, minimum=minimum, maximum=maximum
         )
     else:
         validate_analysis_event_items(
-            value, references, minimum=minimum, maximum=maximum
+            value,
+            references,
+            minimum=minimum,
+            maximum=maximum,
+            methods=(
+                ANALYSIS_EVENT_TARGET_METHODS
+                if query_kind == "event"
+                else ANALYSIS_TARGET_METHODS
+            ),
         )
 
 
@@ -270,6 +280,32 @@ def _validate_event_controls(
     validate_analysis_split_event(inputs.get("split_event", {}), references)
     validate_analysis_aggregate_config(inputs.get("aggregate_config", {}))
     validate_analysis_extra_data(inputs.get("extra_data", {}))
+    validate_analysis_filter_map(
+        inputs.get("user_filtering", {}), references.user_fields, "user_filtering"
+    )
+    for field in ("calc_y", "calc_layer_y", "return_hierarchy_list"):
+        value = inputs.get(field, False)
+        if not isinstance(value, bool):
+            raise InputValidationError(
+                f"actual value: {actual_value(value)}; {field} must be true or false; "
+                "request was not sent",
+                field=field,
+            )
+    page_size = inputs.get("page_size")
+    if page_size is not None and (
+        not isinstance(page_size, int)
+        or isinstance(page_size, bool)
+        or not 1 <= page_size <= 10_000
+    ):
+        raise InputValidationError(
+            f"actual value: {actual_value(page_size)}; page_size must be an integer "
+            "from 1 through 10000; request was not sent",
+            field="page_size",
+            next_action=(
+                "Use page_size only as a bounded Event row limit; it is not a page "
+                "number or completeness proof."
+            ),
+        )
 
 
 def _validate_retention_controls(
@@ -311,11 +347,11 @@ def _validate_retention_controls(
 
 
 def validate_analysis_date_list(value: Any, query_kind: str) -> None:
-    maximum = 2 if query_kind == "event" else 1
+    maximum = 10 if query_kind == "event" else 1
     if not isinstance(value, (list, tuple)) or not 1 <= len(value) <= maximum:
         raise InputValidationError(
             f"actual value: {actual_value(type(value).__name__) if not isinstance(value, (list, tuple)) else len(value)}; "
-            "analysis date_list must contain 1 window, or 2 windows for event queries; "
+            "analysis date_list must contain 1 window, or up to 10 windows for event queries; "
             "request was not sent",
             field="date_list",
         )

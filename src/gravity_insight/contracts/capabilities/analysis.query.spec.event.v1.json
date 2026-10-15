@@ -11,13 +11,13 @@
   "privacy_classification": "user_level",
   "provider": {
     "kind": "agent_product_card",
-    "fingerprint": "3d4d9141f2aa400f0cc4553567bd965843e751d84c3711dbf6ab54a8bfc0867e"
+    "fingerprint": "9151071f718d43a53e6160e06303dbd031417eaeb7264b444609111007eda79e"
   },
   "dependencies": [
     {
       "identity_kind": "operation",
       "selector": "analysis.event.query",
-      "contract_version": "1",
+      "contract_version": "2",
       "minimum_trust": "stable",
       "completeness": "unknown",
       "data_quality": "pass"

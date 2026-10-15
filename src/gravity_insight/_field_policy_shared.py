@@ -16,7 +16,7 @@ MetadataLoader = Callable[[str, Mapping[str, Any]], Mapping[str, Any]]
 
 ANALYSIS_QUERY_ID_RE = re.compile(r"^\d{13}[A-Za-z0-9]{19}$")
 ANALYSIS_CONTROL_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
-ANALYSIS_FORMULA_RE = re.compile(r"^[xX0-9+*/().\s-]{1,256}$")
+ANALYSIS_FORMULA_RE = re.compile(r"^[xX0-9+*/().\s-]{1,1000}$")
 ANALYSIS_TARGET_METHODS = frozenset(
     {
         "PresetAllCount",
@@ -32,6 +32,9 @@ ANALYSIS_TARGET_METHODS = frozenset(
         "ListSetDistinctCount",
         "ListElementDistinctCount",
     }
+)
+ANALYSIS_EVENT_TARGET_METHODS = ANALYSIS_TARGET_METHODS | frozenset(
+    {"Median", "StdDev", "VarSamp"}
 )
 RETENTION_ADDITIVE_FOLLOWUP_GAP_CODE = (
     "RETENTION_ADDITIVE_FOLLOWUP_COHORT_PATH_UNVERIFIED"

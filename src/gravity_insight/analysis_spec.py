@@ -14,7 +14,8 @@ from typing import Any
 from ._field_policy_analysis import validate_analysis_shape
 from .actionable_error_values import actual_value, allowed_values
 from .analysis_spec_preview import prepare_query_spec_preview
-from .analysis_execution_support import is_analysis_time_group, reject_unsupported_property_groups
+from .analysis_execution_support import reject_unsupported_property_groups
+from .analysis_spec_input import compile_dated_query, compile_metric
 from .analysis_spec_schema import (
     ANALYSIS_SPEC_KINDS,
     ANALYSIS_TIME_GROUPS_BY_KIND,
@@ -25,22 +26,15 @@ from .analysis_spec_schema import (
     analysis_query_spec_schema,
 )
 from .analysis_spec_controls import (
-    apply_scatter_zone,
-    funnel_window,
-    retention_controls,
     validate_time_grain,
 )
 from .analysis_spec_validation import (
     compile_condition_values,
-    compile_event_quantile,
-    boolean as _boolean,
     bounded_string as _bounded_string,
     choice as _choice,
-    integer_range as _integer_range,
     list_items as _list,
     logic as _logic,
     mapping as _mapping,
-    optional_string as _optional_string,
     reject_keys as _reject_keys,
 )
 from .domains import ANALYSIS_QUERY_OPERATIONS, new_analysis_query_id
@@ -61,12 +55,17 @@ _KIND_FIELDS = {
         {
             "start",
             "end",
+            "date_ranges",
             "steps",
+            "formulas",
             "time_grain",
             "global_filters",
             "global_logic",
+            "user_filters",
+            "calculate_y",
             "calculate_layer_y",
             "return_hierarchy_list",
+            "page_size",
             "aggregate",
         }
     ),
@@ -132,11 +131,12 @@ class CompiledAnalysisQuery:
         selected_id = node_id or (
             f"analysis_{self.kind}_{self.inputs['query_id'][-8:].casefold()}"
         )
+        item_budget = max(200, int(self.inputs.get("page_size", 0) or 0))
         return {
             "id": selected_id,
             "kind": "run",
             "request": {"selector": self.operation_id, "inputs": self.inputs},
-            "limits": {"max_pages": 1, "max_items": 200},
+            "limits": {"max_pages": 1, "max_items": item_budget},
         }
 
 
@@ -171,7 +171,7 @@ def compile_query_spec(
     if selected_kind == "property":
         _compile_property(values, inputs)
     else:
-        _compile_dated_query(
+        compile_dated_query(
             selected_kind,
             values,
             inputs,
@@ -236,59 +236,8 @@ def validate_query_spec(
     return compiled, validation
 
 
-def _compile_dated_query(
-    kind: str,
-    spec: Mapping[str, Any],
-    inputs: dict[str, Any],
-    *,
-    start: str | None,
-    end: str | None,
-) -> None:
-    selected_start = start if start is not None else spec.get("start")
-    selected_end = end if end is not None else spec.get("end")
-    inputs["date_list"] = [_date_range(selected_start, selected_end)]
-    steps = _steps(spec.get("steps"), kind)
-    inputs["query_item_list"] = [
-        _event_step(item, index=index, kind=kind)
-        for index, item in enumerate(steps)
-    ]
-    if kind in {"event", "funnel"}:
-        inputs["global_conditions"] = _list(spec.get("global_filters", []), "global_filters", 100)
-        inputs["global_cond_logic"] = _logic(spec.get("global_logic", "AND"), "global_logic")
-    if kind == "event":
-        inputs["calc_layer_y"] = _boolean(spec.get("calculate_layer_y", False), "calculate_layer_y")
-        if "return_hierarchy_list" in spec:
-            inputs["return_hierarchy_list"] = _boolean(
-                spec["return_hierarchy_list"], "return_hierarchy_list"
-            )
-        if "aggregate" in spec:
-            inputs["aggregate_config"] = dict(_mapping(spec["aggregate"], "aggregate"))
-        inputs["extra_data"] = {"client_server_time": "CLIENT"}
-    elif kind == "funnel":
-        inputs["stat_time_window"] = funnel_window(spec.get("window"))
-        inputs["to_calc_each_day"] = _boolean(
-            spec.get("calculate_each_day", False), "calculate_each_day"
-        )
-    elif kind == "retention":
-        inputs.update(retention_controls(spec))
-        if spec.get("time_grain") is None and not any(
-            is_analysis_time_group(item) for item in inputs.get("group_by_list", ())
-        ):
-            inputs["group_by_list"] = [
-                {
-                    "type": "default_event",
-                    "field": "create_time",
-                    "group_by": "day",
-                },
-                *inputs.get("group_by_list", ()),
-            ]
-    elif kind == "scatter":
-        apply_scatter_zone(inputs["query_item_list"][0], spec.get("zone"))
-        inputs["extra_data"] = {"client_server_time": "CLIENT"}
-
-
 def _compile_property(spec: Mapping[str, Any], inputs: dict[str, Any]) -> None:
-    target = _metric(spec.get("property"), "property", require_data_type=True)
+    target = compile_metric(spec.get("property"), "property", require_data_type=True)
     label = str(target.pop("label", ""))
     conditions = _list(spec.get("conditions", []), "conditions", 100)
     inputs["query_item"] = {
@@ -339,61 +288,6 @@ def _copy_shared_controls(spec: Mapping[str, Any], inputs: dict[str, Any]) -> No
         )
 
 
-def _event_step(value: Mapping[str, Any], *, index: int, kind: str) -> dict[str, Any]:
-    item = _mapping(value, f"steps[{index}]")
-    allowed = {"event", "metric", "label", "conditions", "condition_logic"}
-    _reject_keys(item, allowed, f"steps[{index}]")
-    event = _bounded_string(item.get("event"), f"steps[{index}].event")
-    metric = _metric(item.get("metric"), f"steps[{index}].metric")
-    if kind == "event":
-        compile_event_quantile(metric, f"steps[{index}].metric")
-    label = _optional_string(item.get("label"), f"steps[{index}].label", event)
-    step = {
-        "event_name": event,
-        "event_label": label,
-        "custom_name": label,
-        "target": metric,
-        "conditions": _list(item.get("conditions", []), f"steps[{index}].conditions", 100),
-        "cond_logic": _logic(item.get("condition_logic", "AND"), f"steps[{index}].condition_logic"),
-        "event_index": index,
-    }
-    if kind == "scatter":
-        step["prop_to_calc"] = metric["field"]
-        step["prop_to_calc_sub"] = "" if metric["name"] == metric["field"] else metric["name"]
-    return step
-
-
-def _metric(value: Any, field: str, *, require_data_type: bool = False) -> dict[str, Any]:
-    item = _mapping(value, field)
-    allowed = {"field", "aggregation", "dimension_table"}
-    allowed |= {"label", "data_type", "source"} if require_data_type else {"quantile"}
-    _reject_keys(item, allowed, field)
-    metric_field = _bounded_string(item.get("field"), f"{field}.field")
-    aggregation = _bounded_string(item.get("aggregation"), f"{field}.aggregation")
-    result = {"field": metric_field, "name": aggregation}
-    if "label" in item:
-        result["label"] = _optional_string(item["label"], f"{field}.label", "")
-        result["cname"] = result["label"]
-    if require_data_type:
-        result["data_type"] = _bounded_string(item.get("data_type"), f"{field}.data_type")
-        result.setdefault("cname", "")
-        if "source" in item:
-            result["type"] = _bounded_string(item["source"], f"{field}.source")
-    elif "quantile" in item:
-        quantile = item["quantile"]
-        if not isinstance(quantile, (int, float)) or isinstance(quantile, bool):
-            raise InputValidationError(
-                f"actual value: {actual_value(quantile)}; allowed type: number",
-                field=f"{field}.quantile",
-            )
-        result["quantile_level"] = quantile
-    if "dimension_table" in item:
-        result["dim_using_table_name"] = _bounded_string(
-            item["dimension_table"], f"{field}.dimension_table"
-        )
-    return result
-
-
 def _group_by(spec: Mapping[str, Any]) -> list[dict[str, Any]]:
     result: list[dict[str, Any]] = []
     grain = spec.get("time_grain")
@@ -437,59 +331,6 @@ def _group_by(spec: Mapping[str, Any]) -> list[dict[str, Any]]:
                 group[target_key] = item[source_key]
         result.append(group)
     return result
-
-
-def _steps(value: Any, kind: str) -> list[Mapping[str, Any]]:
-    items = _list(value, "steps", 50)
-    minimum = 2 if kind in {"funnel", "retention"} else 1
-    maximum = (
-        2
-        if kind == "retention"
-        else (1 if kind == "scatter" else (20 if kind == "funnel" else 50))
-    )
-    if not minimum <= len(items) <= maximum:
-        qualifier = "exactly 2" if minimum == maximum else f"{minimum} through {maximum}"
-        raise InputValidationError(
-            f"actual value: {len(items)} items; allowed count: {qualifier} items",
-            field="steps",
-        )
-    return [_mapping(item, f"steps[{index}]") for index, item in enumerate(items)]
-
-
-def _date_range(start: Any, end: Any) -> dict[str, str]:
-    from datetime import date
-
-    if not isinstance(start, str) or not isinstance(end, str):
-        raise InputValidationError(
-            f"actual value: {actual_value({'start': start, 'end': end})}; allowed "
-            "format: ISO dates for both fields",
-            field="start/end",
-            next_action=(
-                "Set spec.start and spec.end to inclusive YYYY-MM-DD, or pass "
-                "paired `--start/--end` (ISO or a closed relative phrase such as "
-                "`last 7 days`)."
-            ),
-        )
-    try:
-        start_date, end_date = date.fromisoformat(start), date.fromisoformat(end)
-    except ValueError as exc:
-        raise InputValidationError(
-            f"actual value: {actual_value({'start': start, 'end': end})}; allowed "
-            "format: ISO dates for both fields",
-            field="start/end",
-            next_action=(
-                "Set spec.start and spec.end to inclusive YYYY-MM-DD, or pass "
-                "paired `--start/--end` (ISO or a closed relative phrase such as "
-                "`last 7 days`)."
-            ),
-        ) from exc
-    if start_date > end_date or (end_date - start_date).days > 90:
-        raise InputValidationError(
-            f"actual value: {actual_value({'start': start, 'end': end})}; allowed "
-            "range: ordered ISO dates spanning no more than 90 days",
-            field="start/end",
-        )
-    return {"start_date": start, "end_date": end}
 
 
 def _workspace(value: Workspace | str | None) -> Workspace:

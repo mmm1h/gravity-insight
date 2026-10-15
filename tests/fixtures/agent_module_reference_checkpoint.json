@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "09dbc4cc35734044563f4304ed0d15d574b7c904856c4fdc83413483f4bc5968",
-    "manual_review_sha256": "62ead62c0ca005abea62b62d7add4eb674cb7c0361e85cd55812cb2718ef75f7",
+    "reference_evidence_sha256": "e2a756e3823b343075596b30cef3b61e8609121db82438d054eda1cfec1d84d0",
+    "manual_review_sha256": "e3902142c80151e7516d004b9ac826d5b3503e5c8da6f0365d3556655d57e8a8",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3309,
-    "scanned_file_count": 3301,
+    "version_controlled_file_count": 3313,
+    "scanned_file_count": 3305,
     "excluded_files": [
       ".env.example",
       "scripts/audit_agent_module_references.py",
@@ -833,7 +833,7 @@
     "dispositions": {
       "no_migration_effect": 362
     },
-    "sites_sha256": "a33b1fb897dce81b67b1108ea97d7728d89109b6b221d87134ebc08b832e7431"
+    "sites_sha256": "4fa2822ca71d1ab0315ca98686f9b39b50d08acfb514fac0a87af51ff5b0a4e8"
   },
   "blockers": [],
   "site_fields": [
@@ -1001,7 +1001,7 @@
       }
     ],
     [
-      "src/gravity_insight/__init__.py:274:21:import_module",
+      "src/gravity_insight/__init__.py:275:21:import_module",
       "rm",
       "dynamic_import",
       "module_name",
@@ -1196,7 +1196,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22945:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22950:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1211,7 +1211,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:69789:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:69858:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
