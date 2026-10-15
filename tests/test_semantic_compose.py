@@ -13,7 +13,8 @@ from gravity_insight.agents.unavailable_report import (
     POST_REGISTRATION_USER_GROUP_COST_GAP_CODE as AGENT_POST_REGISTRATION_USER_GROUP_COST_GAP_CODE,
 )
 from gravity_insight.plan import AdapterContext
-from gravity_insight.plan_semantic_compose_adapter import validate_semantic_compose_plan
+from gravity_insight.plan_semantic_compose_adapter import project_semantic_compose_result, validate_semantic_compose_plan
+from gravity_insight.plan_multidim_result import project_multidim_result
 from gravity_insight.semantic_compose import (
     SEMANTIC_COMPOSE_INPUT_SCHEMA_VERSION,
     compiled_semantic_bytes,
@@ -279,6 +280,38 @@ class SemanticComposeTests(unittest.TestCase):
         self.assertIn("not guaranteed to return identical values", statements[0])
         self.assertIn("only as separately timestamped observations", statements[1])
         self.assertIn("not as replay-equivalent, stable, settled, or causal", statements[1])
+
+    def test_source_fetch_time_survives_semantic_and_plan_projections_without_clock_conversion(self):
+        stamp = "2026-01-12T03:04:05.123456+05:30"
+        native = native_result()
+        native["query"]["fetched_at"] = stamp
+        with patch("gravity_insight.semantic_compose.run_multidim_query", return_value=native) as run:
+            result = run_semantic_compose(object(), request("day", definition=DEFINITION_V5), app_id=APP_ID)
+        planned = project_semantic_compose_result(result, ("result", "allowed_claims", "validation"), None)
+        component = project_multidim_result(planned["result"], ("query",), None)["query"]
+        self.assertEqual(stamp, component["fetched_at"])
+        self.assertEqual("available", component["fetched_at_availability"])
+        self.assertEqual("source_fetch_observation", component["fetched_at_semantics"])
+        self.assertEqual(3, len(planned["allowed_claims"]))
+        self.assertEqual("available", planned["validation"]["source_fetched_at"])
+        self.assertEqual(1, run.call_count)
+        self.assertNotIn("as_of", component)
+
+    def test_unavailable_source_time_withholds_only_timestamp_dependent_claims(self):
+        cases = ((DEFINITION_V4, None), (DEFINITION_V5, None), (DEFINITION_V5, "2026-01-12T03:04:05"), (DEFINITION_V5, "not-a-time-private-marker"))
+        for definition, stamp in cases:
+            with self.subTest(version=definition["version"], stamp=stamp):
+                native = native_result()
+                native["query"]["fetched_at_availability"] = "available"
+                if stamp is not None:
+                    native["query"]["fetched_at"] = stamp
+                with patch("gravity_insight.semantic_compose.run_multidim_query", return_value=native):
+                    result = run_semantic_compose(object(), request("day", definition=definition), app_id=APP_ID)
+                self.assertEqual((None, "unavailable"), (result["result"]["query"]["fetched_at"], result["validation"]["source_fetched_at"]))
+                self.assertEqual(["native-cost-grain-boundary"] if definition == DEFINITION_V5 else [], [claim["claim_id"] for claim in result["allowed_claims"]])
+                self.assertEqual(["observed-metric-value", "within-result-comparison"], result["validation"]["withheld_claims"])
+                self.assertEqual(12.5, result["result"]["query"]["data"]["list"][0]["ap_cost"])
+                self.assertNotIn("private-marker", json.dumps(result))
 
     def test_v5_declares_native_cost_grain_provenance_and_estimation_policy(self):
         definition = definition_by_id("report.ap-cost-observation", 5)

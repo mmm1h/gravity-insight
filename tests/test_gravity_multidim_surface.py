@@ -306,6 +306,12 @@ class MultidimSurfaceTests(unittest.TestCase):
         self.assertNotIn("token=secret", repr(safe))
         self.assertNotIn("C:/private", repr(safe))
         self.assertNotIn("data", safe["query"])
+        self.assertEqual((None, "unavailable"), (safe["query"]["fetched_at"], safe["query"]["fetched_at_availability"]))
+        self.assertEqual("failed", safe["query"]["obligations"]["execution_status"]["state"])
+        native["status"] = native["query"]["status"] = "partial"
+        partial = sanitize_multidim_result(native, "17")
+        self.assertEqual("partial", partial["query"]["status"])
+        self.assertEqual("partial", partial["query"]["obligations"]["execution_status"]["state"])
 
     def test_multidim_ndjson_streams_each_query_row(self):
         from gravity_insight import cli

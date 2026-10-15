@@ -291,11 +291,25 @@ def run_semantic_compose(
     )
     safe = sanitize_multidim_result(native, str(app_id))
     ok = safe.get("ok") is True and safe.get("status") in {"success", "empty"}
+    observed = safe["query"].get("fetched_at") is not None
+    timestamp_dependent = (
+        compiled["definition"]["definition_id"] == "report.ap-cost-observation"
+        and compiled["definition"]["version"] in (4, 5)
+    )
+    withheld = [
+        claim["claim_id"] for claim in compiled["allowed_claims"]
+        if ok and timestamp_dependent and not observed
+        and claim["claim_id"] in {"observed-metric-value", "within-result-comparison"}
+    ]
     validation = {
         **compiled["validation"],
         "network_called": True,
         "live_metadata": copy.deepcopy(safe.get("validation")),
         "result_eligible": ok,
+        "source_fetched_at": "available" if observed else "unavailable",
+        "source_fetched_at_semantics": "source_fetch_observation_not_dataset_as_of",
+        "provenance_gap_code": None if observed else "SOURCE_FETCH_TIMESTAMP_UNAVAILABLE",
+        "withheld_claims": withheld,
     }
     result = {
         "schema_version": SEMANTIC_COMPOSE_RESULT_SCHEMA_VERSION,
@@ -305,7 +319,7 @@ def run_semantic_compose(
         "semantic_members": compiled["semantic_members"],
         "generated_query": compiled["generated_query"],
         "validation": validation,
-        "allowed_claims": compiled["allowed_claims"] if ok else [],
+        "allowed_claims": [claim for claim in compiled["allowed_claims"] if claim["claim_id"] not in withheld] if ok else [],
         "operation_id": safe.get("operation_id", MULTIDIM_QUERY_OPERATION),
         "network_called": True,
         "query_executed": True,

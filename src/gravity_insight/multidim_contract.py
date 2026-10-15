@@ -1,12 +1,18 @@
-"""Contract-derived cohort horizon rules for governed Multidim requests."""
+"""Governed Multidim controls, source observation and cohort rules."""
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
+import re
 from typing import Any, NoReturn
 
+from .contracts.envelope_obligations import (
+    CompletenessState, DataCompleteness, EnvelopeObligations, ExecutionState,
+    ExecutionStatus, MutationCertainty, MutationState, SemanticState,
+    SemanticValidity, diagnostic_evidence,
+)
 from .errors import (
     ErrorCategory,
     GravityInsightError,
@@ -49,6 +55,50 @@ _READING_STATUSES = frozenset(
     }
 )
 _MAX_DENOMINATOR = 9_223_372_036_854_775_807
+
+
+def multidim_component_observation(
+    fetched_at: Any, *, status: str, error: Mapping[str, Any] | None,
+) -> tuple[dict[str, Any], EnvelopeObligations]:
+    """Decide source-read provenance separately from source completeness."""
+    stamp = _source_fetched_at(fetched_at)
+    observation = {
+        "fetched_at": stamp,
+        "fetched_at_availability": "available" if stamp is not None else "unavailable",
+        "fetched_at_semantics": "source_fetch_observation",
+    }
+    execution = (
+        ExecutionState.COMPLETE if status in {"success", "empty"}
+        else ExecutionState.PARTIAL if status == "partial" else ExecutionState.FAILED
+    )
+    codes = {
+        ExecutionState.COMPLETE: "MULTIDIM_READ_RETURNED",
+        ExecutionState.PARTIAL: "MULTIDIM_READ_PARTIAL",
+        ExecutionState.FAILED: "MULTIDIM_READ_REJECTED",
+    }
+    obligations = EnvelopeObligations(
+        ExecutionStatus(execution, codes[execution]),
+        DataCompleteness(CompletenessState.UNKNOWN, "MULTIDIM_SOURCE_COVERAGE_UNPROVEN"),
+        SemanticValidity(SemanticState.UNKNOWN, ("SOURCE_DATASET_AS_OF_UNAVAILABLE",)),
+        diagnostic_evidence(error),
+        MutationCertainty(MutationState.NOT_APPLICABLE, "MULTIDIM_READ_ONLY"),
+    )
+    return observation, obligations
+
+
+def _source_fetched_at(value: Any) -> str | None:
+    if not isinstance(value, str) or len(value) > 64 or re.fullmatch(
+        r"[0-9]{4}-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,9})?(?:Z|[+-][0-9]{2}:[0-9]{2})",
+        value,
+    ) is None or value.endswith("-00:00"):
+        return None
+    try:
+        selected = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return value if selected.utcoffset() is not None else None
+    except ValueError:
+        return None
+
+
 _STANDARD_DENOMINATOR_GAP_REASON = (
     "registered contracts and sanitized probe evidence establish the two aggregate "
     "field paths but do not define standard_activate_cnt cohort inclusion, exclusion, "

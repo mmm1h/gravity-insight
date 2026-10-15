@@ -26,6 +26,7 @@ Target release: `0.3.27`
 
 ### Fixed
 
+- Multidim and Semantic Compose now preserve each source component's valid timezone-aware `fetched_at` through Plan projection. Missing or invalid source time stays explicitly unavailable; v4/v5 timestamp-dependent claims are withheld while other supported boundaries remain. Fetch time never becomes a dataset as-of, settlement or maturity guarantee (#284).
 - User-event reads now expose typed `user_event_scope` metadata: query-item conditions filter timeline rows while native summary remains unfiltered; a filtered matching total is unavailable. Equal totals and empty final pages cannot certify content closure, and same-timestamp occurrences remain intact. SDK/CLI/Plan and user-journey continuation preserve this unknown boundary without changing rows, native counts, request volume or empty/error states (#286, #295). Order Directory failures distinguish native projection, envelope, row and pagination rejection with bounded paths/types and declared schema versions; missing native evidence stays unavailable (#281).
 - Multidim first-day revenue totals now request and live-validate the registered `standard_1day_pay_amount` and `ad_1day_amount` dependencies in the same query before calling native totals. Missing or null dependency columns fail explicitly; ordinary reads retain their selected metrics and no local monetary total is substituted (#279).
 
