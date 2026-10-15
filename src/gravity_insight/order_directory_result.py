@@ -5,6 +5,12 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+from functools import lru_cache
+from .composite_catalog import stable_operation
+from .models import load_operation_manifest
+from .paths import MANIFEST_ROOT
+from .result_audit import result_response_drift
+
 from ._order_read import (
     SAFE_ROW_FIELDS,
     canonical_app,
@@ -13,6 +19,9 @@ from ._order_read import (
     exact_dated_safe_row,
 )
 from ._order_directory_failure import (
+    _bounded_drift,
+    build_contract_diagnostic as _build_contract_diagnostic,
+    sanitize_contract_diagnostic,
     failure_message,
     is_builtin_code,
     native_failure_receipt,
@@ -23,6 +32,11 @@ from ._order_directory_failure import (
 )
 from .errors import ErrorCode, ErrorDetail, exit_code_for_error
 from .result_source import GOVERNED_PRODUCT, result_source
+from .contracts.envelope_obligations import (
+    CompletenessState, DataCompleteness, EnvelopeObligations,
+    ExecutionState, ExecutionStatus, MutationCertainty, MutationState,
+    SemanticState, SemanticValidity, diagnostic_evidence, serialize_envelope,
+)
 
 
 SCHEMA_VERSION = "gravity-insight.order-directory.v1"
@@ -62,6 +76,36 @@ _ACTIONS = {
     "budget": "Increase the bounded page or item limit and retry the same day.",
     "contract": "Stop automation until the Order Directory contract is re-verified.",
 }
+
+
+
+
+@lru_cache(maxsize=1)
+def _operation_contract() -> tuple[str, str]:
+    identity = stable_operation("analysis", "order_detail", action="list").operation_id
+    spec = next(
+        spec for path in sorted(MANIFEST_ROOT.glob("*.json"))
+        for spec in load_operation_manifest(path) if spec.operation_id == identity
+    )
+    return identity, str(spec.contract_version)
+
+
+def build_contract_diagnostic(
+    layer: str, response_drift: Any, *, product_schema_version: str
+) -> dict[str, Any]:
+    return _build_contract_diagnostic(
+        layer, response_drift, operation_contract=_operation_contract(),
+        product_schema_version=product_schema_version,
+    )
+
+def native_contract_diagnostic(value: Any, *, product_schema_version: str) -> dict[str, Any]:
+    audit = value.get("result_audit") if isinstance(value, Mapping) else None
+    raw = audit.get("response_drift") if isinstance(audit, Mapping) else None
+    # Bound work before the general audit normalizer can inspect native fields.
+    drift = result_response_drift(value) if _bounded_drift(raw) else None
+    return build_contract_diagnostic("leaf_projection", drift, product_schema_version=product_schema_version)
+
+
 
 
 def success_result(
@@ -109,6 +153,7 @@ def failure_result(
     max_items: int,
     max_workers: int,
     retry_after_ms: int | None = None,
+    contract_diagnostic: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     normalized = normalize_code(code)
     resolved_stage = (
@@ -122,7 +167,7 @@ def failure_result(
         retry_after_ms=safe_retry_after(normalized, retry_after_ms),
         next_action=_ACTIONS[resolved_stage],
     )
-    return {
+    result = {
         "schema_version": SCHEMA_VERSION,
         "result_source": result_source(GOVERNED_PRODUCT),
         "ok": False,
@@ -141,6 +186,23 @@ def failure_result(
         "error": detail.to_dict(),
         "next_action": detail.next_action,
     }
+    diagnostic = sanitize_contract_diagnostic(
+        contract_diagnostic, operation_contract=_operation_contract(),
+        product_schema_version=SCHEMA_VERSION,
+    )
+    if normalized == ErrorCode.CONTRACT_CHANGED.value and diagnostic is not None:
+        result["contract_diagnostic"] = diagnostic
+    return serialize_envelope(result, _failure_obligations(detail.to_dict()))
+
+
+def _failure_obligations(error: Mapping[str, Any]) -> EnvelopeObligations:
+    return EnvelopeObligations(
+        ExecutionStatus(ExecutionState.FAILED, "ORDER_DIRECTORY_RESULT_REJECTED"),
+        DataCompleteness(CompletenessState.UNKNOWN, "ORDER_DIRECTORY_NO_ACCEPTED_ROWS"),
+        SemanticValidity(SemanticState.UNKNOWN, ("ORDER_DIRECTORY_RESULT_REJECTED",)),
+        diagnostic_evidence(error),
+        MutationCertainty(MutationState.NOT_APPLICABLE, "ORDER_DIRECTORY_READ_ONLY"),
+    )
 
 
 def failure_from_native(
@@ -153,6 +215,10 @@ def failure_from_native(
     max_workers: int,
 ) -> dict[str, Any]:
     code, stage, retry_after = native_failure_receipt(value)
+    diagnostic = (
+        build_contract_diagnostic("native_read", None, product_schema_version=SCHEMA_VERSION)
+        if code == ErrorCode.CONTRACT_CHANGED.value else None
+    )
     return failure_result(
         app_id=app_id,
         date=date,
@@ -162,6 +228,7 @@ def failure_from_native(
         max_items=max_items,
         max_workers=max_workers,
         retry_after_ms=retry_after,
+        contract_diagnostic=diagnostic,
     )
 
 
@@ -180,8 +247,7 @@ def sanitize_order_directory_result(
     date = _expected_date(expected_date)
     limits = _limits(max_pages, max_items, max_workers)
     if (
-        not isinstance(value, Mapping)
-        or set(value) != _ENVELOPE_KEYS
+        not _valid_result_fields(value)
         or value.get("schema_version") != SCHEMA_VERSION
         or value.get("app_id") != app_id
         or value.get("date") != date
@@ -202,6 +268,18 @@ def sanitize_order_directory_result(
     ):
         return _sanitize_failure(value, app_id, date, limits)
     return _contract_result(app_id, date, limits)
+
+
+def _valid_result_fields(value: Any) -> bool:
+    if not isinstance(value, Mapping) or not _ENVELOPE_KEYS <= set(value):
+        return False
+    extra = set(value) - _ENVELOPE_KEYS
+    if extra - {"contract_diagnostic", "obligations"}:
+        return False
+    status = value.get("status")
+    if extra and (not isinstance(status, str) or status not in {"error", "contract_changed"}):
+        return False
+    return "contract_diagnostic" not in extra or value.get("status") == "contract_changed"
 
 
 def order_directory_item_count(value: Any) -> int:
@@ -306,14 +384,18 @@ def _sanitize_failure(
     if selected is None:
         return _contract_result(app_id, date, limits)
     code, stage, retry_after = selected
-    return failure_result(
+    rebuilt = failure_result(
         app_id=app_id,
         date=date,
         code=code,
         stage=stage,
         retry_after_ms=retry_after,
+        contract_diagnostic=value.get("contract_diagnostic"),
         **limits,
     )
+    if "obligations" in value and value["obligations"] != rebuilt["obligations"]:
+        return _contract_result(app_id, date, limits)
+    return rebuilt
 
 
 def _validated_failure_parts(

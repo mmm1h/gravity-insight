@@ -18,13 +18,13 @@ from .actionable_error_values import actual_value
 ORDER_DIRECTORY_NAME = "order_directory"
 ORDER_DIRECTORY_FIELDS = frozenset({"name", "app", "date"})
 ORDER_DIRECTORY_OUTPUT_FIELDS = frozenset(
-    {"app_id", "data", "date", "limits", "page", "returned_items"}
+    {"app_id", "data", "date", "limits", "page", "returned_items", "contract_diagnostic"}
 )
 _TARGETS = frozenset({"/app", "/date"})
 _STRUCTURAL = frozenset(
     {
         "schema_version", "ok", "status", "exit_code", "error", "next_action",
-        "app_id", "date",
+        "app_id", "date", "obligations",
     }
 )
 

@@ -7,15 +7,20 @@ from typing import Any
 
 from . import runtime
 from ._order_read import (
+    ReadContractRejection,
     SAFE_ROW_FIELDS,
     complete_order_rows,
     exact_dated_safe_row,
+    finite_json_scalar,
     ok_matches,
+    reject_order_read,
     validate_order_read_request,
 )
 from .composite_catalog import stable_operation
 from .errors import ErrorCode
 from .order_directory_result import (
+    build_contract_diagnostic as contract_diagnostic,
+    native_contract_diagnostic,
     SCHEMA_VERSION,
     failure_from_native,
     failure_result,
@@ -118,12 +123,24 @@ def _result_from_read(
     workers: int,
 ) -> dict[str, Any]:
     if not isinstance(value, Mapping):
-        return _contract_failure(app, day, pages, items, workers)
+        rejected = reject_order_read("envelope", (), "object", value)
+        return _contract_failure(
+            app, day, pages, items, workers,
+            diagnostic=contract_diagnostic(rejected.layer, rejected.response_drift, product_schema_version=SCHEMA_VERSION),
+        )
     status = value.get("status")
+    if isinstance(status, str) and status in _CONTRACT_STATUSES:
+        return _contract_failure(
+            app, day, pages, items, workers,
+            diagnostic=native_contract_diagnostic(value, product_schema_version=SCHEMA_VERSION),
+        )
     if not isinstance(status, str) or not ok_matches(value.get("ok"), status):
-        return _contract_failure(app, day, pages, items, workers)
-    if status in _CONTRACT_STATUSES:
-        return _contract_failure(app, day, pages, items, workers)
+        field, kind = ("ok", "boolean") if isinstance(status, str) else ("status", "string")
+        rejected = reject_order_read("envelope", (field,), kind, value.get(field))
+        return _contract_failure(
+            app, day, pages, items, workers,
+            diagnostic=contract_diagnostic(rejected.layer, rejected.response_drift, product_schema_version=SCHEMA_VERSION),
+        )
     if status in _FAILURE_STATUSES:
         return failure_from_native(
             value,
@@ -139,10 +156,13 @@ def _result_from_read(
         max_pages=pages,
         max_items=items,
         max_workers=workers,
-        project_row=lambda row: exact_dated_safe_row(row, day),
+        project_row=lambda row: _directory_row(row, day),
     )
-    if complete is None:
-        return _contract_failure(app, day, pages, items, workers)
+    if isinstance(complete, ReadContractRejection):
+        return _contract_failure(
+            app, day, pages, items, workers,
+            diagnostic=contract_diagnostic(complete.layer, complete.response_drift, product_schema_version=SCHEMA_VERSION),
+        )
     rows, page = complete
     try:
         return success_result(
@@ -156,6 +176,23 @@ def _result_from_read(
         )
     except ValueError:
         return _contract_failure(app, day, pages, items, workers)
+
+
+def _directory_row(value: Any, day: str) -> dict[str, Any] | ReadContractRejection:
+    row = exact_dated_safe_row(value, day)
+    if row is not None:
+        return row
+    path = ("data", "list", "*")
+    if not isinstance(value, Mapping):
+        return reject_order_read("row", path, "object", value)
+    for field in SAFE_ROW_FIELDS:
+        if field not in value:
+            return reject_order_read("row", (*path, field), "json_scalar")
+        if not finite_json_scalar(value[field]):
+            return reject_order_read("row", (*path, field), "json_scalar", value[field])
+    if set(value) != set(SAFE_ROW_FIELDS):
+        return reject_order_read("row", path, "object", value)
+    return reject_order_read("row", (*path, "CreateTime"), "string", value["CreateTime"])
 
 
 def validate_order_directory_request(
@@ -179,8 +216,11 @@ def validate_order_directory_request(
 
 
 def _contract_failure(
-    app: str, day: str, pages: int, items: int, workers: int
+    app: str, day: str, pages: int, items: int, workers: int,
+    *, diagnostic: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
+    if diagnostic is None:
+        diagnostic = contract_diagnostic("envelope", None, product_schema_version=SCHEMA_VERSION)
     return failure_result(
         app_id=app,
         date=day,
@@ -189,6 +229,7 @@ def _contract_failure(
         max_pages=pages,
         max_items=items,
         max_workers=workers,
+        contract_diagnostic=diagnostic,
     )
 
 

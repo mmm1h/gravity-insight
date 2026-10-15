@@ -15,6 +15,7 @@ from ._order_directory_failure import (
     valid_retry_receipt,
 )
 from ._order_read import (
+    ReadContractRejection,
     canonical_app,
     canonical_date,
     complete_order_rows,
@@ -130,7 +131,7 @@ def result_from_read(
         max_workers=workers,
         project_row=lambda row: _raw_row(row, day, query.get("fields", ())),
     )
-    if complete is None:
+    if isinstance(complete, ReadContractRejection):
         return _contract_failure(app, day, limits, query=query)
     rows, page = complete
     data = value.get("data")

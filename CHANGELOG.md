@@ -26,6 +26,7 @@ Target release: `0.3.27`
 
 ### Fixed
 
+- Order Directory failures now distinguish native projection, envelope, row and pagination rejection with bounded registered paths, expected/observed types and declared schema versions. Missing native field evidence stays unavailable; Plan preserves the diagnostic and typed failure facts. Existing successful reads and upstream acceptance remain unchanged (#281).
 - Multidim first-day revenue totals now request and live-validate the registered `standard_1day_pay_amount` and `ad_1day_amount` dependencies in the same query before calling native totals. Missing or null dependency columns fail explicitly; ordinary reads retain their selected metrics and no local monetary total is substituted (#279).
 
 ## [0.3.26] - 2026-10-14

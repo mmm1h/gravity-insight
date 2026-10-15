@@ -8,6 +8,7 @@ from typing import Any
 
 from . import runtime
 from ._order_read import (
+    ReadContractRejection,
     TRACE_PARENT_FIELDS,
     complete_order_rows,
     false_or_absent,
@@ -155,7 +156,7 @@ def _read_parent(
         max_workers=workers,
         project_row=_trace_parent_row,
     )
-    if complete is None:
+    if isinstance(complete, ReadContractRejection):
         return _contract_failure(app, day, 0, 0, pages, items, workers)
     rows, _page = complete
     return rows, len(rows)

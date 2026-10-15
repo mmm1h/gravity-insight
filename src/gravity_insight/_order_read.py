@@ -6,12 +6,14 @@ import copy
 import math
 import re
 from collections.abc import Callable, Mapping
+from dataclasses import dataclass
 from datetime import date as date_type, datetime
 from typing import Any
 
 from .composite_batch import validate_composite_bounds
 from .errors import InputValidationError
 from .actionable_error_values import actual_value
+from .response_drift import ResponseDriftRecorder
 
 
 SAFE_ROW_FIELDS = ("CreateTime", "Amount", "BackAmount", "Status")
@@ -48,6 +50,26 @@ _FETCH_STRATEGIES = frozenset(
         "parallel_known_total",
     }
 )
+_MISSING = object()
+
+
+@dataclass(frozen=True)
+class ReadContractRejection:
+    """The actual failed boundary, containing paths and types without values."""
+
+    layer: str
+    response_drift: Mapping[str, Any]
+
+
+def reject_order_read(
+    layer: str, path: tuple[str, ...], expected_type: str, value: Any = _MISSING
+) -> ReadContractRejection:
+    recorder = ResponseDriftRecorder()
+    if value is _MISSING:
+        recorder.add_breaking_field(path, expected_type)
+    else:
+        recorder.add_breaking_field(path, expected_type, value)
+    return ReadContractRejection(layer, recorder.to_contract())
 
 
 def validate_order_read_request(
@@ -141,18 +163,21 @@ def complete_order_rows(
     max_pages: int,
     max_items: int,
     max_workers: int,
-    project_row: Callable[[Any], Mapping[str, Any] | None],
-) -> tuple[list[Mapping[str, Any]], dict[str, Any]] | None:
+    project_row: Callable[[Any], Mapping[str, Any] | ReadContractRejection | None],
+) -> tuple[list[Mapping[str, Any]], dict[str, Any]] | ReadContractRejection:
     """Validate a complete public ``read_all`` envelope and rebuild its rows."""
 
-    if not _valid_read_envelope(value, operation_id):
-        return None
+    rejection = _read_envelope_rejection(value, operation_id)
+    if rejection is not None:
+        return rejection
     raw_rows = _raw_order_rows(value.get("data"), max_items)
-    if raw_rows is None:
-        return None
+    if isinstance(raw_rows, ReadContractRejection):
+        return raw_rows
     rows = _project_order_rows(raw_rows, project_row)
-    if rows is None or (value.get("status") == "empty") != (not rows):
-        return None
+    if isinstance(rows, ReadContractRejection):
+        return rows
+    if (value.get("status") == "empty") != (not rows):
+        return reject_order_read("envelope", ("status",), "string", value.get("status"))
     page = complete_page_receipt(
         value.get("page"),
         len(rows),
@@ -160,7 +185,28 @@ def complete_order_rows(
         max_workers=max_workers,
         require_strategy=True,
     )
-    return (rows, page) if page is not None else None
+    if page is None:
+        return reject_order_read("pagination", ("page",), "object", value.get("page", _MISSING))
+    return rows, page
+
+
+def _read_envelope_rejection(value: Any, operation_id: str) -> ReadContractRejection | None:
+    if not isinstance(value, Mapping):
+        return reject_order_read("envelope", (), "object", value)
+    expected = {
+        "schema_version": ("gravity-insight.read.v1", "string"),
+        "operation_id": (operation_id, "string"),
+        "error": (None, "null"),
+        "next_page_input": (None, "null"),
+    }
+    for field, (wanted, kind) in expected.items():
+        if value.get(field) != wanted:
+            return reject_order_read("envelope", (field,), kind, value.get(field, _MISSING))
+    if not valid_read_status(value):
+        return reject_order_read("envelope", ("status",), "string", value.get("status", _MISSING))
+    if not false_or_absent(value.get("truncated")):
+        return reject_order_read("envelope", ("truncated",), "boolean", value["truncated"])
+    return None
 
 
 def complete_page_receipt(
@@ -217,18 +263,6 @@ def valid_read_status(value: Mapping[str, Any]) -> bool:
     )
 
 
-def _valid_read_envelope(value: Any, operation_id: str) -> bool:
-    return bool(
-        isinstance(value, Mapping)
-        and valid_read_status(value)
-        and value.get("schema_version") == "gravity-insight.read.v1"
-        and value.get("operation_id") == operation_id
-        and value.get("error") is None
-        and false_or_absent(value.get("truncated"))
-        and value.get("next_page_input") is None
-    )
-
-
 def _creation_time_in_day(value: Any, day: str) -> bool:
     if not isinstance(value, str):
         return False
@@ -243,23 +277,27 @@ def _creation_time_in_day(value: Any, day: str) -> bool:
     return parsed.date().isoformat() == day
 
 
-def _raw_order_rows(value: Any, max_items: int) -> list[Any] | None:
-    if not isinstance(value, Mapping) or "list" not in value:
-        return None
+def _raw_order_rows(value: Any, max_items: int) -> list[Any] | ReadContractRejection:
+    if not isinstance(value, Mapping):
+        return reject_order_read("row", ("data",), "object", value)
     if set(value) - {"list", "page_info", "total"}:
-        return None
-    rows = value.get("list")
-    return rows if isinstance(rows, list) and len(rows) <= max_items else None
+        return reject_order_read("row", ("data",), "object", value)
+    rows = value.get("list", _MISSING)
+    if not isinstance(rows, list) or len(rows) > max_items:
+        return reject_order_read("row", ("data", "list"), "array", rows)
+    return rows
 
 
 def _project_order_rows(
-    rows: list[Any], project: Callable[[Any], Mapping[str, Any] | None]
-) -> list[Mapping[str, Any]] | None:
+    rows: list[Any], project: Callable[[Any], Mapping[str, Any] | ReadContractRejection | None]
+) -> list[Mapping[str, Any]] | ReadContractRejection:
     result: list[Mapping[str, Any]] = []
     for value in rows:
         selected = project(value)
+        if isinstance(selected, ReadContractRejection):
+            return selected
         if selected is None:
-            return None
+            return reject_order_read("row", ("data", "list", "*"), "object", value)
         result.append(dict(selected))
     return result
 
