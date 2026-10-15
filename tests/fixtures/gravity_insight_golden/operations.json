@@ -2380,8 +2380,8 @@
       "action": "query",
       "auth_profile": "gravity_authorization",
       "block_reason": null,
-      "contract_version": "1",
-      "description": "事件分析结构化聚合；不是自由 SQL。输入经实时元数据和深层结构策略校验，响应按受控聚合投影脱敏。",
+      "contract_version": "2",
+      "description": "事件分析结构化聚合；支持普通/公式指标、最多十个显式日期窗、受治理用户筛选、同比控制和有界行上限。page_size 不是分页或完整性证明；输入经实时元数据和深层结构策略校验，响应按受控聚合投影脱敏。",
       "domain": "analysis",
       "executable": true,
       "input_fields": [
@@ -2445,6 +2445,25 @@
         {
           "default": {
             "present": true,
+            "value": false
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": null,
+          "min_items": null,
+          "name": "calc_y",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "boolean"
+        },
+        {
+          "default": {
+            "present": true,
             "value": []
           },
           "description": "",
@@ -2452,7 +2471,7 @@
           "item_enum": [],
           "item_type": "object",
           "max_depth": 5,
-          "max_items": 50,
+          "max_items": 100,
           "max_length": null,
           "min_items": null,
           "name": "custom_query_item_list",
@@ -2471,7 +2490,7 @@
           "item_enum": [],
           "item_type": "object",
           "max_depth": 5,
-          "max_items": 2,
+          "max_items": 10,
           "max_length": null,
           "min_items": 1,
           "name": "date_list",
@@ -2570,6 +2589,25 @@
           "item_type": null,
           "max_depth": 5,
           "max_items": null,
+          "max_length": null,
+          "min_items": null,
+          "name": "page_size",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "integer"
+        },
+        {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
           "max_length": 4096,
           "min_items": null,
           "name": "query_id",
@@ -2580,20 +2618,20 @@
         },
         {
           "default": {
-            "present": false,
-            "value": null
+            "present": true,
+            "value": []
           },
           "description": "",
           "enum": [],
           "item_enum": [],
           "item_type": "object",
           "max_depth": 5,
-          "max_items": 50,
+          "max_items": 100,
           "max_length": null,
           "min_items": null,
           "name": "query_item_list",
           "nullable": false,
-          "required": true,
+          "required": false,
           "sensitive": false,
           "type": "array"
         },
@@ -2630,6 +2668,25 @@
           "max_length": null,
           "min_items": null,
           "name": "split_event",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "object"
+        },
+        {
+          "default": {
+            "present": true,
+            "value": {}
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": null,
+          "min_items": null,
+          "name": "user_filtering",
           "nullable": false,
           "required": false,
           "sensitive": false,
@@ -2719,20 +2776,26 @@
           "global_cond_logic",
           "date_list",
           "return_hierarchy_list",
+          "calc_y",
           "calc_layer_y",
+          "user_filtering",
+          "page_size",
           "aggregate_config",
           "extra_data"
         ],
         "defaults": {
           "aggregate_config": {},
           "calc_layer_y": false,
+          "calc_y": false,
           "custom_query_item_list": [],
           "extra_data": {},
           "global_cond_logic": "AND",
           "global_conditions": [],
           "group_by_list": [],
+          "query_item_list": [],
           "return_hierarchy_list": false,
-          "split_event": {}
+          "split_event": {},
+          "user_filtering": {}
         },
         "fixed_body": {},
         "fixed_query": {},
@@ -3803,259 +3866,291 @@
       "upstream_method": "POST"
     },
     {
-      "operation_id": "analysis.monetization_detail.list",
-      "domain": "analysis",
-      "resource": "monetization_detail",
       "action": "list",
-      "platform": null,
-      "description": "单日变现明细；支持受治理选列、全局/局部条件逻辑、排序和同 App 已登记分群。date 始终生成唯一 create_time 范围，独立临时分群因无可验证目录而失败关闭。空结果与权限裁剪空集不可区分；若不确定权限，先运行 gravity apps permission-profile。",
-      "stability": "stable",
-      "executable": true,
+      "auth_profile": "gravity_authorization",
       "block_reason": null,
       "contract_version": "4",
-      "upstream_method": "POST",
-      "path_template": "/report/api/v3/dataanalysis/monetization_detail/list/",
-      "auth_profile": "gravity_authorization",
+      "description": "单日变现明细；支持受治理选列、全局/局部条件逻辑、排序和同 App 已登记分群。date 始终生成唯一 create_time 范围，独立临时分群因无可验证目录而失败关闭。空结果与权限裁剪空集不可区分；若不确定权限，先运行 gravity apps permission-profile。",
+      "domain": "analysis",
+      "executable": true,
       "input_fields": [
         {
-          "name": "app_id",
-          "type": "string",
-          "required": true,
-          "nullable": false,
-          "enum": [],
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "sensitive": false,
-          "item_type": null,
+          "enum": [],
           "item_enum": [],
-          "min_items": null,
+          "item_type": null,
+          "max_depth": 5,
           "max_items": null,
           "max_length": 64,
-          "max_depth": 5
+          "min_items": null,
+          "name": "app_id",
+          "nullable": false,
+          "required": true,
+          "sensitive": false,
+          "type": "string"
         },
         {
+          "default": {
+            "present": true,
+            "value": "AND"
+          },
+          "description": "",
+          "enum": [
+            "AND",
+            "OR"
+          ],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": 4096,
+          "min_items": null,
           "name": "cond_logic",
-          "type": "string",
-          "required": false,
           "nullable": false,
-          "enum": [
-            "AND",
-            "OR"
-          ],
-          "default": {
-            "present": true,
-            "value": "AND"
-          },
-          "description": "",
+          "required": false,
           "sensitive": false,
-          "item_type": null,
-          "item_enum": [],
-          "min_items": null,
-          "max_items": null,
-          "max_length": 4096,
-          "max_depth": 5
+          "type": "string"
         },
         {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": null,
+          "min_items": null,
           "name": "date",
-          "type": "date",
-          "required": true,
           "nullable": false,
-          "enum": [],
-          "default": {
-            "present": false,
-            "value": null
-          },
-          "description": "",
+          "required": true,
           "sensitive": false,
-          "item_type": null,
-          "item_enum": [],
-          "min_items": null,
-          "max_items": null,
-          "max_length": null,
-          "max_depth": 5
+          "type": "date"
         },
         {
-          "name": "fields",
-          "type": "array",
-          "required": true,
-          "nullable": false,
-          "enum": [],
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "sensitive": false,
-          "item_type": "string",
+          "enum": [],
           "item_enum": [],
-          "min_items": 1,
+          "item_type": "string",
+          "max_depth": 5,
           "max_items": 100,
           "max_length": null,
-          "max_depth": 5
+          "min_items": 1,
+          "name": "fields",
+          "nullable": false,
+          "required": true,
+          "sensitive": false,
+          "type": "array"
         },
         {
-          "name": "global_conditions",
-          "type": "array",
-          "required": false,
-          "nullable": false,
-          "enum": [],
           "default": {
             "present": true,
             "value": []
           },
           "description": "",
-          "sensitive": false,
-          "item_type": "object",
+          "enum": [],
           "item_enum": [],
-          "min_items": null,
+          "item_type": "object",
+          "max_depth": 5,
           "max_items": 100,
           "max_length": null,
-          "max_depth": 5
+          "min_items": null,
+          "name": "global_conditions",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
         },
         {
-          "name": "local_cond_logic",
-          "type": "string",
-          "required": false,
-          "nullable": false,
-          "enum": [
-            "AND",
-            "OR"
-          ],
           "default": {
             "present": true,
             "value": "AND"
           },
           "description": "",
-          "sensitive": false,
-          "item_type": null,
+          "enum": [
+            "AND",
+            "OR"
+          ],
           "item_enum": [],
-          "min_items": null,
+          "item_type": null,
+          "max_depth": 5,
           "max_items": null,
           "max_length": 4096,
-          "max_depth": 5
+          "min_items": null,
+          "name": "local_cond_logic",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "string"
         },
         {
-          "name": "local_conditions",
-          "type": "array",
-          "required": false,
-          "nullable": false,
-          "enum": [],
           "default": {
             "present": true,
             "value": []
           },
           "description": "",
-          "sensitive": false,
-          "item_type": "object",
+          "enum": [],
           "item_enum": [],
-          "min_items": null,
+          "item_type": "object",
+          "max_depth": 5,
           "max_items": 100,
           "max_length": null,
-          "max_depth": 5
+          "min_items": null,
+          "name": "local_conditions",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
         },
         {
-          "name": "order_by_list",
-          "type": "array",
-          "required": false,
-          "nullable": false,
-          "enum": [],
           "default": {
             "present": true,
             "value": []
           },
           "description": "",
-          "sensitive": false,
-          "item_type": "object",
+          "enum": [],
           "item_enum": [],
-          "min_items": null,
+          "item_type": "object",
+          "max_depth": 5,
           "max_items": 20,
           "max_length": null,
-          "max_depth": 5
+          "min_items": null,
+          "name": "order_by_list",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "array"
         },
         {
-          "name": "page",
-          "type": "integer",
-          "required": false,
-          "nullable": false,
-          "enum": [],
           "default": {
             "present": true,
             "value": 1
           },
           "description": "",
-          "sensitive": false,
-          "item_type": null,
+          "enum": [],
           "item_enum": [],
-          "min_items": null,
+          "item_type": null,
+          "max_depth": 5,
           "max_items": null,
           "max_length": null,
-          "max_depth": 5
+          "min_items": null,
+          "name": "page",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "integer"
         },
         {
-          "name": "page_size",
-          "type": "integer",
-          "required": false,
-          "nullable": false,
-          "enum": [],
           "default": {
             "present": true,
             "value": 20
           },
           "description": "",
-          "sensitive": false,
-          "item_type": null,
+          "enum": [],
           "item_enum": [],
-          "min_items": null,
+          "item_type": null,
+          "max_depth": 5,
           "max_items": null,
           "max_length": null,
-          "max_depth": 5
+          "min_items": null,
+          "name": "page_size",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "integer"
         },
         {
+          "default": {
+            "present": false,
+            "value": null
+          },
+          "description": "",
+          "enum": [],
+          "item_enum": [],
+          "item_type": null,
+          "max_depth": 5,
+          "max_items": null,
+          "max_length": 64,
+          "min_items": null,
           "name": "segment_id",
-          "type": "string",
-          "required": false,
           "nullable": false,
-          "enum": [],
-          "default": {
-            "present": false,
-            "value": null
-          },
-          "description": "",
+          "required": false,
           "sensitive": false,
-          "item_type": null,
-          "item_enum": [],
-          "min_items": null,
-          "max_items": null,
-          "max_length": 64,
-          "max_depth": 5
+          "type": "string"
         },
         {
-          "name": "tmp_segment_id",
-          "type": "string",
-          "required": false,
-          "nullable": false,
-          "enum": [],
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "sensitive": false,
-          "item_type": null,
+          "enum": [],
           "item_enum": [],
-          "min_items": null,
+          "item_type": null,
+          "max_depth": 5,
           "max_items": null,
           "max_length": 64,
-          "max_depth": 5
+          "min_items": null,
+          "name": "tmp_segment_id",
+          "nullable": false,
+          "required": false,
+          "sensitive": false,
+          "type": "string"
         }
       ],
+      "live_probe": {
+        "enabled": true,
+        "inputs": {
+          "app_id": "$first_app_id",
+          "date": "$today",
+          "fields": [
+            "CreateTime"
+          ],
+          "page": 1,
+          "page_size": 1
+        }
+      },
+      "operation_id": "analysis.monetization_detail.list",
+      "pagination": {
+        "default_page_size": 20,
+        "items_field": "list",
+        "kind": "page_info",
+        "list_path": "data.list",
+        "max_page_size": 1000,
+        "page_field": "page",
+        "page_info_field": "page_info",
+        "page_info_path": "data.page_info",
+        "page_size_field": "page_size",
+        "total_page_field": "total_page"
+      },
+      "path_template": "/report/api/v3/dataanalysis/monetization_detail/list/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "user_level",
+        "redact_fields": [
+          "authorization",
+          "password",
+          "token",
+          "gravity_email",
+          "access_token",
+          "cookie",
+          "secret",
+          "refresh_token",
+          "session_token"
+        ]
+      },
       "request": {
-        "location": "mixed",
-        "path_fields": [],
-        "query_fields": [],
         "body_fields": [
           "app_id",
           "date",
@@ -4079,19 +4174,64 @@
           "page": 1,
           "page_size": 20
         },
+        "fixed_body": {},
         "fixed_query": {},
-        "fixed_body": {}
+        "location": "mixed",
+        "path_fields": [],
+        "query_fields": []
       },
+      "required_parent": [
+        {
+          "input_field": null,
+          "operation_id": "app.list"
+        }
+      ],
+      "resource": "monetization_detail",
       "response_projection": {
-        "data_shape": "object",
+        "data_dynamic_item_fields": {},
+        "data_item_keys": {
+          "total": [
+            "CreateTime",
+            "AdEventTime",
+            "AdPlatform",
+            "TurboPromotedObjectID",
+            "AdvertiserID",
+            "AdAid",
+            "event$ecpm",
+            "samount",
+            "event$ad_type",
+            "event$adn_type",
+            "event$ad_unit_id",
+            "event$ad_through",
+            "event$ad_source_id",
+            "event$ad_placement_id",
+            "re_attribute_info",
+            "user_id",
+            "event_user_id",
+            "device_id",
+            "ClientID",
+            "TraceID",
+            "device_info",
+            "user$ad_count",
+            "user$ad_avg_ecpm",
+            "user$ad_ltv",
+            "Name",
+            "WXOpenID"
+          ]
+        },
         "data_keys": [
           "list",
           "page_info",
           "total"
         ],
-        "required_data_keys": [
-          "list"
+        "data_path_item_keys": {},
+        "data_scalar_list_types": {},
+        "data_shape": "object",
+        "dynamic_item_fields": [
+          "fields"
         ],
+        "empty_object_as_empty_page": false,
+        "empty_object_as_empty_result": false,
         "item_keys": [
           "CreateTime",
           "AdEventTime",
@@ -4129,9 +4269,10 @@
           "id",
           "modify_time"
         ],
-        "dynamic_item_fields": [
-          "fields"
-        ],
+        "known_omitted_data_item_keys": {},
+        "known_omitted_data_keys": [],
+        "known_omitted_item_keys": [],
+        "known_omitted_nested_item_keys": {},
         "nested_item_keys": {
           "device_info": [
             "Android_Version",
@@ -4163,110 +4304,32 @@
             "ReAttributeAdClickTime"
           ]
         },
-        "known_omitted_nested_item_keys": {},
-        "data_item_keys": {
-          "total": [
-            "CreateTime",
-            "AdEventTime",
-            "AdPlatform",
-            "TurboPromotedObjectID",
-            "AdvertiserID",
-            "AdAid",
-            "event$ecpm",
-            "samount",
-            "event$ad_type",
-            "event$adn_type",
-            "event$ad_unit_id",
-            "event$ad_through",
-            "event$ad_source_id",
-            "event$ad_placement_id",
-            "re_attribute_info",
-            "user_id",
-            "event_user_id",
-            "device_id",
-            "ClientID",
-            "TraceID",
-            "device_info",
-            "user$ad_count",
-            "user$ad_avg_ecpm",
-            "user$ad_ltv",
-            "Name",
-            "WXOpenID"
-          ]
-        },
-        "scalar_list_item_types": {},
-        "data_scalar_list_types": {},
-        "data_path_item_keys": {},
-        "data_dynamic_item_fields": {},
-        "known_omitted_item_keys": [],
-        "recursive_data_item_keys": {},
-        "known_omitted_data_keys": [],
-        "known_omitted_data_item_keys": {},
         "numeric_paths": [],
-        "empty_object_as_empty_page": false,
-        "empty_object_as_empty_result": false,
-        "opaque_json_item_keys": []
-      },
-      "pagination": {
-        "kind": "page_info",
-        "page_field": "page",
-        "page_size_field": "page_size",
-        "items_field": "list",
-        "page_info_field": "page_info",
-        "total_page_field": "total_page",
-        "list_path": "data.list",
-        "page_info_path": "data.page_info",
-        "default_page_size": 20,
-        "max_page_size": 1000
+        "opaque_json_item_keys": [],
+        "recursive_data_item_keys": {},
+        "required_data_keys": [
+          "list"
+        ],
+        "scalar_list_item_types": {}
       },
       "semantic_error_rules": [
         {
-          "path": "code",
+          "message": "Gravity rejected the read operation",
           "operator": "truthy",
+          "path": "code",
           "value": null,
-          "values": [],
-          "message": "Gravity rejected the read operation"
+          "values": []
         },
         {
-          "path": "extra.error",
+          "message": "Gravity rejected the read operation",
           "operator": "truthy",
+          "path": "extra.error",
           "value": null,
-          "values": [],
-          "message": "Gravity rejected the read operation"
+          "values": []
         }
       ],
-      "privacy_policy": {
-        "classification": "user_level",
-        "redact_fields": [
-          "authorization",
-          "password",
-          "token",
-          "gravity_email",
-          "access_token",
-          "cookie",
-          "secret",
-          "refresh_token",
-          "session_token"
-        ]
-      },
-      "required_parent": [
-        {
-          "operation_id": "app.list",
-          "input_field": null
-        }
-      ],
-      "live_probe": {
-        "enabled": true,
-        "inputs": {
-          "app_id": "$first_app_id",
-          "date": "$today",
-          "fields": [
-            "CreateTime"
-          ],
-          "page": 1,
-          "page_size": 1
-        }
-      }
+      "stability": "stable",
+      "upstream_method": "POST"
     },
     {
       "action": "list",
@@ -11130,81 +11193,89 @@
       "upstream_method": "GET"
     },
     {
-      "operation_id": "app.detail",
-      "domain": "app",
-      "resource": "detail",
       "action": "get",
-      "platform": null,
-      "description": "App 只读详情。当前前端精确使用 GET JSON body {app_id}；2026-10-14 官方 MCP 与前端字段证据确认安全配置容器，响应仅投影逐叶白名单中的 App 元数据和非敏感配置状态，凭据、任意属性对象及回调、下载和签名 URL 固定省略。",
-      "stability": "stable",
-      "executable": true,
+      "auth_profile": "gravity_authorization",
       "block_reason": null,
       "contract_version": "3",
-      "upstream_method": "GET",
-      "path_template": "/turbo_engine/api/v1/user/open_app/detail/",
-      "auth_profile": "gravity_authorization",
+      "description": "App 只读详情。当前前端精确使用 GET JSON body {app_id}；2026-10-14 官方 MCP 与前端字段证据确认安全配置容器，响应仅投影逐叶白名单中的 App 元数据和非敏感配置状态，凭据、任意属性对象及回调、下载和签名 URL 固定省略。",
+      "domain": "app",
+      "executable": true,
       "input_fields": [
         {
-          "name": "app_id",
-          "type": "string",
-          "required": true,
-          "nullable": false,
-          "enum": [],
           "default": {
             "present": false,
             "value": null
           },
           "description": "",
-          "sensitive": false,
-          "item_type": null,
+          "enum": [],
           "item_enum": [],
-          "min_items": null,
+          "item_type": null,
+          "max_depth": 5,
           "max_items": null,
           "max_length": 4096,
-          "max_depth": 5
+          "min_items": null,
+          "name": "app_id",
+          "nullable": false,
+          "required": true,
+          "sensitive": false,
+          "type": "string"
         }
       ],
+      "live_probe": {
+        "enabled": true,
+        "inputs": {
+          "app_id": "$first_app_id"
+        }
+      },
+      "operation_id": "app.detail",
+      "pagination": {
+        "default_page_size": null,
+        "items_field": "list",
+        "kind": "none",
+        "list_path": "",
+        "max_page_size": null,
+        "page_field": "",
+        "page_info_field": "page_info",
+        "page_info_path": "",
+        "page_size_field": "",
+        "total_page_field": ""
+      },
+      "path_template": "/turbo_engine/api/v1/user/open_app/detail/",
+      "platform": null,
+      "privacy_policy": {
+        "classification": "internal_business",
+        "redact_fields": [
+          "authorization",
+          "password",
+          "token",
+          "gravity_email",
+          "access_token",
+          "cookie",
+          "secret",
+          "client_secret",
+          "secret_key"
+        ]
+      },
       "request": {
-        "location": "mixed",
-        "path_fields": [],
-        "query_fields": [],
         "body_fields": [
           "app_id"
         ],
         "defaults": {},
+        "fixed_body": {},
         "fixed_query": {},
-        "fixed_body": {}
+        "location": "mixed",
+        "path_fields": [],
+        "query_fields": []
       },
+      "required_parent": [
+        {
+          "input_field": null,
+          "operation_id": "app.list"
+        }
+      ],
+      "resource": "detail",
       "response_projection": {
-        "data_shape": "object",
-        "data_keys": [
-          "app",
-          "wx_app",
-          "ta_conf",
-          "postback_conf",
-          "booking_info",
-          "extra_attribution_conf",
-          "attributed_order",
-          "dryrun_mode",
-          "distinct_strategy",
-          "reactive_window"
-        ],
-        "required_data_keys": [
-          "app"
-        ],
-        "item_keys": [],
-        "dynamic_item_fields": [],
-        "nested_item_keys": {
-          "alipay": [
-            "user_id_mode"
-          ]
-        },
-        "known_omitted_nested_item_keys": {
-          "alipay": [
-            "alipay_app_id",
-            "key"
-          ]
-        },
+        "data_dynamic_item_fields": {},
         "data_item_keys": {
           "app": [
             "create_time",
@@ -11252,16 +11323,25 @@
           ],
           "wx_app": []
         },
-        "scalar_list_item_types": {},
-        "data_scalar_list_types": {},
-        "data_path_item_keys": {},
-        "data_dynamic_item_fields": {},
-        "known_omitted_item_keys": [],
-        "recursive_data_item_keys": {},
-        "known_omitted_data_keys": [
-          "clickback_url",
-          "callback_url"
+        "data_keys": [
+          "app",
+          "wx_app",
+          "ta_conf",
+          "postback_conf",
+          "booking_info",
+          "extra_attribution_conf",
+          "attributed_order",
+          "dryrun_mode",
+          "distinct_strategy",
+          "reactive_window"
         ],
+        "data_path_item_keys": {},
+        "data_scalar_list_types": {},
+        "data_shape": "object",
+        "dynamic_item_fields": [],
+        "empty_object_as_empty_page": false,
+        "empty_object_as_empty_result": false,
+        "item_keys": [],
         "known_omitted_data_item_keys": {
           "app": [
             "download_url",
@@ -11291,65 +11371,48 @@
             "secret"
           ]
         },
+        "known_omitted_data_keys": [
+          "clickback_url",
+          "callback_url"
+        ],
+        "known_omitted_item_keys": [],
+        "known_omitted_nested_item_keys": {
+          "alipay": [
+            "alipay_app_id",
+            "key"
+          ]
+        },
+        "nested_item_keys": {
+          "alipay": [
+            "user_id_mode"
+          ]
+        },
         "numeric_paths": [],
-        "empty_object_as_empty_page": false,
-        "empty_object_as_empty_result": false,
-        "opaque_json_item_keys": []
-      },
-      "pagination": {
-        "kind": "none",
-        "page_field": "",
-        "page_size_field": "",
-        "items_field": "list",
-        "page_info_field": "page_info",
-        "total_page_field": "",
-        "list_path": "",
-        "page_info_path": "",
-        "default_page_size": null,
-        "max_page_size": null
+        "opaque_json_item_keys": [],
+        "recursive_data_item_keys": {},
+        "required_data_keys": [
+          "app"
+        ],
+        "scalar_list_item_types": {}
       },
       "semantic_error_rules": [
         {
-          "path": "code",
+          "message": "Gravity rejected the read operation",
           "operator": "truthy",
+          "path": "code",
           "value": null,
-          "values": [],
-          "message": "Gravity rejected the read operation"
+          "values": []
         },
         {
-          "path": "extra.error",
+          "message": "Gravity rejected the read operation",
           "operator": "truthy",
+          "path": "extra.error",
           "value": null,
-          "values": [],
-          "message": "Gravity rejected the read operation"
+          "values": []
         }
       ],
-      "privacy_policy": {
-        "classification": "internal_business",
-        "redact_fields": [
-          "authorization",
-          "password",
-          "token",
-          "gravity_email",
-          "access_token",
-          "cookie",
-          "secret",
-          "client_secret",
-          "secret_key"
-        ]
-      },
-      "required_parent": [
-        {
-          "operation_id": "app.list",
-          "input_field": null
-        }
-      ],
-      "live_probe": {
-        "enabled": true,
-        "inputs": {
-          "app_id": "$first_app_id"
-        }
-      }
+      "stability": "stable",
+      "upstream_method": "GET"
     },
     {
       "action": "list",

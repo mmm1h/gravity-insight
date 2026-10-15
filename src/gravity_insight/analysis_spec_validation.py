@@ -8,6 +8,7 @@ from collections.abc import Iterator, Mapping, Sequence
 from typing import Any
 
 from .actionable_error_values import actual_value, allowed_values
+from ._field_policy_shared import ANALYSIS_EVENT_TARGET_METHODS
 from .errors import InputValidationError
 
 
@@ -144,6 +145,9 @@ def event_input_definitions(definitions: Mapping[str, Any]) -> dict[str, Any]:
         "different semantics."
     )
     metric = copy.deepcopy(definitions["metric"])
+    metric["properties"]["aggregation"]["oneOf"][0]["enum"] = sorted(
+        ANALYSIS_EVENT_TARGET_METHODS
+    )
     metric["allOf"] = [{
         "if": {"properties": {"aggregation": {"const": "Quantile"}}, "required": ["aggregation"]},
         "then": {"required": ["quantile"]},

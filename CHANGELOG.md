@@ -21,6 +21,7 @@ Target release: `0.3.27`
 
 ### Added
 
+- Event Analysis now supports formula-only compact specs, typed `AnalysisFormula` dependencies, up to ten explicit date windows, same-App metadata-validated user filters, comparison controls and a bounded row limit through SDK, CLI, Plan and Agent. The row limit never establishes pagination or completeness.
 - `operations describe analysis.user_event.list` now exposes the complete nested `query_item_list` grammar, including event/property metadata bindings, condition keys, operators, condition types, list controls and logical composition. Agents no longer need to inspect installed source code to construct a governed event-history filter (#283).
 
 ## [0.3.26] - 2026-10-14

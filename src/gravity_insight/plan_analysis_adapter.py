@@ -136,6 +136,13 @@ def validate_analysis_query_plan(
         start=request.get("start"),
         end=request.get("end"),
     )
+    page_size = compiled.inputs.get("page_size")
+    if type(page_size) is int and page_size > context.max_items:
+        raise input_error(
+            f"actual value: {actual_value(page_size)}; Event page_size exceeds this "
+            "Plan node's max_items budget; must raise limits.max_items or reduce page_size",
+            "limits.max_items",
+        )
     if "metadata_snapshot" in request:
         validate_metadata_snapshot(
             request.get("metadata_snapshot"),

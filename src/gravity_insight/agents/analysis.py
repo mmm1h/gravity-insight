@@ -463,9 +463,11 @@ def _input_template(
         }
     schema = contract["kind_schemas"][selected_kind]
     properties = schema.get("properties", {})
+    # Event also accepts date_ranges/formulas; advertise one valid basic choice.
+    required = ["start", "end", "steps"] if selected_kind == "event" else schema.get("required", [])
     spec = {
         name: _property_placeholder(name, properties.get(name))
-        for name in schema.get("required", [])
+        for name in required
     }
     return {
         "kind": selected_kind,

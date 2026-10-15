@@ -74,14 +74,25 @@ def _metrics(kind: str, spec: Mapping[str, Any]) -> list[dict[str, str]]:
         return [item] if item is not None else []
     items: list[dict[str, str]] = []
     steps = spec.get("steps")
-    if not isinstance(steps, list):
-        return items
-    for step in steps:
-        if not isinstance(step, Mapping):
-            continue
-        item = _metric(step.get("metric"))
-        if item is not None:
-            items.append(item)
+    if isinstance(steps, list):
+        for step in steps:
+            if not isinstance(step, Mapping):
+                continue
+            item = _metric(step.get("metric"))
+            if item is not None:
+                items.append(item)
+    formulas = spec.get("formulas")
+    if isinstance(formulas, list):
+        for formula in formulas:
+            name = formula.get("name") if isinstance(formula, Mapping) else None
+            if isinstance(name, str) and name:
+                items.append(
+                    {
+                        "field": name,
+                        "aggregation": "formula",
+                        "additivity": "unknown",
+                    }
+                )
     return items
 
 

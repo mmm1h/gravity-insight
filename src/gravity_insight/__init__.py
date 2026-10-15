@@ -168,6 +168,7 @@ _EXPORTS = {
     "compile_query_spec": (".analysis_spec", "compile_query_spec"),
     "AnalysisCohort": (".analysis_primitives", "AnalysisCohort"),
     "AnalysisFilter": (".analysis_primitives", "AnalysisFilter"),
+    "AnalysisFormula": (".analysis_primitives", "AnalysisFormula"),
     "AnalysisMetric": (".analysis_primitives", "AnalysisMetric"),
     "AnalysisSpec": (".analysis_primitives", "AnalysisSpec"),
     "AnalysisStep": (".analysis_primitives", "AnalysisStep"),
