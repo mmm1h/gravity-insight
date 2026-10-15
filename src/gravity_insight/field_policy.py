@@ -19,6 +19,7 @@ from ._field_policy_operations import operation_rule
 from ._field_policy_shared import MetadataLoader
 from .field_metadata_override import selected_metadata_loader
 from .models import OperationSpec
+from .realtime_event_diagnostics import realtime_event_metadata_dependencies, validate_realtime_event_fields
 
 
 class FieldPolicy:
@@ -32,6 +33,8 @@ class FieldPolicy:
     ) -> Mapping[str, Any] | None:
         metadata_loader = selected_metadata_loader(metadata_loader)
         rule = operation_rule(operation.operation_id)
+        if rule.request_kind == "realtime_event":
+            return validate_realtime_event_fields(inputs, metadata_loader)
         if rule.request_kind == "analysis_segment":
             validate_analysis_segment_rule(inputs, metadata_loader)
             return
@@ -54,6 +57,8 @@ class FieldPolicy:
         operation: OperationSpec, inputs: Mapping[str, Any]
     ) -> tuple[str, ...]:
         rule = operation_rule(operation.operation_id)
+        if rule.request_kind == "realtime_event":
+            return realtime_event_metadata_dependencies(inputs)
         if rule.request_kind != "analysis_query":
             return ()
         return analysis_metadata_dependencies(str(rule.query_kind), inputs)

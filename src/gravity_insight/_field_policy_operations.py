@@ -26,6 +26,7 @@ ANALYSIS_ORDER_DETAIL = _operation("analysis", "order_detail", "list")
 ANALYSIS_MONETIZATION_DETAIL = _operation("analysis", "monetization_detail", "list")
 ANALYSIS_USER_DETAIL = _operation("analysis", "user_detail", "list")
 ANALYSIS_USER_EVENT = _operation("analysis", "user_event", "list")
+ANALYSIS_REALTIME_EVENT = _operation("analysis", "realtime_event", "list")
 ANALYSIS_SEGMENT_USER_DETAIL = _operation("analysis", "segment", "user_detail", "list")
 ANALYSIS_ACCOUNT_USER = _operation("analysis", "account_user", "list")
 ANALYSIS_DASHBOARD_FAVOURITE = _operation(
@@ -126,6 +127,7 @@ OPERATION_RULES: Mapping[str, OperationRule] = {
     ANALYSIS_MONETIZATION_DETAIL: OperationRule("analysis_detail"),
     ANALYSIS_USER_DETAIL: OperationRule("analysis_detail"),
     ANALYSIS_USER_EVENT: OperationRule("analysis_detail"),
+    ANALYSIS_REALTIME_EVENT: OperationRule("realtime_event"),
     ANALYSIS_SEGMENT_USER_DETAIL: OperationRule("analysis_detail"),
     ANALYSIS_SEGMENT_EVALUATE: OperationRule("analysis_segment"),
     ANALYSIS_USER_PROPERTY_VALUE: OperationRule("property_values", "user"),

@@ -429,7 +429,7 @@ class GravityInsightGoldenTests(unittest.TestCase):
         bindings = document["request_builders"]
         response_projectors = document["response_projectors"]
         self.assertEqual(
-            WIRE_OPERATION_IDS | {"app.onelink.list"}, set(bindings)
+            WIRE_OPERATION_IDS | {"app.onelink.list", "analysis.realtime_event.list"}, set(bindings)
         )
         self.assertEqual(bindings, registry._REQUEST_BUILDER_NAMES)
         self.assertEqual(response_projectors, models._RESPONSE_PROJECTOR_NAMES)

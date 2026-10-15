@@ -63,7 +63,7 @@ raw operation。
 | --- | --- | --- | --- |
 | Analysis Query | `analysis query` | `analysis_query()` | `analysis_query` |
 | Analysis Context / Defaults | `analysis context` / `analysis defaults` | `analysis_context()` / `analysis_default_dictionary()` | `analysis_context` / `analysis_default_dictionary` |
-| Realtime Event Catalog | `analysis realtime-events` | 见[方法索引](sdk.md#method-index) | 见[adapter 索引](plan.md#adapter-index) |
+| Realtime Event Catalog | `analysis realtime-events`，支持 `--event-name`、`--client-lib`、`--client-lib-version`、单个 `--property-filter` 和显式 `--property-field` | 见[方法索引](sdk.md#method-index) | 见[adapter 索引](plan.md#adapter-index)；窗口≤24h/最多1000行，内容unknown |
 | App Configuration / Permission Snapshot | `apps snapshot` / `apps permission-profile` | 同上 | 同上 |
 | Attribution | `attribution snapshot\|performance\|user-detail` | 同上 | 同上 |
 | Reports / Business Pulse / Report Directory | `reports pulse\|usage\|directory\|subscriptions` | `business_pulse()` / matching methods | `business_pulse` / matching composites |

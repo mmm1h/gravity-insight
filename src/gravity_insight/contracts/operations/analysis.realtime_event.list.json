@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 1,
-    "description": "Read one App realtime-event catalog for an explicit Asia/Shanghai request_time window. Observed server responses have data.list only and no page_info; the first observed non-empty page returned 1000 items after filters.event_type=profile. Item schema is the 12 observed top-level keys; raw_properties remains an opaque object.",
+    "contract_version": 2,
+    "description": "Read bounded realtime diagnostics for one explicit Asia/Shanghai window of at most24 hours. Registered ordinary filters use AND. At most one EQUALS property filter with one metadata-typed scalar is accepted; LIST/DICT comparison semantics remain unverified. Existing identifiers are preserved. SDK/version are nullable. Only explicitly selected, metadata/type/privacy-validated scalar properties are projected; raw properties/IP/UA stay omitted. Native responses have at most1000 rows, no page_info and unknown content completeness; empty does not prove ingestion absence.",
     "domain": "analysis",
     "effect": "read",
     "examples": [
@@ -34,13 +34,14 @@
         "type": "integer"
       },
       "filters": {
-        "description": "Filter object built from event_type, event_name, request_id, client_id, client_lib, client_lib_version, and properties; empty controls serialize to an empty object. The first non-empty sample used event_type=profile.",
+        "description": "Closed registered AND filters; one scalar property EQUALS condition at most. Values are redacted from request echoes.",
         "required": true,
-        "type": "object"
+        "type": "object",
+        "sensitive": true
       },
       "page": {
         "default": 1,
-        "description": "Observed frontend page selector. The server returned 1000 items with no page_info, so page is accepted but server paging remains unclaimed.",
+        "description": "Must be1. Native paging is unproven; never traverse pages.",
         "required": true,
         "type": "integer"
       },
@@ -51,10 +52,17 @@
         "type": "integer"
       },
       "request_time": {
-        "description": "Two Asia/Shanghai local datetime strings delimiting the explicit catalog window.",
+        "description": "Two ordered Asia/Shanghai local datetimes YYYY-MM-DD HH:MM:SS, at most24 hours apart.",
         "item_type": "string",
         "required": true,
         "type": "array"
+      },
+      "property_fields": {
+        "type": "array",
+        "item_type": "string",
+        "required": false,
+        "default": [],
+        "description": "At most20 distinct explicit nonidentifying scalar property names from same-App metadata. Local projection only; never sent upstream."
       }
     },
     "live_probe": {
@@ -143,11 +151,13 @@
         "event_name",
         "event_type",
         "request_id",
-        "request_time"
-      ],
-      "known_omitted_item_keys": [
+        "request_time",
         "client_lib",
         "client_lib_version",
+        "properties",
+        "property_coverage"
+      ],
+      "known_omitted_item_keys": [
         "raw_properties",
         "request_ip",
         "request_ua",

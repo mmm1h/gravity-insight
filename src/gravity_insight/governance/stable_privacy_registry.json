@@ -600,9 +600,13 @@
     "analysis.realtime_event.list": [
       "data.list",
       "data.list[].client_id",
+      "data.list[].client_lib",
+      "data.list[].client_lib_version",
       "data.list[].client_time",
       "data.list[].event_name",
       "data.list[].event_type",
+      "data.list[].properties",
+      "data.list[].property_coverage",
       "data.list[].request_id",
       "data.list[].request_time"
     ],

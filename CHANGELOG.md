@@ -17,6 +17,7 @@ Target release: `0.3.27`
 
 ### Breaking changes
 
+- **Hard break:** realtime diagnostics use `analysis.realtime_event.list` contract v2 and `gravity-insight.realtime-event-catalog.v2`, with page=1, a window of at most24 hours and at most1000 returned rows. SDK/version AND filters and explicitly selected metadata-typed scalar properties are available through SDK/CLI/Plan/Agent/Journey; Plan requires the typed v2 scope/obligations and rejects the old envelope. Native content and ingestion completeness remain unknown.
 - **Hard break:** staged user-event export downloads require the original task-bound `completeness` receipt. A workbook with another client, date or event scope fails before atomic publication; legacy tasks without comparable scope evidence cannot be certified. Committed transport remains distinct from unknown source content/snapshot completeness (#294).
 
 Migration guide: [0.3.27](docs/migration/0.3.27.md)
