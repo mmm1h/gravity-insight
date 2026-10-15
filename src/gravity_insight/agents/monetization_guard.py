@@ -76,7 +76,7 @@ _ENGLISH_OPEN_DIMENSIONS = frozenset(
     {
         "adid", "advertiser", "attribution", "client_id", "clientid",
         "device", "device_id", "event_user_id", "field", "fields",
-        "filter", "group", "grouping", "ltv", "placement", "profile",
+        "filter", "ltv", "placement", "profile",
         "sort", "trace_id", "traceid", "user", "user_id", "where",
     }
 )
@@ -85,7 +85,7 @@ _ENGLISH_NEGATIONS = frozenset(
     {"avoid", "cannot", "exclude", "never", "no", "not", "skip", "without"}
 )
 _CHINESE_OPEN_DIMENSIONS = (
-    "用户", "设备", "标识", "筛选", "过滤", "条件", "分组", "排序", "字段", "画像", "归因",
+    "用户", "设备", "标识", "筛选", "过滤", "条件", "排序", "字段", "画像", "归因",
 )
 _LEGACY_IDENTIFIER_FREE_PHRASE = "无标识"
 _CHINESE_BLOCKED = (
@@ -115,8 +115,6 @@ def monetization_guard_blocks_operation_fallback(query: str) -> bool:
         return False
     if selected in _EXACT_PRODUCT_INTENTS:
         return True
-    if monetization_open_dimension_query(selected):
-        return False
     if _contains_near_raw_selector(selected):
         return True
     words = tuple(_ASCII_WORD.findall(selected))
@@ -144,14 +142,22 @@ def monetization_detail_query(query: str) -> bool:
         return False
     return (
         monetization_guard_blocks_operation_fallback(selected)
-        and not _blocked_product_query(selected)
+        and not _hard_blocked_query(selected)
     )
 
 
-def monetization_detail_input_template() -> dict[str, str]:
+def monetization_detail_input_template() -> dict[str, Any]:
     return {
         "app": "<workspace-app-alias-or-positive-id>",
         "date": "<date:YYYY-MM-DD>",
+        "fields": list(SAFE_ROW_FIELDS),
+        "global_conditions": [],
+        "cond_logic": "AND",
+        "local_conditions": [],
+        "local_cond_logic": "AND",
+        "order_by": [],
+        "segment_id": None,
+        "tmp_segment_id": None,
     }
 
 
@@ -264,15 +270,15 @@ MONETIZATION_DETAIL_CAPABILITY: Mapping[str, Any] = {
         "读取一个显式单日的完整已登记变现明细",
     ),
     "description": (
-        "按显式 App 和单日完整读取固定合同的变现明细；当前登记字段为 "
+        "按显式 App 和单日读取受治理的变现明细，支持登记字段、条件逻辑、排序和同 App 分群；当前登记字段为 "
         + "/".join(SAFE_ROW_FIELDS)
         + "；未登记字段按合同漂移 fail-closed，登记后按投影总裁决暴露；"
-        "带字段、筛选或分组的请求交给 raw capability discovery。"
+        "date 始终生成唯一时间范围，独立临时分群不会被透传。"
         "空结果与权限裁剪空集不可区分；若不确定权限，先运行 "
         "`gravity apps permission-profile`。"
     ),
     "boundaries": (
-        "带字段、筛选或分组的请求交给 raw capability discovery。",
+        "只接受登记字段、元数据验证条件及同 App 已登记分群。",
         "这是单日逐行变现明细，不是按平台广告位聚合的变现报表。",
     ),
     "required_inputs": MONETIZATION_DETAIL_REQUIRED_INPUTS,
@@ -290,6 +296,14 @@ MONETIZATION_DETAIL_CAPABILITY: Mapping[str, Any] = {
             "nullable": False,
             "description": "One explicit YYYY-MM-DD monetization window.",
         },
+        "fields": {"type": "array", "item_type": "string", "required": False},
+        "global_conditions": {"type": "array", "item_type": "object", "required": False},
+        "cond_logic": {"type": "string", "enum": ["AND", "OR"], "required": False},
+        "local_conditions": {"type": "array", "item_type": "object", "required": False},
+        "local_cond_logic": {"type": "string", "enum": ["AND", "OR"], "required": False},
+        "order_by": {"type": "array", "item_type": "object", "required": False},
+        "segment_id": {"type": "string|integer|null", "required": False},
+        "tmp_segment_id": {"type": "string|integer|null", "required": False},
     },
     "plan_node_limits": {"max_pages": 1_000, "max_items": 100_000},
     "sensitive_query": True,

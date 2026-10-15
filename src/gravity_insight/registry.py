@@ -24,6 +24,7 @@ from .models import OperationSpec
 from .material_report_wire import (
     material_report_request_parts as _material_report_request_parts,
 )
+from .monetization_wire import monetization_detail_request_parts
 from .mutation_policy import MutationPolicyMixin
 from .segment_rule_wire import (
     _analysis_segment_rule_request_parts,
@@ -433,43 +434,17 @@ def _analysis_order_detail_request_parts(
     return _isolated_wire({}, body)
 
 
-_MONETIZATION_BASE_FIELDS = (
-    "CreateTime",
-    "AdEventTime",
-    "AdPlatform",
-    "AdvertiserID",
-    "AdAid",
-    "TurboPromotedObjectID",
-    "event$ad_type",
-    "event$adn_type",
-    "event$ad_unit_id",
-    "event$ad_through",
-    "event$ad_source_id",
-    "event$ad_placement_id",
-    "event$ecpm",
-    "samount",
-    "re_attribute_info",
-)
-
-
 def _analysis_monetization_detail_request_parts(
     values: Mapping[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any]]:
-    conditions = _analysis_conditions_with_optional_day(
-        values, default_field="create_time", default_type="event"
+    return monetization_detail_request_parts(
+        values,
+        conditions=_analysis_conditions_with_optional_day(
+            values, default_field="create_time", default_type="event"
+        ),
+        query_id=_analysis_query_id(),
+        identifier=_wire_identifier,
     )
-    fields = values.get("fields") or _MONETIZATION_BASE_FIELDS
-    body = {
-        "query_id": _analysis_query_id(),
-        "app_id": _wire_identifier(values.get("app_id"), "app_id"),
-        "page": values.get("page", 1),
-        "page_size": values.get("page_size", 20),
-        "order_by_list": values.get("order_by_list", []),
-        "global_conditions": conditions,
-        "local_conditions": values.get("local_conditions", []),
-        "field_map": list(fields),
-    }
-    return _isolated_wire({}, body)
 
 
 def _analysis_user_detail_request_parts(

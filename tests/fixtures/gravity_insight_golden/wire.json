@@ -53,8 +53,12 @@
       },
       "operation_id": "analysis.monetization_detail.list",
       "wire": {
+        "method": "POST",
+        "path": "/report/api/v3/dataanalysis/monetization_detail/list/",
+        "query": {},
         "body": {
           "app_id": 101,
+          "cond_logic": "AND",
           "field_map": [
             "CreateTime",
             "AdEventTime",
@@ -83,15 +87,13 @@
               ]
             }
           ],
+          "local_cond_logic": "AND",
           "local_conditions": [],
           "order_by_list": [],
           "page": 2,
           "page_size": 3,
           "query_id": "17861472000000123456789abcdef012"
-        },
-        "method": "POST",
-        "path": "/report/api/v3/dataanalysis/monetization_detail/list/",
-        "query": {}
+        }
       }
     },
     {

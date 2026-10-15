@@ -4,8 +4,8 @@
   "operation": {
     "action": "list",
     "auth_profile": "gravity_authorization",
-    "contract_version": 3,
-    "description": "单日变现明细；固定产品读取完整已登记字段，raw fields 仍由 live metadata 校验，用户与设备字段可用于结构化筛选。空结果与权限裁剪空集不可区分；若不确定权限，先运行 gravity apps permission-profile。",
+    "contract_version": 4,
+    "description": "单日变现明细；支持受治理选列、全局/局部条件逻辑、排序和同 App 已登记分群。date 始终生成唯一 create_time 范围，独立临时分群因无可验证目录而失败关闭。空结果与权限裁剪空集不可区分；若不确定权限，先运行 gravity apps permission-profile。",
     "domain": "analysis",
     "effect": "read",
     "examples": [],
@@ -18,6 +18,14 @@
       "date": {
         "required": true,
         "type": "date"
+      },
+      "cond_logic": {
+        "default": "AND",
+        "enum": [
+          "AND",
+          "OR"
+        ],
+        "type": "string"
       },
       "fields": {
         "item_type": "string",
@@ -38,6 +46,14 @@
         "max_items": 100,
         "type": "array"
       },
+      "local_cond_logic": {
+        "default": "AND",
+        "enum": [
+          "AND",
+          "OR"
+        ],
+        "type": "string"
+      },
       "order_by_list": {
         "default": [],
         "item_type": "object",
@@ -51,6 +67,16 @@
       "page_size": {
         "default": 20,
         "type": "integer"
+      },
+      "segment_id": {
+        "max_length": 64,
+        "required": false,
+        "type": "string"
+      },
+      "tmp_segment_id": {
+        "max_length": 64,
+        "required": false,
+        "type": "string"
       }
     },
     "live_probe": {
@@ -109,10 +135,16 @@
         "page_size",
         "order_by_list",
         "global_conditions",
-        "local_conditions"
+        "cond_logic",
+        "local_conditions",
+        "local_cond_logic",
+        "segment_id",
+        "tmp_segment_id"
       ],
       "defaults": {
+        "cond_logic": "AND",
         "global_conditions": [],
+        "local_cond_logic": "AND",
         "local_conditions": [],
         "order_by_list": [],
         "page": 1,

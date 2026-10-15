@@ -16,9 +16,16 @@ from .actionable_error_values import actual_value
 
 
 MONETIZATION_DETAIL_NAME = "monetization_detail"
-REQUEST_FIELDS = frozenset({"name", "app", "date"})
+REQUEST_FIELDS = frozenset(
+    {
+        "name", "app", "date", "fields", "global_conditions", "cond_logic",
+        "local_conditions", "local_cond_logic", "order_by", "segment_id",
+        "tmp_segment_id",
+    }
+)
+REQUIRED_REQUEST_FIELDS = frozenset({"name", "app", "date"})
 OUTPUT_FIELDS = frozenset(
-    {"app_id", "data", "date", "limits", "page", "returned_items"}
+    {"app_id", "data", "date", "query", "limits", "page", "returned_items"}
 )
 _TARGETS = frozenset({"/app", "/date"})
 _STRUCTURAL = frozenset(
@@ -31,6 +38,7 @@ _STRUCTURAL = frozenset(
         "next_action",
         "app_id",
         "date",
+        "query",
     }
 )
 
@@ -46,7 +54,7 @@ def validate_monetization_detail_plan(
 ) -> None:
     """Validate the closed request and its two scalar binding targets."""
 
-    if set(request) != REQUEST_FIELDS:
+    if not REQUIRED_REQUEST_FIELDS <= set(request) or set(request) - REQUEST_FIELDS:
         raise input_error(
             f"actual value: {actual_value(sorted(request))}; monetization_detail request fields are incomplete or unavailable; must include the required product fields",
             "request",
@@ -72,6 +80,8 @@ def execute_monetization_detail_plan(
     )
 
     try:
+        from .monetization_query import normalize_monetization_query
+
         app_id = context.workspace.resolve_app(request["app"])
         canonical = validate_monetization_detail_request(
             app_id,
@@ -80,6 +90,8 @@ def execute_monetization_detail_plan(
             max_pages=context.max_pages,
             max_items=context.max_items,
         )
+        query_options = _query_options(request)
+        normalize_monetization_query(**query_options)
     except (KeyError, TypeError, ValueError):
         raise input_error(
             f"actual value: {actual_value(sorted(request))}; monetization_detail bound request is invalid; must pass product validation", "request"
@@ -87,6 +99,7 @@ def execute_monetization_detail_plan(
     result = sdk.monetization_detail(
         request["app"],
         canonical[1],
+        **query_options,
         max_workers=1,
         max_pages=context.max_pages,
         max_items=context.max_items,
@@ -96,6 +109,7 @@ def execute_monetization_detail_plan(
         result,
         canonical[0],
         canonical[1],
+        **query_options,
         max_workers=1,
         max_pages=context.max_pages,
         max_items=context.max_items,
@@ -143,6 +157,8 @@ def _validate_bound_request(
     from .monetization_detail import validate_monetization_detail_request
 
     try:
+        from .monetization_query import normalize_monetization_query
+
         app = 1 if "/app" in dynamic else workspace.resolve_app(request.get("app"))
         date = "2026-01-01" if "/date" in dynamic else request.get("date")
         validate_monetization_detail_request(
@@ -152,10 +168,26 @@ def _validate_bound_request(
             max_pages=context.max_pages,
             max_items=context.max_items,
         )
+        normalize_monetization_query(**_query_options(request))
     except (KeyError, TypeError, ValueError):
         raise input_error(
             f"actual value: {actual_value(sorted(request))}; monetization_detail request is invalid; must pass product validation", "request"
         ) from None
+
+
+def _query_options(request: Mapping[str, Any]) -> dict[str, Any]:
+    from .monetization_projection import SAFE_ROW_FIELDS
+
+    return {
+        "fields": request.get("fields", SAFE_ROW_FIELDS),
+        "global_conditions": request.get("global_conditions", ()),
+        "cond_logic": request.get("cond_logic", "AND"),
+        "local_conditions": request.get("local_conditions", ()),
+        "local_cond_logic": request.get("local_cond_logic", "AND"),
+        "order_by": request.get("order_by", ()),
+        "segment_id": request.get("segment_id"),
+        "tmp_segment_id": request.get("tmp_segment_id"),
+    }
 
 
 def _invalid_result(value: Any, context: AdapterContext) -> dict[str, Any]:

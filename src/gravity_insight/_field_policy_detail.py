@@ -38,7 +38,11 @@ from ._field_policy_shared import (
 )
 from ._field_policy_segment_members import validate_segment_member_fields
 from ._order_read import STATIC_ORDER_FIELD_PROFILES
-from .monetization_detail import SAFE_ROW_FIELDS, validate_monetization_operation_request
+from .monetization_projection import SAFE_ROW_FIELDS
+from .monetization_query import (
+    validate_monetization_operation_request,
+    validate_monetization_segment_scope,
+)
 from ._field_policy_user_detail import static_user_detail_request
 from .errors import InputValidationError
 from .models import OperationSpec
@@ -94,6 +98,8 @@ def validate_analysis_detail(
     _validate_selected_fields(inputs.get("fields", ()), selected_fields)
     _validate_detail_condition_sets(inputs, metadata, metadata_loader, app_id)
     _validate_detail_logic(inputs)
+    if operation.operation_id == ANALYSIS_MONETIZATION_DETAIL:
+        validate_monetization_segment_scope(inputs, metadata.segment_ids)
     if "order_by_list" in inputs:
         validate_detail_order(inputs.get("order_by_list"), metadata.allowed_fields)
     if operation.operation_id == ANALYSIS_USER_EVENT:
@@ -129,8 +135,12 @@ def _static_detail_product_request(
                 "local_conditions",
                 "order_conditions",
                 "order_by_list",
+                "segment_id",
+                "tmp_segment_id",
             )
         )
+        and inputs.get("cond_logic", "AND") == "AND"
+        and inputs.get("local_cond_logic", "AND") == "AND"
         and inputs.get("user_cond_logic", "AND") == "AND"
         and inputs.get("order_cond_logic", "AND") == "AND"
     )
@@ -240,7 +250,13 @@ def _validate_detail_condition_sets(
 
 
 def _validate_detail_logic(inputs: Mapping[str, Any]) -> None:
-    for name in ("user_cond_logic", "order_cond_logic", "postback_cond_logic"):
+    for name in (
+        "cond_logic",
+        "local_cond_logic",
+        "user_cond_logic",
+        "order_cond_logic",
+        "postback_cond_logic",
+    ):
         if name in inputs and inputs.get(name) not in {"AND", "OR"}:
             raise InputValidationError(f"actual value: {actual_value(inputs.get(name))}; allowed values: \"AND\", \"OR\"", field=name)
 
