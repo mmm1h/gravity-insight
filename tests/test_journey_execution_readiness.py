@@ -81,7 +81,7 @@ class JourneyExecutionReadinessTests(unittest.TestCase):
 
     def test_three_states_do_not_confuse_dependency_readiness_with_binding(self):
         executable = self.service.can_run(DICTIONARY, {"app": "main"})
-        unbound = self.service.can_run("analysis.event-trend")
+        unbound = self.service.can_run("analysis.business-pulse")
         self.trust.status = "quarantined"
         blocked = self.service.can_run(DICTIONARY, {"app": "main"})
 
@@ -99,7 +99,13 @@ class JourneyExecutionReadinessTests(unittest.TestCase):
     def test_only_characterized_journeys_have_bound_owners(self):
         rows = self.service.list()["journeys"]
         self.assertEqual(
-            {DICTIONARY, REALTIME, "analysis.merge2.ap-cost-anomaly-localization"},
+            {DICTIONARY, REALTIME, "analysis.merge2.ap-cost-anomaly-localization", "analysis.event-trend",
+             "analysis.readable-app-catalog", "analysis.app-configuration", "analysis.attribution-backtrack-configuration",
+             "analysis.attribution-click-interval", "analysis.postback-mode", "analysis.postback-window",
+             "analysis.reattribution-configuration", "analysis.event-metadata", "analysis.event-properties",
+             "analysis.user-properties", "analysis.user-report", "analysis.ad-report", "analysis.material-report",
+             "analysis.order-report", "analysis.monetization-report", "analysis.ad-metric-catalog",
+             "analysis.material-metric-catalog", "analysis.user-report-fields"},
             {row["journey_id"] for row in rows if row["execution_binding"]["status"] == "bound"},
         )
 

@@ -15,7 +15,7 @@ class Service:
         return {"schema_version": "gravity.journey-list.v1"}
 
     def verify(self):
-        return {"schema_version": "gravity.journey-registry-verification.v1"}
+        return {"schema_version": "gravity.journey-registry-verification.v2"}
 
     def describe(self, journey_id):
         return {"schema_version": "gravity.journey-description.v1", "journey_id": journey_id}
@@ -118,7 +118,7 @@ class ReferenceJourneySurfaceTests(unittest.TestCase):
 
         self.assertEqual("gravity.journey-list.v1", listed["schema_version"])
         self.assertEqual(
-            "gravity.journey-registry-verification.v1",
+            "gravity.journey-registry-verification.v2",
             verified["schema_version"],
         )
         self.assertEqual("gravity.journey-description.v1", describe["schema_version"])

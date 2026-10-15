@@ -62,8 +62,8 @@ _DEFINITIONS = (
     ToolDefinition(
         "gravity.execute",
         "Execute Registered Journey",
-        "Execute one exact registered Journey through its existing Runtime owner; raw operations are not accepted.",
-        True,
+        "Execute one exact registered Journey through its existing Runtime owner. Inspect its input_contract first. Elect output with a destination and confirm=true before execution for complete local JSON delivery beyond the MCP byte budget; this can write that file. Raw operations are not accepted.",
+        False,
         False,
     ),
     ToolDefinition(

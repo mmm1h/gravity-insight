@@ -181,8 +181,10 @@ class MCPServer:
             and 1_024 <= requested_maximum <= MAX_OUTPUT_BYTES
             else MAX_OUTPUT_BYTES
         )
+        owner_invoked = False
         try:
             selected = validate_arguments(name, arguments)
+            owner_invoked = True
             value = self._handlers[name](selected)
             if not isinstance(value, Mapping):
                 raise MCPInputError("Tool owner returned a non-object result")
@@ -193,7 +195,7 @@ class MCPServer:
                 execution=name in {"gravity.execute", "gravity.export"},
             )
         except Exception as exc:
-            return exception_tool_result(name, exc, max_bytes=maximum)
+            return exception_tool_result(name, exc, max_bytes=maximum, owner_invoked=owner_invoked)
 
     def _read_resource(self, params: Mapping[str, Any]) -> dict[str, Any]:
         uri = params.get("uri")

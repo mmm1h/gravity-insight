@@ -15,5 +15,24 @@
     "analysis.gravity.core.project-metric-contract-check": {"cli": "declared", "sdk": "declared", "plan": "declared", "agent": "declared"},
     "analysis.gravity.core.returned-filter-comparison": {"cli": "declared", "sdk": "declared", "plan": "declared", "agent": "declared"},
     "analysis.gravity.game.revenue-forecast-readiness": {"cli": "missing", "sdk": "missing", "plan": "missing", "agent": "missing"}
+  },
+  "current_journeys": {
+    "analysis.ad-metric-catalog": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.ad-report": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.app-configuration": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.attribution-backtrack-configuration": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.attribution-click-interval": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.event-metadata": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.event-properties": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.material-metric-catalog": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.material-report": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.monetization-report": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.order-report": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.postback-mode": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.postback-window": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.reattribution-configuration": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.user-properties": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.user-report": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"},
+    "analysis.user-report-fields": {"cli": "available", "sdk": "available", "plan": "available", "agent": "available"}
   }
 }

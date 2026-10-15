@@ -2,7 +2,7 @@
   "schema_version": "gravity.mcp-host-development-evidence.v1",
   "suite_id": "r10-mcp-host-development-2026-08-29",
   "suite_sha256": "4ef0c938f029f3329c3533b6ad498207b4bb01dd671237e41a729c40644455f4",
-  "evaluated_at": "2026-09-02T13:50:35.316748+00:00",
+  "evaluated_at": "2026-10-15T13:40:57.193180+00:00",
   "evaluator": {
     "selector_id": "gravity.schema-aware-lexical-selector.v2",
     "kind": "offline_schema_aware_lexical_surrogate",
@@ -30,7 +30,7 @@
       "expected_first_choice": "tool:gravity.inspect:server",
       "observed_first_choice": "resource:gravity://server/metadata",
       "first_choice_correct": false,
-      "selection_score": 0.313827,
+      "selection_score": 0.306252,
       "matched_terms": [
         "mcp",
         "metadata",
@@ -47,7 +47,7 @@
       "expected_first_choice": "tool:gravity.inspect:skill",
       "observed_first_choice": "tool:gravity.inspect:skill",
       "first_choice_correct": true,
-      "selection_score": 0.783321,
+      "selection_score": 0.780758,
       "matched_terms": [
         "hub",
         "inspect",
@@ -161,7 +161,7 @@
       "expected_first_choice": "tool:gravity.export:json",
       "observed_first_choice": "tool:gravity.export:json",
       "first_choice_correct": true,
-      "selection_score": 0.817411,
+      "selection_score": 0.812652,
       "matched_terms": [
         "analysis",
         "destination",
@@ -182,7 +182,7 @@
       "expected_first_choice": "tool:gravity.export:markdown",
       "observed_first_choice": "tool:gravity.export:markdown",
       "first_choice_correct": true,
-      "selection_score": 0.466786,
+      "selection_score": 0.47218,
       "matched_terms": [
         "confirmation",
         "explicit",
@@ -220,7 +220,7 @@
       "expected_first_choice": "resource:gravity://server/metadata",
       "observed_first_choice": "resource:gravity://server/metadata",
       "first_choice_correct": true,
-      "selection_score": 0.647489,
+      "selection_score": 0.639537,
       "matched_terms": [
         "mcp",
         "metadata",

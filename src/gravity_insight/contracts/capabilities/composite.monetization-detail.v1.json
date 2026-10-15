@@ -1,0 +1,32 @@
+{
+  "artifact_kind": "capability",
+  "schema_version": "gravity.capability.v1",
+  "identity_kind": "composite",
+  "selector": "composite:monetization_detail",
+  "contract_version": "1",
+  "display_name": "composite:monetization_detail",
+  "lifecycle": "active",
+  "owner": "gravity-runtime/report",
+  "effect": "read",
+  "privacy_classification": "internal_business",
+  "provider": {
+    "kind": "agent_product_card",
+    "fingerprint": "a62385fc043731a433719c75e24f19098c7ba97af3e3240577abc84cd365d1ba"
+  },
+  "dependencies": [
+    {
+      "identity_kind": "operation",
+      "selector": "analysis.monetization_detail.list",
+      "contract_version": "4",
+      "minimum_trust": "stable",
+      "completeness": "unknown",
+      "data_quality": "pass"
+    }
+  ],
+  "declared_completeness": "unknown",
+  "required_data_quality": "pass",
+  "allowed_claims": [
+    "returned-scope-observation"
+  ],
+  "validation_ttl_seconds": 86400
+}

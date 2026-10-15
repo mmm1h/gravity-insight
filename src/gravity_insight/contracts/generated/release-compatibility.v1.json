@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "f4f70666ed619918d2aed3dda3c1cca52595ba4b26018cfd3370fe234db7cad2"
+    "compatibility_sha256": "18b87ce1b8fe5b2030e717703c285ca2f5aad73ddc7103a45adc44a9b80c1de1"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -491,11 +491,16 @@
       "hard_breaks": [
         {
           "id": "0.3.27-hard-break-1",
-          "description": "realtime diagnostics use `analysis.realtime_event.list` contract v2 and `gravity-insight.realtime-event-catalog.v2`, with page=1, a window of at most24 hours and at most1000 returned rows. SDK/version AND filters and explicitly selected metadata-typed scalar properties are available through SDK/CLI/Plan/Agent/Journey; Plan requires the typed v2 scope/obligations and rejects the old envelope. Native content and ingestion completeness remain unknown.",
+          "description": "Journey registry verification emits `gravity.journey-registry-verification.v2`; new `gravity.journey.v2` registrations have explicit `runtime_contract` bindings and null historical-ledger evidence. Existing v1 bindings/schema and frozen ledger rows remain intact. MCP `gravity.execute` advertises its optional confirmed local JSON write; `gravity.mcp-error.v2` preserves unknown network state after owner exceptions.",
           "migration_guide": "docs/migration/0.3.27.md"
         },
         {
           "id": "0.3.27-hard-break-2",
+          "description": "realtime diagnostics use `analysis.realtime_event.list` contract v2 and `gravity-insight.realtime-event-catalog.v2`, with page=1, a window of at most24 hours and at most1000 returned rows. SDK/version AND filters and explicitly selected metadata-typed scalar properties are available through SDK/CLI/Plan/Agent/Journey; Plan requires the typed v2 scope/obligations and rejects the old envelope. Native content and ingestion completeness remain unknown.",
+          "migration_guide": "docs/migration/0.3.27.md"
+        },
+        {
+          "id": "0.3.27-hard-break-3",
           "description": "staged user-event export downloads require the original task-bound `completeness` receipt. A workbook with another client, date or event scope fails before atomic publication; legacy tasks without comparable scope evidence cannot be certified. Committed transport remains distinct from unknown source content/snapshot completeness (#294). Migration guide: [0.3.27](docs/migration/0.3.27.md)",
           "migration_guide": "docs/migration/0.3.27.md"
         }

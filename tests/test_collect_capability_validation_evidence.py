@@ -80,10 +80,10 @@ class CapabilityEvidenceCollectorTests(unittest.TestCase):
     def test_inventory_separates_reads_writes_and_unproven_upper_layers(self):
         value = inventory()
 
-        self.assertEqual(231, value["capabilities"])
+        self.assertEqual(236, value["capabilities"])
         self.assertEqual(190, value["counts"]["read_probe_candidate"])
         self.assertEqual(38, value["counts"]["requires_production_write"])
-        self.assertEqual(3, value["counts"]["execution_path_unproven"])
+        self.assertEqual(8, value["counts"]["execution_path_unproven"])
         self.assertFalse(value["network_called"])
 
     def test_app_binding_replaces_only_exact_declared_placeholders(self):
