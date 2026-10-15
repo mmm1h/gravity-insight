@@ -3,7 +3,7 @@
   "definition_sha256": "b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326",
   "edge_kind_counts": {
     "ast_delayed_import": 539,
-    "ast_eager_import": 2849,
+    "ast_eager_import": 2852,
     "lazy_export_owner": 62,
     "package_parent": 739
   },
@@ -18,8 +18,8 @@
         2,
         2
       ],
-      "edge_count": 3425,
-      "graph_sha256": "3b0f31f848439a110d2ff1941e9fc4f8c5fb97800f55d4e52222b9c88d1c5984",
+      "edge_count": 3428,
+      "graph_sha256": "4f911b05aaae0d12082db25adc7ab07987fd3af9bf3e5d426106353258015eca",
       "largest_cyclic_scc_size": 461,
       "self_loop_scc_count": 0
     },
@@ -50,8 +50,8 @@
         2,
         1
       ],
-      "edge_count": 3363,
-      "graph_sha256": "a17090d3ec1dc0fc0ec62c245085e545bbe219b7813f05a96dcb747fa5d02451",
+      "edge_count": 3366,
+      "graph_sha256": "40ca6138e27db05b68fbe407eeb6eff13ff38ba8fb95d9229e8968f61b11c9eb",
       "largest_cyclic_scc_size": 17,
       "self_loop_scc_count": 1
     },
@@ -67,8 +67,8 @@
         2,
         2
       ],
-      "edge_count": 4079,
-      "graph_sha256": "5c9a69975abf0487c67317e4f5624011c9526a5d04b3ba6c79a3dbb940f29007",
+      "edge_count": 4082,
+      "graph_sha256": "ee395de3ae8947dc82ee858fcf83d834cb9a8adef7701757ffd00016b5caf439",
       "largest_cyclic_scc_size": 578,
       "self_loop_scc_count": 0
     },
@@ -76,8 +76,8 @@
       "cyclic_scc_count": 0,
       "cyclic_scc_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
       "cyclic_scc_sizes": [],
-      "edge_count": 2849,
-      "graph_sha256": "f93fe231aa618ab1b1ba02edaf0510b0bd6be76354d3e32a6af608635835d267",
+      "edge_count": 2852,
+      "graph_sha256": "a68552e38884020b71510c1c42ddcf1396dc4717f000260389d1f40547a01ca4",
       "largest_cyclic_scc_size": 0,
       "self_loop_scc_count": 0
     }

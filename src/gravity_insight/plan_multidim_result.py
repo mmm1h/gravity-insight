@@ -6,6 +6,8 @@ import copy
 from collections.abc import Mapping
 from typing import Any
 
+from .contracts.envelope_obligations import serialize_envelope
+from .multidim_contract import multidim_component_observation
 from .errors import ContractChangedError, ErrorCode
 from .multidim_service import (
     CUSTOM_METRIC_OPERATIONS,
@@ -231,17 +233,22 @@ def _safe_component(
         return None
     assert isinstance(value, Mapping)
     status = value["status"]
+    observation, obligations = multidim_component_observation(
+        value.get("fetched_at"), status=status,
+        error=_safe_error(value.get("error")) if status not in _SUCCESS else None,
+    )
     if failed and status not in _SUCCESS:
         selected = {
             "operation_id": operation_id,
             "ok": False,
             "status": status,
             "error": _safe_error(value.get("error")),
+            **observation,
         }
         diagnostics = _safe_drift_diagnostics(value, operation_id)
         if diagnostics is not None:
             selected["drift_diagnostics"] = diagnostics
-        return selected
+        return serialize_envelope(selected, obligations)
     data = value["data"]
     rows_key = "list" if isinstance(data.get("list"), list) else "items"
     selected: dict[str, Any] = {
@@ -249,13 +256,14 @@ def _safe_component(
         "ok": value.get("ok", True),
         "status": status,
         "data": {rows_key: copy.deepcopy(data[rows_key])},
+        **observation,
     }
     page = _safe_page(value.get("page"))
     if page is not None:
         selected["page"] = page
     if isinstance(value.get("truncated"), bool):
         selected["truncated"] = value["truncated"]
-    return project_result_audit(selected, value)
+    return serialize_envelope(project_result_audit(selected, value), obligations)
 
 
 def _safe_drift_diagnostics(
