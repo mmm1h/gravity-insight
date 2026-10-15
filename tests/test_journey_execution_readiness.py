@@ -110,7 +110,7 @@ class JourneyExecutionReadinessTests(unittest.TestCase):
     def test_verified_products_execute_once_and_preserve_native_results(self):
         for identity, method, inputs, data in (
             (DICTIONARY, "analysis_default_dictionary", {"app": "main"}, {"api": ["v1"]}),
-            (REALTIME, "realtime_event_catalog", {"app": "main", **WINDOW}, {"list": [{"event_name": "profile_set"}]}),
+            (REALTIME, "realtime_event_catalog", {"app": "main", **WINDOW}, {"list": [{"event_name": "profile_set", "event_type": "profile", "request_time": "2026-09-01 00:01:00", "client_lib": "fixture-sdk", "client_lib_version": "1.0"}]}),
         ):
             with self.subTest(identity=identity):
                 self.transport.data = data

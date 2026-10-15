@@ -142,7 +142,7 @@ methods = sorted(
 | 本地派生与 playbook | `derive_metrics()`、`metric_anomaly_playbook_schema()`、`prepare_metric_anomaly_playbook()`、`metric_anomaly_playbook()` |
 | Metadata | `sync_metadata_app()`、`metadata_status()`、`table_lineage()`、`metadata_cache_stats()`、`clear_metadata_cache()`、`bypass_metadata_cache()` |
 | Metadata template | `metadata_template_mutation_schema()`、`metadata_template_mutation()`、`create_metadata_template()`、`append_metadata_template_members()`、`remove_metadata_template_members()`、`delete_metadata_template()` |
-| Realtime event | `realtime_event_catalog()`、`realtime_event_mutation_schema()`、`realtime_event_mutation()` |
+| Realtime event | `realtime_event_catalog()` 的 v2 有界诊断支持 SDK/版本 AND 筛选、单个 `properties` EQUALS 单值条件及显式 `property_fields` 标量投影；结果含 typed unknown/采集范围边界。写入仍走 `realtime_event_mutation_schema()`、`realtime_event_mutation()` |
 | Reports | `report_directory()`、`report_subscriptions()`、`create_report()`、`delete_report()`、`create_report_subscription()`、`delete_report_subscription()` |
 | Custom metric | `custom_metrics()`、`custom_metric_mutation_schema()`、`custom_metric_mutation()`、`create_custom_metric()`、`update_custom_metric()`、`delete_custom_metric()` |
 | Export / receipt | `export_run()`、`list_http_receipts()`、`get_http_receipt()`、`export_http_receipts()` |

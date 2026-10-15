@@ -27,9 +27,16 @@ class RealtimeEventSdkMixin:
         start: str,
         end: str,
         event_type: str = "profile",
+        event_name: str | None = None,
+        client_lib: str | None = None,
+        client_lib_version: str | None = None,
+        client_id: str | None = None,
+        request_id: str | None = None,
+        properties: list[Mapping[str, Any]] | None = None,
+        property_fields: tuple[str, ...] | list[str] = (),
         workspace: Any | None = None,
     ) -> dict[str, Any]:
-        """Read one first page of the realtime-event catalog for a workspace App."""
+        """Read bounded realtime SDK diagnostics for a workspace App."""
 
         from .realtime_event_catalog import realtime_event_catalog
 
@@ -40,6 +47,13 @@ class RealtimeEventSdkMixin:
             start=start,
             end=end,
             event_type=event_type,
+            event_name=event_name,
+            client_lib=client_lib,
+            client_lib_version=client_lib_version,
+            client_id=client_id,
+            request_id=request_id,
+            properties=properties,
+            property_fields=property_fields,
         )
 
 

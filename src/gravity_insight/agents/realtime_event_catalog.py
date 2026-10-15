@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from .intent_text import affirmative_intent_text
+from ..realtime_event_diagnostics import FILTER_FIELDS, realtime_property_fields_schema, realtime_property_filter_schema
 
 
 REALTIME_EVENT_CATALOG_NAME = "realtime_event_catalog"
@@ -29,12 +30,13 @@ REALTIME_EVENT_CATALOG_CAPABILITY: Mapping[str, Any] = {
     "domain": "analysis",
     "aliases": tuple(sorted(_EXACT - {REALTIME_EVENT_CATALOG_NAME})),
     "description": (
-        "读取一个 App 在显式时间窗内的实时事件目录第一页；"
-        "默认 filters.event_type=profile。响应无 page_info。"
+        "读取一个 App 显式短窗口的实时事件与 SDK/版本诊断；"
+        "普通筛选按 AND，默认 event_type=profile；无可证明分页。"
     ),
     "boundaries": (
-        "只返回第一页；响应无 page_info。",
+        "单次最多1000行、窗口最多24小时，内容完整性unknown；空结果不证明未上报。",
         "默认 filters.event_type=profile，不是全量事件查询。",
+        "属性只允许元数据与隐私校验后的显式标量选择；不自动开启采集。",
     ),
     "required_inputs": ("app", "start", "end"),
     "input_schema": {
@@ -42,6 +44,13 @@ REALTIME_EVENT_CATALOG_CAPABILITY: Mapping[str, Any] = {
         "start": {"type": "string", "required": True, "nullable": False},
         "end": {"type": "string", "required": True, "nullable": False},
         "event_type": {"type": "string", "required": False, "nullable": False},
+        **{key: {"type": "string", "required": False, "nullable": False} for key in FILTER_FIELDS if key != "properties"},
+        "properties": {"type": "array", "required": False, "nullable": False,
+                       "machine_schema": realtime_property_filter_schema(),
+                       "description": "至多一个 field/datatype/operator=EQUALS/values=[单值] 对象；datatype 必须等于元数据，LIST/DICT 比较未验证。"},
+        "property_fields": {"type": "array", "required": False, "nullable": False,
+                            "machine_schema": realtime_property_fields_schema(),
+                            "description": "至多20个显式、安全的标量属性元数据英文名；不会返回raw_properties整体。"},
     },
 }
 
@@ -74,8 +83,9 @@ def realtime_event_catalog_plan_request(card: Mapping[str, Any]) -> dict[str, An
         "start": card.get("start", "<YYYY-MM-DD HH:MM:SS>"),
         "end": card.get("end", "<YYYY-MM-DD HH:MM:SS>"),
     }
-    if card.get("event_type"):
-        request["event_type"] = card["event_type"]
+    for name in ("event_type", *FILTER_FIELDS, "property_fields"):
+        if name in card and card[name] is not None:
+            request[name] = card[name]
     return request
 
 

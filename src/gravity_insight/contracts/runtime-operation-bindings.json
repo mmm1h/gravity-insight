@@ -22,6 +22,7 @@
     }
   },
   "request_builders": {
+    "analysis.realtime_event.list": "analysis_realtime_event_request_parts",
     "analysis.account_user.list": "analysis_account_user_request_parts",
     "analysis.event.list": "analysis_event_catalog_request_parts",
     "analysis.event_property.list": "analysis_event_property_catalog_request_parts",
@@ -42,6 +43,7 @@
     "report.business.query": "_business_report_request_parts"
   },
   "response_projectors": {
+    "analysis.realtime_event.list": "project_analysis_realtime_event",
     "analysis.user_event.list": "project_analysis_user_event"
   },
   "prober": {

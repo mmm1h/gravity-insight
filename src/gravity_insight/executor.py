@@ -38,10 +38,11 @@ from .receipt import capture_http_receipt_references, record_response_drift
 from .registry import PolicyEngine, Registry
 from .response_drift import ResponseDriftRecorder
 from .response_projection import (
+    _ABSENT,
+    _path_get,
+    _project_mapping_data,
     _empty_projection,
     _normalize_empty_page,
-    _project_data_containers,
-    _required_data_expected_type,
 )
 from . import response_redaction_policy as _response_redaction
 from .semantic_status import (
@@ -50,9 +51,9 @@ from .semantic_status import (
 )
 from .transport import Transport
 from .user_event_projection import project_analysis_user_event
+from .realtime_event_diagnostics import project_analysis_realtime_event
 
 
-_ABSENT = object()
 class ReadExecutor:
     def __init__(self, registry: Registry, policy: PolicyEngine, transport: Transport) -> None:
         self._registry = registry
@@ -211,57 +212,6 @@ def _project(
         ), ProjectionDrift.BREAKING, recorder.to_contract()
     result = _project_mapping_data(operation, data, values, recorder)
     return *result, recorder.to_contract()
-
-
-def _project_mapping_data(
-    operation: OperationSpec,
-    data: Mapping[str, Any],
-    values: Mapping[str, Any],
-    recorder: ResponseDriftRecorder,
-) -> tuple[Any, tuple[str, ...], ProjectionDrift]:
-    projection = operation.response_projection
-    required = set(projection.required_data_keys)
-    missing = [key for key in required if _path_get(data, key) is _ABSENT]
-    for key in missing:
-        recorder.add_breaking_field(
-            ("data", *key.split(".")),
-            _required_data_expected_type(operation, key),
-        )
-    drift = ProjectionDrift.BREAKING if missing else ProjectionDrift.NONE
-    warnings = (
-        [f"required response data keys are absent (count={len(missing)})"]
-        if missing else []
-    )
-    projected: dict[str, Any] = {}
-    for key in projection.data_keys:
-        value = _path_get(data, key)
-        if value is not _ABSENT:
-            projected[key] = value
-        elif key not in required:
-            warnings.append(f"optional response data key is absent: {key}")
-    unknown = {str(key) for key in data} - set(projection.data_keys) - set(
-        projection.known_omitted_data_keys
-    )
-    if unknown:
-        recorder.add_unknown_fields(("data",), data, unknown)
-        warnings.append(
-            f"unregistered response data keys were omitted (count={len(unknown)})"
-        )
-        drift = max(drift, ProjectionDrift.ADDITIVE)
-    primary = operation.pagination.list_path.rsplit(".", 1)[-1]
-    if not primary and "list" in projection.data_keys:
-        primary = "list"
-    if primary not in projection.data_scalar_list_types:
-        projected, item_warnings, item_drift = _project_list_rows(
-            operation, projected, values, recorder
-        )
-        warnings.extend(item_warnings)
-        drift = max(drift, item_drift)
-    projected, nested_warnings, nested_drift = _project_data_containers(
-        operation, projected, values, recorder
-    )
-    warnings.extend(nested_warnings)
-    return projected, tuple(warnings), max(drift, nested_drift)
 
 
 def _project_analysis_aggregate(
@@ -438,21 +388,6 @@ def _projected_items(operation: OperationSpec, projected: Any) -> list[Any] | ob
         if isinstance(projected.get("list"), list):
             return projected["list"]
     return _ABSENT
-
-
-def _path_get(value: Any, path: str) -> Any:
-    if not path:
-        return value
-    current = value
-    parts = path.split(".")
-    # Response data keys are conventionally relative to data; JSON paths may be absolute.
-    if parts and parts[0] == "data" and isinstance(current, Mapping) and "data" not in current:
-        parts = parts[1:]
-    for part in parts:
-        if not isinstance(current, Mapping) or part not in current:
-            return _ABSENT
-        current = current[part]
-    return current
 
 
 def _redact(

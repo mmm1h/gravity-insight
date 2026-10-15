@@ -7,6 +7,7 @@ from typing import Any
 
 from .drift import ProjectionDrift
 from .list_row_projection import (
+    _project_list_rows,
     _is_json_scalar,
     _project_nested_item_value,
     _project_scalar_list,
@@ -442,3 +443,72 @@ def _project_data_path_items(
                 drift = ProjectionDrift.BREAKING
         copied[root] = safe_root
     return copied, tuple(warnings), drift, set(rules_by_root)
+
+
+_ABSENT = object()
+
+
+def _project_mapping_data(
+    operation: OperationSpec,
+    data: Mapping[str, Any],
+    values: Mapping[str, Any],
+    recorder: ResponseDriftRecorder,
+) -> tuple[Any, tuple[str, ...], ProjectionDrift]:
+    projection = operation.response_projection
+    required = set(projection.required_data_keys)
+    missing = [key for key in required if _path_get(data, key) is _ABSENT]
+    for key in missing:
+        recorder.add_breaking_field(
+            ("data", *key.split(".")),
+            _required_data_expected_type(operation, key),
+        )
+    drift = ProjectionDrift.BREAKING if missing else ProjectionDrift.NONE
+    warnings = (
+        [f"required response data keys are absent (count={len(missing)})"]
+        if missing else []
+    )
+    projected: dict[str, Any] = {}
+    for key in projection.data_keys:
+        value = _path_get(data, key)
+        if value is not _ABSENT:
+            projected[key] = value
+        elif key not in required:
+            warnings.append(f"optional response data key is absent: {key}")
+    unknown = {str(key) for key in data} - set(projection.data_keys) - set(
+        projection.known_omitted_data_keys
+    )
+    if unknown:
+        recorder.add_unknown_fields(("data",), data, unknown)
+        warnings.append(
+            f"unregistered response data keys were omitted (count={len(unknown)})"
+        )
+        drift = max(drift, ProjectionDrift.ADDITIVE)
+    primary = operation.pagination.list_path.rsplit(".", 1)[-1]
+    if not primary and "list" in projection.data_keys:
+        primary = "list"
+    if primary not in projection.data_scalar_list_types:
+        projected, item_warnings, item_drift = _project_list_rows(
+            operation, projected, values, recorder
+        )
+        warnings.extend(item_warnings)
+        drift = max(drift, item_drift)
+    projected, nested_warnings, nested_drift = _project_data_containers(
+        operation, projected, values, recorder
+    )
+    warnings.extend(nested_warnings)
+    return projected, tuple(warnings), max(drift, nested_drift)
+
+
+def _path_get(value: Any, path: str) -> Any:
+    if not path:
+        return value
+    current = value
+    parts = path.split(".")
+    # Response data keys are conventionally relative to data; JSON paths may be absolute.
+    if parts and parts[0] == "data" and isinstance(current, Mapping) and "data" not in current:
+        parts = parts[1:]
+    for part in parts:
+        if not isinstance(current, Mapping) or part not in current:
+            return _ABSENT
+        current = current[part]
+    return current

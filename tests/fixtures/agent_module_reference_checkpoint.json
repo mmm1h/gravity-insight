@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "181ca46c99694fab2d2131cb1d7fb730baa549282f9b748f4a691819770761c8",
+    "reference_evidence_sha256": "598842019c811b5b2b524cceeec7dbdc7067e844c611e65ec5fbbeb33cbca9e5",
     "manual_review_sha256": "039641b895a455d630c8440f4f2365bde29729d2f5329a1f9e6bdf3f7e8a574f",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3326,
-    "scanned_file_count": 3318,
+    "version_controlled_file_count": 3328,
+    "scanned_file_count": 3320,
     "excluded_files": [
       ".env.example",
       "scripts/audit_agent_module_references.py",
@@ -837,7 +837,7 @@
     "dispositions": {
       "no_migration_effect": 366
     },
-    "sites_sha256": "158a32148ae6da3a7224f12fbcbba95e58c81ca16eee29e251a266b53b51ba1b"
+    "sites_sha256": "47f255c0e01bbfa8d0bf257105e0326f0ee3a0539a5f3a5cb8b22922cf3b281c"
   },
   "blockers": [],
   "site_fields": [
@@ -1200,7 +1200,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22951:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22997:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1215,7 +1215,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:70222:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:70386:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1590,7 +1590,7 @@
       }
     ],
     [
-      "src/gravity_insight/journey_service.py:11:1:from import",
+      "src/gravity_insight/journey_service.py:10:1:from import",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",

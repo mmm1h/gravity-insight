@@ -104,7 +104,10 @@ class RealtimeEventCatalogTests(unittest.TestCase):
                 "2026-08-18 23:59:59",
             ]
         )
-        expected = {"schema_version": SCHEMA_VERSION, "ok": True, "status": "success"}
+        expected = realtime_event_catalog(
+            GravityInsightClient._from_manifest_for_tests(_manifest(), transport=_Transport({"list": []})),
+            7, start="2026-08-18 00:00:00", end="2026-08-18 23:59:59",
+        )
         workspace = _Workspace()
         with (
             patch("gravity_insight.capability_cli.load_workspace", return_value=workspace),
@@ -149,6 +152,7 @@ class RealtimeEventCatalogTests(unittest.TestCase):
                 plan_sdk, request, context
             )["schema_version"],
         )
+        self.assertEqual("empty", plan_subject.execute_realtime_event_catalog_plan(plan_sdk, request, context)["status"])
 
         card = discover_capabilities("查询实时事件目录", client=object(), limit=1)[
             "candidates"

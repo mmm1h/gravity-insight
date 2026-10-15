@@ -84,6 +84,13 @@ def resolve_request_builder(
     return builder
 
 
+def analysis_realtime_event_request_parts(
+    values: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Keep metadata-backed local property selection off the native request."""
+    return {}, {key: values[key] for key in ("app_id", "filters", "page", "page_size", "request_time") if key in values}
+
+
 def analysis_segment_request_parts(
     values: Mapping[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any]]:

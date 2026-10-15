@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Mapping
-from datetime import datetime
 from typing import Any
 
 from .actionable_error_values import actual_value
@@ -23,6 +22,7 @@ from .journey_contract import journey_artifact, journey_artifacts, verify_journe
 from .model_registry import ModelRegistry
 from .operator_registry import OperatorRegistry
 from .reference_journey_contract import JOURNEY_ID
+from .realtime_event_diagnostics import FILTER_FIELDS, realtime_event_inputs
 from .workspace_app import resolve_workspace_app
 
 
@@ -188,24 +188,19 @@ class JourneyService:
         return serialize_envelope(payload, obligations)
 
     def _product_inputs(self, method: str, inputs: Mapping[str, Any]) -> dict[str, Any]:
-        fields = {"app"} if method == "analysis_default_dictionary" else {"app", "start", "end", "event_type"}
+        fields = {"app"} if method == "analysis_default_dictionary" else {"app", "start", "end", "event_type", "property_fields", *FILTER_FIELDS}
         if set(inputs) - fields:
             raise InputValidationError(
                 "actual value: unsupported fields; Journey Product input fields changed",
-                field="inputs", next_action="Use app for the dictionary; add start/end and optional event_type for the realtime catalog.",
+                field="inputs", next_action="Use app for the dictionary; use the registered bounded realtime diagnostic fields for the realtime catalog.",
             )
         result = {"app": resolve_workspace_app(self._workspace, inputs.get("app"))}
         if method == "realtime_event_catalog":
             start, end = inputs.get("start"), inputs.get("end")
-            try:
-                dates = [datetime.strptime(value, "%Y-%m-%d %H:%M:%S") for value in (start, end)]
-                valid = all(date.strftime("%Y-%m-%d %H:%M:%S") == value for date, value in zip(dates, (start, end)))
-            except (ValueError, TypeError):
-                valid = False
             event_type = inputs.get("event_type", "profile")
-            if not valid or dates[0] > dates[1] or not isinstance(event_type, str):
-                raise InputValidationError("Catalog requires an explicit ordered datetime window and string event_type", field="inputs")
-            result.update(start=start, end=end, event_type=event_type)
+            optional = {key: inputs[key] for key in (*FILTER_FIELDS, "property_fields") if key in inputs}
+            realtime_event_inputs(result["app"], start, end, event_type, optional)
+            result.update(start=start, end=end, event_type=event_type, **optional)
         return result
 
     def run(

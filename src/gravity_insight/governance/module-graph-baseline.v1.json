@@ -3,24 +3,24 @@
   "definition_sha256": "b3e0b2a61cb32c8069acec07315c1c65b94a3506c05133c7878a7a2c967f6326",
   "edge_kind_counts": {
     "ast_delayed_import": 539,
-    "ast_eager_import": 2866,
+    "ast_eager_import": 2883,
     "lazy_export_owner": 62,
-    "package_parent": 741
+    "package_parent": 742
   },
-  "node_count": 742,
+  "node_count": 743,
   "profiles": {
     "ast+lazy-exports": {
       "cyclic_scc_count": 4,
-      "cyclic_scc_sha256": "652680f10ec98312c6caa12f8c6dd2061d8600099f8f731cd015a9c93dac59a0",
+      "cyclic_scc_sha256": "8ff73c23d4d9270cff055be72269f8f55641f65a001c77b8fb8bbe4a0241a3d0",
       "cyclic_scc_sizes": [
-        461,
+        463,
         3,
         2,
         2
       ],
-      "edge_count": 3442,
-      "graph_sha256": "8028ae3a8739f82447f3dabf65a8c07c8df88e8b0d2a999eeaef8bdf014ed7e4",
-      "largest_cyclic_scc_size": 461,
+      "edge_count": 3459,
+      "graph_sha256": "7c9744841184ccb573c82564af3c80aadae351dff74f4af40e0345e73baf6157",
+      "largest_cyclic_scc_size": 463,
       "self_loop_scc_count": 0
     },
     "ast-only": {
@@ -50,16 +50,16 @@
         2,
         1
       ],
-      "edge_count": 3380,
-      "graph_sha256": "e602d845564bf9f26f24793bce265c08023f5a036e3c9b428c334d1e30c0b783",
+      "edge_count": 3397,
+      "graph_sha256": "79dcd62039f52742d9ead15a7a418ebf2c5025e27a67b80ee7e12b2f1e038c69",
       "largest_cyclic_scc_size": 17,
       "self_loop_scc_count": 1
     },
     "canonical": {
       "cyclic_scc_count": 7,
-      "cyclic_scc_sha256": "84dae7d5fee04743d120e4bfcc592b896aa67ab96c40a22d9172c52f51029f9d",
+      "cyclic_scc_sha256": "f8a8794b4066c42ac5283b7ac83ed36d5e65fdcef49f81335b26cbd8acb9ca0d",
       "cyclic_scc_sizes": [
-        580,
+        581,
         15,
         8,
         3,
@@ -67,17 +67,17 @@
         2,
         2
       ],
-      "edge_count": 4098,
-      "graph_sha256": "39cca278780dc9b233aae7f4cca79fe7a4c0d2af2768f2de05ca5bfd1bf9938d",
-      "largest_cyclic_scc_size": 580,
+      "edge_count": 4116,
+      "graph_sha256": "676b60dc248a50b81a4c3a6962c8ba6cacd00c66142d7ccc6b03488c9e73631a",
+      "largest_cyclic_scc_size": 581,
       "self_loop_scc_count": 0
     },
     "eager-ast-only": {
       "cyclic_scc_count": 0,
       "cyclic_scc_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
       "cyclic_scc_sizes": [],
-      "edge_count": 2866,
-      "graph_sha256": "caf226c6b41d37a5f03d8df1b1f40f057564ac9a2cf6696c7a8ee557079923e4",
+      "edge_count": 2883,
+      "graph_sha256": "ea618404936ded29aa08c301614938d1aeed9f1ef4126ac84c314d8f4935da21",
       "largest_cyclic_scc_size": 0,
       "self_loop_scc_count": 0
     }

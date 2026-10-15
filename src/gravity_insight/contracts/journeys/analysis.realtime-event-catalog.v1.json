@@ -12,7 +12,7 @@
     {
       "identity_kind": "operation",
       "selector": "analysis.realtime_event.list",
-      "contract_version": "1",
+      "contract_version": "2",
       "minimum_trust": "stable",
       "completeness": "unknown",
       "data_quality": "pass"

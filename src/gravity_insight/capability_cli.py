@@ -10,6 +10,7 @@ from .analysis_default_dictionary import analysis_default_dictionary
 from .account_permission_profile import account_permission_profile
 from .app_snapshot import app_snapshot
 from .realtime_event_catalog import realtime_event_catalog
+from .realtime_event_diagnostics import FILTER_FIELDS
 from .cli_limits import positive_int
 from .order_cli import add_order_commands
 from .monetization_detail_cli import add_monetization_detail_command
@@ -47,12 +48,17 @@ def add_deepening_commands(
     defaults.set_defaults(_gravity_handler=_dispatch_analysis_defaults)
     catalog = analysis_commands.add_parser(
         "realtime-events",
-        help="Read one first page of the realtime-event catalog.",
+        help="Read bounded realtime SDK diagnostics without enabling warehousing.",
     )
     catalog.add_argument("--app", required=True)
     catalog.add_argument("--start", required=True)
     catalog.add_argument("--end", required=True)
     catalog.add_argument("--event-type", default="profile")
+    for name in FILTER_FIELDS:
+        if name != "properties":
+            catalog.add_argument("--" + name.replace("_", "-"))
+    catalog.add_argument("--property-filter", help="One metadata-typed field/datatype/EQUALS/values JSON object or file.")
+    catalog.add_argument("--property-field", action="append", default=[], help="Explicit safe scalar property to project; at most20.")
     catalog.set_defaults(_gravity_handler=_dispatch_realtime_event_catalog)
     add_order_commands(analysis_commands, concurrency_parser, positive_int)
     add_monetization_detail_command(
@@ -89,6 +95,9 @@ def _dispatch_realtime_event_catalog(args: Any, _object_input: Any) -> dict[str,
         start=args.start,
         end=args.end,
         event_type=args.event_type,
+        **{key: getattr(args, key) for key in FILTER_FIELDS if key != "properties"},
+        properties=[_object_input(args.property_filter)] if args.property_filter is not None else None,
+        property_fields=args.property_field,
     )
 
 
