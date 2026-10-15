@@ -8,6 +8,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Any
 
 from .response_drift import merge_response_drifts, normalize_response_drift
+from .contracts.user_event_scope import annotate_user_event_scope
 
 
 SCHEMA_VERSION = "gravity.result-audit.v1"
@@ -49,7 +50,7 @@ def add_result_audit(
 ) -> dict[str, Any]:
     """Add or merge the independent audit sub-contract without copying facts."""
 
-    selected = _audit_retention_result(dict(value))
+    selected = annotate_user_event_scope(_audit_retention_result(dict(value)))
     normalized = _references(references)
     current = selected.get("result_audit")
     existing_references: list[dict[str, str]] = []
