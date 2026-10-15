@@ -23,7 +23,7 @@
 - #171/#170 的当前取证裁决见[脱敏收据](../evidence/forensics/20260907_operation_recertification.json)：Scatter 补登记已观察的嵌套字段；订单细查仅在末页回显、SDK has_more=false、累计条数等于 total_number 三项齐全后提升 completeness。所有原读取入口与已登记字段保留，没有读取能力损失，也未改变调用参数或结果 envelope；只刷新对应 operation 的版本、指纹与 Validation。默认值字典的可选键 warning、本地素材的空数组元素类型、素材报表空样本仍是未闭合证据，user_detail 的 cohort completeness 继续 unknown；不以声明升级代替现场证明。
 - #176 需求 1 只允许显式开启的凭据失效切换，默认单账号能力不变；429 仍走既有退避。2026-09-07 Owner 的独立进程复现否定同 IP 下的账号级限流隔离，需求 2 不推进。完整读取以账号/世代租约重跑，权限与数据范围准入未知即拒绝；高级入口和机器状态见 [SDK 多账号边界](reference/sdk.md#多账号鉴权失效切换高级默认关闭)。#175 的一般刷新根目录重绑定保持独立交付，本变更不修复或依赖该缺陷。单账号读取能力没有删除或降级。
 - Owner 裁定 CLI 启动更新默认开启且真实安装，包括 Hard break；精确 pin、doctor 与显式关闭继续有效。安装使用独立不可变 pip stage，校验后由新进程执行，失败回退到未改动的基础环境，不在业务执行中换版。换版留机器可读记录，详见 [0.3.10 迁移指南](migration/0.3.10.md)。变化不删除任何读取 surface，外部 Installer 计划合同仍保留；调用方若需固定语境必须显式 pin 或关闭自动更新。
-- Insight-first；SQL 只执行 workspace 已登记产品。
+- Insight-first；SQL 只执行 workspace 已登记产品。#282 为行为广告原生指标登记有限 unavailable 语义合同，复用既有结果审计、Multidim schema/Plan 和 Analysis gap owner；不伪造 unit/formula 完整的 Semantic Metric。金额/精度与普通读取能力不变，币种/单位、eCPM来源/后端换算、结算、原生日历/成熟日/as-of 无证据则 null/未知；reporting_ad_amount 与 reporting_ad_revenue 不推为同一未舍入事实，分组 UV 不可相加。仅允许保留独立原生估算观察，精确现金/IAP账合并须补证，不增加请求或提级数据完整性。
 - Workspace SQL 的间接问法必须同时具备审核、跨表聚合、登记名称、日期窗和运行意图；发现只按精确登记名选择 product，无匹配返回既有配置缺口，绝不降级为 Insight、raw operation 或裸 SQL。
 - 调用方能选择目录时使用 host catalog；没有 selection 时 recognizer 保持离线地板。宿主评测器迁到 Astra Responses `low`，新身份 `openai/gpt-6-astra/low/host-selector.v2` 保留匿名批次与 v1 输出，未完成/歧义响应失败关闭。Runtime 读取能力无损，旧 Claude 成绩保留；真实质量、延迟、费用待[development 对照](../evals/agent_usability/README.md#current-live-selector-gpt-6-astra)验证，不据离线门禁提升宿主毕业状态。
 - `app.app_info.get` 的 Agent owner card 按 CLI/SDK 输入对象暴露 `url` 模板；Plan `run` node 仍由 `request.inputs` 承载该对象。
