@@ -16,6 +16,7 @@ from .composite_batch import (
     validate_composite_bounds,
 )
 from .composite_catalog import stable_operation
+from .contracts.user_event_scope import CONTENT_GAP_CODE
 from .errors import InputValidationError, PaginationError
 from .actionable_error_values import actual_value
 from .process_limits import MAX_CONCURRENCY
@@ -275,6 +276,8 @@ def _envelope_metadata(selected: _JourneyInput) -> dict[str, Any]:
             "page_size": selected.page_size,
             "automatic": False,
             "reason": "user-event has no page_info contract",
+            "content_completeness": "unknown",
+            "content_gap_code": CONTENT_GAP_CODE,
         },
     }
 

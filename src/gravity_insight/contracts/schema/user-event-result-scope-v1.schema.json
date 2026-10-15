@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.user-event-result-scope.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "timeline_scope", "summary_scope", "query_item_conditions",
+    "summary_reconciliation", "filtered_matching_record_total", "filtered_total_availability",
+    "content_completeness", "content_gap_code", "ordering_evidence", "cursor_evidence",
+    "equal_total_proves_content_closure", "empty_terminator_proves_content_closure"
+  ],
+  "oneOf": [
+    {"properties": {"query_item_conditions": {"const": "present"}, "summary_reconciliation": {"const": "not_comparable"}}},
+    {"properties": {"query_item_conditions": {"const": "not_requested"}, "summary_reconciliation": {"const": "requires_identical_scope"}}},
+    {"properties": {"query_item_conditions": {"const": "unavailable"}, "summary_reconciliation": {"const": "unavailable"}}}
+  ],
+  "properties": {
+    "schema_version": {"const": "gravity.user-event-result-scope.v1"},
+    "timeline_scope": {"const": "requested_event_window_and_query_item_conditions"},
+    "summary_scope": {"const": "unfiltered_event_window"},
+    "query_item_conditions": {"enum": ["present", "not_requested", "unavailable"]},
+    "summary_reconciliation": {"enum": ["not_comparable", "requires_identical_scope", "unavailable"]},
+    "filtered_matching_record_total": {"type": "null"},
+    "filtered_total_availability": {"const": "unavailable"},
+    "content_completeness": {"const": "unknown"},
+    "content_gap_code": {"const": "USER_EVENT_CONTENT_CLOSURE_UNPROVEN"},
+    "ordering_evidence": {"const": "unavailable"},
+    "cursor_evidence": {"const": "unavailable"},
+    "equal_total_proves_content_closure": {"const": false},
+    "empty_terminator_proves_content_closure": {"const": false}
+  }
+}

@@ -135,6 +135,8 @@ class UserJourneyTests(unittest.TestCase):
         )
         self.assertEqual((4, 25), (by_source["events"]["page"], by_source["events"]["page_size"]))
         self.assertFalse(result["continuation"]["automatic"])
+        self.assertEqual("unknown", result["continuation"]["content_completeness"])
+        self.assertEqual("USER_EVENT_CONTENT_CLOSURE_UNPROVEN", result["continuation"]["content_gap_code"])
         with self.assertRaises(InputValidationError):
             user_journey(client, 17, "north-secret", start="2026-08-12")
 
