@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from ..contracts.behavior_ad_semantics import GAP_CODE as BEHAVIOR_AD_SEMANTICS_GAP_CODE
 from .gap import unavailable_gap
 from .intent_text import affirmative_intent_text
 
@@ -97,6 +98,12 @@ EVENT_DATASET_SNAPSHOT_BOUNDARY_NEXT_ACTION = (
 def unavailable_analysis_gap(query: str) -> dict[str, Any] | None:
     selected = affirmative_intent_text(query)
     words = frozenset(re.findall(r"[a-z0-9_]+", selected))
+    if _behavior_ad_financial_semantics(selected, words):
+        return unavailable_gap(
+            query, code=BEHAVIOR_AD_SEMANTICS_GAP_CODE, journey="native_behavior_ad_semantics",
+            reason="Native behavior advertising observations have no verified monetary unit/currency, backend formula/conversion, settlement, native bucket calendar or dataset as-of/completed-day contract; grouped ad UV is non-additive.",
+            next_action="Inspect `gravity multidim query --input-schema` x-native-behavior-ad-semantics. Keep native IAA estimates separate; register reviewed source unit/formula, settlement, calendar and snapshot evidence before any exact IAP/financial-ledger join. Preserve missing dates as unknown and do not sum grouped UV.",
+        )
     if _custom_event_first_exposure(selected, words):
         return unavailable_gap(
             query,
@@ -283,6 +290,12 @@ def _event_dataset_snapshot_boundary(
         for term in ("as-of", "as of", "数据截止", "快照", "水位", "版本边界")
     )
     return event_context and count_reconciliation and snapshot_boundary
+
+
+def _behavior_ad_financial_semantics(selected: str, words: frozenset[str]) -> bool:
+    source = bool(words & {"iaa", "ecpm", "reporting_ad_amount", "reporting_ad_revenue"}) or any(text in selected for text in ("行为广告收入", "广告变现收入"))
+    semantics = bool(words & {"currency", "unit", "units", "settlement", "settled", "timezone", "calendar", "cash", "conversion", "asof", "watermark"}) or any(text in selected for text in ("币种", "单位", "结算", "现金", "日界", "时区", "财务账", "收入公式", "汇率", "完整日", "底层精度"))
+    return source and semantics
 
 
 def _current_table_schema(selected: str, words: frozenset[str]) -> bool:

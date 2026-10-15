@@ -215,7 +215,7 @@ result = gravity.analysis_query("event", event_spec, app="main")
 ```
 
 编译入口不发送最终分析请求，带条件值的预览使用脱敏表示。Analysis、Segment Rule、Multidim 和
-Semantic Compose 都要求显式结构化输入；自然语言不填业务字段。Multidim 组件保留源 `fetched_at`，缺失/无效时为 null 且 `fetched_at_availability=unavailable`；这只是源读取时间，不是 dataset as-of。Semantic v4/v5 在缺证时撤下依赖该时间的 claims，并在 `validation.withheld_claims` 列出。
+Semantic Compose 都要求显式结构化输入；自然语言不填业务字段。Multidim 组件保留源 `fetched_at`，缺失/无效时为 null 且 `fetched_at_availability=unavailable`；这只是源读取时间，不是 dataset as-of。Semantic v4/v5 在缺证时撤下依赖该时间的 claims，并在 `validation.withheld_claims` 列出。行为广告指标的 `behavior_ad_semantics` 将币种/单位、公式/换算、结算、原生日历和 as-of 标为未验证；同份合同由 Multidim schema 的 `x-native-behavior-ad-semantics` 公开。金额族保持独立，分组 UV 不可相加，缺日不补零，不与 IAP 静默合成现金账。
 
 产品之间不要互相替代：Dashboard snapshot 不执行图表；Segment snapshot 不返回成员；Saved Analysis
 prepare 不执行最终查询；Order Split Trace 必须先唯一匹配父行；Material/Promotion 不跨平台归一或

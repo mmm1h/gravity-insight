@@ -9,6 +9,7 @@ from datetime import date
 from typing import Any, Mapping
 
 from .actionable_error_values import actual_value
+from .contracts.behavior_ad_semantics import behavior_ad_semantics_catalog
 from .composite_batch import validate_composite_bounds
 from .errors import InputValidationError
 from .multidim_contract import (
@@ -119,6 +120,7 @@ def multidim_input_schema(
         "additionalProperties": False,
         "required": ["date_list", "time_dims", "metrics_list"],
         "x-cli-shortcuts": _cli_shortcut_schema(selected_contract),
+        "x-native-behavior-ad-semantics": behavior_ad_semantics_catalog(),
         "properties": {
             "date_list": {
                 "type": "array",

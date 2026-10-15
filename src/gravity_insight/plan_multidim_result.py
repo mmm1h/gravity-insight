@@ -7,6 +7,7 @@ from collections.abc import Mapping
 from typing import Any
 
 from .contracts.envelope_obligations import serialize_envelope
+from .contracts.behavior_ad_semantics import project_behavior_ad_semantics
 from .multidim_contract import multidim_component_observation
 from .errors import ContractChangedError, ErrorCode
 from .multidim_service import (
@@ -259,6 +260,9 @@ def _safe_component(
         **observation,
     }
     page = _safe_page(value.get("page"))
+    boundary = project_behavior_ad_semantics(value)
+    if boundary is not None:
+        selected["behavior_ad_semantics"] = boundary
     if page is not None:
         selected["page"] = page
     if isinstance(value.get("truncated"), bool):

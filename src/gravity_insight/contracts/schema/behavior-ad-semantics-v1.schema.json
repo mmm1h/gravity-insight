@@ -1,0 +1,169 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.behavior-ad-semantics.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "availability",
+    "gap_code",
+    "source_family",
+    "metrics",
+    "monetary_unit",
+    "currency",
+    "income_formula",
+    "ecpm_generation_source",
+    "backend_conversion",
+    "underlying_precision",
+    "display_precision_role",
+    "settlement_status",
+    "native_bucket_timezone",
+    "native_bucket_calendar",
+    "completed_through",
+    "dataset_as_of",
+    "fetched_at_semantics",
+    "grouped_ad_uv",
+    "missing_dates",
+    "allowed_claims",
+    "forbidden_claims",
+    "source_completeness",
+    "cross_family_amount_equivalence"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "gravity.behavior-ad-semantics.v1"
+    },
+    "availability": {
+      "const": "unavailable"
+    },
+    "gap_code": {
+      "const": "BEHAVIOR_AD_MONETARY_CALENDAR_SEMANTICS_UNVERIFIED"
+    },
+    "source_family": {
+      "enum": [
+        "adreport",
+        "monetization_report"
+      ]
+    },
+    "metrics": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "reporting_ad_amount",
+          "reporting_ad_revenue",
+          "reporting_ad_cnt",
+          "reporting_ad_uv",
+          "reporting_ad_ecpm"
+        ]
+      }
+    },
+    "monetary_unit": {
+      "const": null
+    },
+    "currency": {
+      "const": null
+    },
+    "income_formula": {
+      "const": null
+    },
+    "ecpm_generation_source": {
+      "const": null
+    },
+    "backend_conversion": {
+      "const": null
+    },
+    "underlying_precision": {
+      "const": null
+    },
+    "display_precision_role": {
+      "const": "formatting_only"
+    },
+    "settlement_status": {
+      "const": "unverified"
+    },
+    "native_bucket_timezone": {
+      "const": null
+    },
+    "native_bucket_calendar": {
+      "const": null
+    },
+    "completed_through": {
+      "const": null
+    },
+    "dataset_as_of": {
+      "const": null
+    },
+    "fetched_at_semantics": {
+      "const": "source_fetch_observation_not_dataset_as_of"
+    },
+    "grouped_ad_uv": {
+      "const": "non_additive"
+    },
+    "missing_dates": {
+      "const": "unknown_not_zero"
+    },
+    "allowed_claims": {
+      "const": [
+        "separate-native-estimate-observation-within-returned-scope"
+      ]
+    },
+    "forbidden_claims": {
+      "const": [
+        "verified-currency-or-monetary-unit",
+        "settled-advertising-cash",
+        "verified-ecpm-formula-or-backend-conversion",
+        "exact-financial-calendar-join",
+        "cross-family-unrounded-equivalence",
+        "silent-iap-iaa-ledger-combination",
+        "sum-grouped-ad-uv-as-overall-unique-users",
+        "missing-date-as-zero",
+        "verified-dataset-as-of-or-completed-day"
+      ]
+    },
+    "source_completeness": {
+      "const": "unknown"
+    },
+    "cross_family_amount_equivalence": {
+      "const": "unverified"
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "source_family": {
+          "const": "adreport"
+        },
+        "metrics": {
+          "items": {
+            "enum": [
+              "reporting_ad_amount",
+              "reporting_ad_cnt",
+              "reporting_ad_uv",
+              "reporting_ad_ecpm"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "properties": {
+        "source_family": {
+          "const": "monetization_report"
+        },
+        "metrics": {
+          "items": {
+            "enum": [
+              "reporting_ad_revenue",
+              "reporting_ad_cnt",
+              "reporting_ad_uv",
+              "reporting_ad_ecpm"
+            ]
+          }
+        }
+      }
+    }
+  ]
+}
