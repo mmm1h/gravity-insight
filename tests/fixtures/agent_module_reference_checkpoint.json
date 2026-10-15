@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "598842019c811b5b2b524cceeec7dbdc7067e844c611e65ec5fbbeb33cbca9e5",
-    "manual_review_sha256": "039641b895a455d630c8440f4f2365bde29729d2f5329a1f9e6bdf3f7e8a574f",
+    "reference_evidence_sha256": "d59b36ec4642bc66b7cea421a9ce57e4d7e7c2f6b8cb0948f9774189ad97b299",
+    "manual_review_sha256": "6e929a531cd0b5f64026447f50dba9630eeefc734603eddd142f71503986ece3",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3328,
-    "scanned_file_count": 3320,
+    "version_controlled_file_count": 3353,
+    "scanned_file_count": 3345,
     "excluded_files": [
       ".env.example",
       "scripts/audit_agent_module_references.py",
@@ -808,12 +808,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 366,
-    "reference_site_count": 364,
-    "manual_review_site_count": 261,
-    "reference_manual_overlap_count": 259,
+    "tracked_site_count": 369,
+    "reference_site_count": 367,
+    "manual_review_site_count": 264,
+    "reference_manual_overlap_count": 262,
     "manual_only_site_count": 2,
-    "unique_source_keys": 366,
+    "unique_source_keys": 369,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -822,7 +822,7 @@
       "documentation_spec": 2,
       "dynamic_import": 11,
       "entrypoint_config": 3,
-      "manual_patch_expression": 239,
+      "manual_patch_expression": 242,
       "module_qualname_dependency": 7,
       "static_import": 97,
       "string_reference": 5
@@ -832,12 +832,12 @@
       "bare_agent_string": 2,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
-      "non_string_patch_expression": 239
+      "non_string_patch_expression": 242
     },
     "dispositions": {
-      "no_migration_effect": 366
+      "no_migration_effect": 369
     },
-    "sites_sha256": "47f255c0e01bbfa8d0bf257105e0326f0ee3a0539a5f3a5cb8b22922cf3b281c"
+    "sites_sha256": "a6a5eceddc68e71540b35711829be2dc7e135e80144bb3653a84c600c36ff126"
   },
   "blockers": [],
   "site_fields": [
@@ -1200,7 +1200,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:22997:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:28226:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -1215,7 +1215,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:70386:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:79255:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -4905,7 +4905,7 @@
       }
     ],
     [
-      "tests/test_journey_execution_readiness.py:128:22:patch.object",
+      "tests/test_journey_execution_readiness.py:134:22:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.sdk",
@@ -4920,7 +4920,7 @@
       }
     ],
     [
-      "tests/test_journey_execution_readiness.py:163:14:patch.object",
+      "tests/test_journey_execution_readiness.py:169:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.sdk",
@@ -4935,7 +4935,7 @@
       }
     ],
     [
-      "tests/test_journey_execution_readiness.py:198:14:patch.object",
+      "tests/test_journey_execution_readiness.py:204:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "self.sdk",
@@ -4950,7 +4950,7 @@
       }
     ],
     [
-      "tests/test_journey_execution_readiness.py:206:14:patch.object",
+      "tests/test_journey_execution_readiness.py:212:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "JourneyService",
@@ -5050,6 +5050,51 @@
       "no_migration_effect",
       "direct_object_patch",
       74,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_official_mcp_task_delivery.py:100:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.sdk",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      68,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_official_mcp_task_delivery.py:137:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "sdk",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      30,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_official_mcp_task_delivery.py:87:22:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "self.sdk",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      68,
       {
         "kind": "none"
       }

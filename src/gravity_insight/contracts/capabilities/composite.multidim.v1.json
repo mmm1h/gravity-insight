@@ -1,0 +1,40 @@
+{
+  "artifact_kind": "capability",
+  "schema_version": "gravity.capability.v1",
+  "identity_kind": "composite",
+  "selector": "composite:multidim",
+  "contract_version": "1",
+  "display_name": "composite:multidim",
+  "lifecycle": "active",
+  "owner": "gravity-runtime/report",
+  "effect": "read",
+  "privacy_classification": "internal_business",
+  "provider": {
+    "kind": "agent_product_card",
+    "fingerprint": "f846fddeff80e4c8033f4d3928add9c0101ec07dad730814ee6392b417b26772"
+  },
+  "dependencies": [
+    {
+      "identity_kind": "operation",
+      "selector": "report.multidim.query",
+      "contract_version": "4",
+      "minimum_trust": "stable",
+      "completeness": "unknown",
+      "data_quality": "pass"
+    },
+    {
+      "identity_kind": "operation",
+      "selector": "report.multidim.calc_total",
+      "contract_version": "2",
+      "minimum_trust": "stable",
+      "completeness": "unknown",
+      "data_quality": "pass"
+    }
+  ],
+  "declared_completeness": "unknown",
+  "required_data_quality": "pass",
+  "allowed_claims": [
+    "returned-scope-observation"
+  ],
+  "validation_ttl_seconds": 86400
+}

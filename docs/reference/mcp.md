@@ -4,11 +4,7 @@
 
 ## Host configuration
 
-Configure the Host to launch this command from the intended Gravity workspace:
-
-```text
-gravity-mcp
-```
+Configure the Host to launch `gravity-mcp` from the intended Gravity workspace.
 
 Credentials and workspace configuration come from the same local environment as `GravitySDK.from_env`. Never put credentials in Tool arguments, Resource URIs or Host-visible server configuration fields.
 
@@ -31,11 +27,15 @@ Legacy `initialize` and `2025-11-25` session behavior are not supported by this 
 | `gravity.inspect` | Local metadata read | server/Journey/Skill owners |
 | `gravity.journey_can_run` | Readiness read | `JourneyService.can_run` |
 | `gravity.capability_describe` | Trust read | `CapabilityTrustService.trust` |
-| `gravity.execute` | Registered Journey read execution | `JourneyService.run` |
+| `gravity.execute` | Journey read; optional confirmed local JSON write | `JourneyService.run` / existing atomic result writer |
 | `gravity.export` | Confirmed local file write | `AnalysisArtifactService` |
 | `gravity.context_pack` | Bounded local repository read | `RepoContextProvider` |
 
-`gravity.execute` accepts a registered `journey_id` and closed inputs. It does not accept an operation ID, URL, HTTP method, raw SQL or wire JSON. Export requires `confirm: true`; rejected or unconfirmed calls perform no target network request and no local write.
+Inspect an exact Journey's `input_contract`, then pass its closed inputs to `gravity.journey_can_run` and `gravity.execute`. App/configuration/catalog/report tasks use finite existing SDK/Plan/read owners; callers cannot select operations, methods, URLs, raw SQL or arbitrary Plans. Same-layer Trust and frozen dependency checks still gate execution.
+
+For full results beyond the unchanged100000-byte MCP budget, elect `output: {"destination":"result.json","confirm":true}` before execution: one execution publishes complete UTF-8 JSON with byte/SHA-256 receipt. Terminal failures preserve the destination; partial/nonzero source facts remain explicit.
+
+Budget errors never claim zero network after an owner ran and never automatically retry. `gravity.export` separately requires `confirm:true`; unconfirmed file requests perform no execution or write.
 
 ## Resources
 

@@ -1,0 +1,59 @@
+{
+  "artifact_kind": "journey",
+  "schema_version": "gravity.journey.v2",
+  "journey_id": "analysis.event-metadata",
+  "version": 1,
+  "display_name": "Event metadata",
+  "display_binding": {
+    "runtime_contract": "analysis.event-metadata"
+  },
+  "lifecycle": "active",
+  "owner": "gravity-runtime/analysis",
+  "calling_project": null,
+  "required_capabilities": [
+    {
+      "identity_kind": "operation",
+      "selector": "analysis.event.list",
+      "contract_version": "3",
+      "minimum_trust": "stable",
+      "completeness": "unknown",
+      "data_quality": "pass"
+    }
+  ],
+  "required_semantics": [],
+  "required_operators": [],
+  "required_models": [],
+  "required_context": [],
+  "required_skill": null,
+  "surfaces": {
+    "cli": "available",
+    "sdk": "available",
+    "plan": "available",
+    "agent": "available"
+  },
+  "request_budget": {
+    "known_requests_min": 1,
+    "known_requests_max": 1,
+    "unknown_discovery_max": 4,
+    "acceptance_production_requests": 0,
+    "runtime_additional_requests": 0
+  },
+  "claim_policy": {
+    "allowed": [
+      "returned-scope-observation"
+    ],
+    "forbidden": [
+      "complete-population",
+      "native-equivalence",
+      "causality"
+    ]
+  },
+  "execution": {
+    "mode": "operation",
+    "owner": "analysis.event.list",
+    "path": [
+      "analysis.event.list"
+    ]
+  },
+  "project_contract_path": null
+}

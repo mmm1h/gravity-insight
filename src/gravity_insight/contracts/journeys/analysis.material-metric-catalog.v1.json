@@ -1,0 +1,59 @@
+{
+  "artifact_kind": "journey",
+  "schema_version": "gravity.journey.v2",
+  "journey_id": "analysis.material-metric-catalog",
+  "version": 1,
+  "display_name": "Material metric catalog",
+  "display_binding": {
+    "runtime_contract": "analysis.material-metric-catalog"
+  },
+  "lifecycle": "active",
+  "owner": "gravity-runtime/analysis",
+  "calling_project": null,
+  "required_capabilities": [
+    {
+      "identity_kind": "product",
+      "selector": "metadata:search",
+      "contract_version": "1",
+      "minimum_trust": "stable",
+      "completeness": "unknown",
+      "data_quality": "pass"
+    }
+  ],
+  "required_semantics": [],
+  "required_operators": [],
+  "required_models": [],
+  "required_context": [],
+  "required_skill": null,
+  "surfaces": {
+    "cli": "available",
+    "sdk": "available",
+    "plan": "available",
+    "agent": "available"
+  },
+  "request_budget": {
+    "known_requests_min": 0,
+    "known_requests_max": 0,
+    "unknown_discovery_max": 0,
+    "acceptance_production_requests": 0,
+    "runtime_additional_requests": 0
+  },
+  "claim_policy": {
+    "allowed": [
+      "returned-scope-observation"
+    ],
+    "forbidden": [
+      "complete-population",
+      "native-equivalence",
+      "causality"
+    ]
+  },
+  "execution": {
+    "mode": "product",
+    "owner": "metadata:search",
+    "path": [
+      "metadata:search"
+    ]
+  },
+  "project_contract_path": null
+}

@@ -37,7 +37,8 @@ def _mcp_import(node: ast.AST) -> str | None:
 
 class MCPRemovabilityTests(unittest.TestCase):
     def test_removing_mcp_preserves_every_journey_surface_contract(self) -> None:
-        expected = json.loads(FIXTURE.read_text(encoding="utf-8"))["journeys"]
+        fixture = json.loads(FIXTURE.read_text(encoding="utf-8"))
+        expected = {**fixture["journeys"], **fixture["current_journeys"]}
         actual = {
             artifact["contract"]["journey_id"]: artifact["contract"]["surfaces"]
             for artifact in journey_artifacts()

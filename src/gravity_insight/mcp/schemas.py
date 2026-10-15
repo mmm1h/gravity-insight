@@ -105,6 +105,13 @@ INPUT_SCHEMAS: dict[str, dict[str, Any]] = {
             "journey_id": {"type": "string", "minLength": 1, "maxLength": 256},
             "inputs": _OBJECT,
             "max_output_bytes": _OUTPUT_BUDGET,
+            "output": _object_schema(
+                {
+                    "destination": {"type": "string", "minLength": 1, "maxLength": 2_048},
+                    "confirm": {"type": "boolean", "const": True},
+                },
+                required=("destination", "confirm"),
+            ),
         },
         required=("journey_id", "inputs"),
     ),

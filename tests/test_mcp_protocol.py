@@ -172,7 +172,7 @@ class MCPProtocolTests(unittest.TestCase):
         blocked = call(
             self.server,
             "gravity.execute",
-            {"journey_id": "analysis.event-trend", "inputs": {}},
+            {"journey_id": "analysis.business-pulse", "inputs": {}},
         )
 
         self.assertTrue(invalid["isError"])

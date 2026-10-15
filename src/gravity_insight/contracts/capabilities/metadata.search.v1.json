@@ -1,0 +1,23 @@
+{
+  "artifact_kind": "capability",
+  "schema_version": "gravity.capability.v1",
+  "identity_kind": "product",
+  "selector": "metadata:search",
+  "contract_version": "1",
+  "display_name": "Offline metadata search",
+  "lifecycle": "active",
+  "owner": "gravity-runtime/metadata",
+  "effect": "read",
+  "privacy_classification": "internal_business",
+  "provider": {
+    "kind": "agent_product_card",
+    "fingerprint": "b5d92d44bd51758478db4b0f641e4e4eaee8872a2e55512c88ab1acb411b1888"
+  },
+  "dependencies": [],
+  "declared_completeness": "unknown",
+  "required_data_quality": "pass",
+  "allowed_claims": [
+    "returned-catalog-observation"
+  ],
+  "validation_ttl_seconds": 86400
+}

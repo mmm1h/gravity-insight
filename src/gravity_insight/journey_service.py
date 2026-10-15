@@ -19,6 +19,7 @@ from .contracts.envelope_obligations import (
 from .errors import ErrorCategory, InputValidationError, exit_code_for_category
 from .execution_snapshot import build_execution_snapshot, snapshot_change_reasons
 from .journey_contract import journey_artifact, journey_artifacts, verify_journey_registry
+from .journey_execution import invoke_task, normalize_task_inputs, task_binding, task_input_contract
 from .model_registry import ModelRegistry
 from .operator_registry import OperatorRegistry
 from .reference_journey_contract import JOURNEY_ID
@@ -105,13 +106,17 @@ class JourneyService:
                 "request_budget", "claim_policy", "execution"
             )},
             "execution_binding": self._binding(contract),
+            "input_contract": task_input_contract(journey_id),
             "network_called": False,
         }
 
     def _binding(self, contract: Mapping[str, Any]) -> dict[str, Any]:
         identity = contract["journey_id"]
         method, owner, mode, schema = None, None, None, None
-        if identity == JOURNEY_ID:
+        current = task_binding(identity)
+        if current is not None:
+            method, owner, mode, schema = (current[key] for key in ("sdk_method", "owner", "mode", "result_schema_version"))
+        elif identity == JOURNEY_ID:
             method, owner, mode = "metric_anomaly_playbook", "metric-anomaly-localization@1", "plan"
             schema = "gravity.analysis-result.v1"
         elif identity == "analysis.default-value-dictionary":
@@ -169,8 +174,14 @@ class JourneyService:
             try:
                 if not isinstance(selected, Mapping):
                     raise InputValidationError("Journey input must be an object", field="inputs")
-                if binding["sdk_method"] is not None:
-                    normalized = self._product_inputs(binding["sdk_method"], selected)
+                if binding["sdk_method"] is not None and (
+                    binding["status"] == "bound" or any(key != "scope" for key in selected)
+                ):
+                    normalized = (
+                        normalize_task_inputs(journey_id, selected, self._workspace)
+                        if task_binding(journey_id) is not None
+                        else self._product_inputs(binding["sdk_method"], selected)
+                    )
                     scope = None
                 else:
                     if set(selected) - {"scope"}:
@@ -212,7 +223,7 @@ class JourneyService:
         if before["journey"]["journey_id"] == JOURNEY_ID:
             return self._reference_runner().run({} if inputs is None else inputs)
         method = before["execution_binding"]["sdk_method"]
-        result = getattr(self._sdk, method)(**before["normalized_input"], workspace=self._workspace)
+        result = invoke_task(self._sdk, journey_id, method, before["normalized_input"], self._workspace)
         after = self._assess(journey_id, inputs)
         reasons = snapshot_change_reasons(before["execution_snapshot"], after["execution_snapshot"])
         if before["normalized_input"] != after["normalized_input"]:
@@ -226,7 +237,8 @@ class JourneyService:
             failed = copy.deepcopy(before)
             failed["can_run_status"] = "blocked"
             failed["reason_codes"] = list(dict.fromkeys([*after["reason_codes"], *reasons]))
-            return _blocked_result(failed, network_called=True)
+            # The vocabulary owner guarantees no target I/O, including on revocation.
+            return _blocked_result(failed, network_called=method != "analysis_vocabulary")
         # Product owners retain their own projection, completeness and errors.
         return result
 

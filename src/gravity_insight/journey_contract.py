@@ -1,4 +1,4 @@
-"""Versioned Journey Contract registry bound to the structured Journey ledger."""
+"""Versioned Journeys with explicit current or historical registration."""
 
 from __future__ import annotations
 
@@ -16,10 +16,15 @@ from .agent_runtime_contracts import (
 )
 from .capability_contract import capability_contract
 from .journey_ledger import ledger_row, load_packaged_journey_ledger
+from .contracts.envelope_obligations import (
+    CompletenessState, DataCompleteness, DiagnosticEvidence, DiagnosticState,
+    EnvelopeObligations, ExecutionState, ExecutionStatus, MutationCertainty,
+    MutationState, SemanticState, SemanticValidity, serialize_envelope,
+)
 
 
-SCHEMA_VERSION = "gravity.journey.v1"
-_SCHEMA_NAME = "journey-v1.schema.json"
+SCHEMA_VERSION = "gravity.journey.v2"
+_SCHEMA_NAMES = {"gravity.journey.v1": "journey-v1.schema.json", SCHEMA_VERSION: "journey-v2.schema.json"}
 _JOURNEY_ROOT = Path(__file__).resolve().parent / "contracts" / "journeys"
 
 
@@ -42,11 +47,18 @@ def journey_artifact(journey_id: str) -> dict[str, Any] | None:
 def load_journey_contract(path: Path) -> dict[str, Any]:
     value = load_json_object(path, f"Journey Contract {path.name}")
     try:
-        validate_schema(value, _SCHEMA_NAME, f"Journey Contract {path.name}")
+        version = value.get("schema_version")
+        schema = _SCHEMA_NAMES.get(version) if isinstance(version, str) else None
+        if schema is None:
+            raise JourneyContractError("Journey Contract schema version is unsupported")
+        validate_schema(value, schema, f"Journey Contract {path.name}")
     except AgentRuntimeContractError as exc:
         raise JourneyContractError(str(exc)) from exc
-    if value["display_name"] != value["display_binding"]["legacy_display_key"]:
+    binding = value["display_binding"]
+    if "legacy_display_key" in binding and value["display_name"] != binding["legacy_display_key"]:
         raise JourneyContractError("Journey display binding contradicts display_name")
+    if "runtime_contract" in binding and binding["runtime_contract"] != value["journey_id"]:
+        raise JourneyContractError("Journey runtime registration contradicts journey_id")
     budget = value["request_budget"]
     if budget["known_requests_min"] > budget["known_requests_max"]:
         raise JourneyContractError("Journey request budget range is invalid")
@@ -62,23 +74,32 @@ def validate_journey_bindings(
     bindings: list[dict[str, Any]] = []
     for contract in contracts:
         journey_id = str(contract["journey_id"])
-        display = str(contract["display_binding"]["legacy_display_key"])
+        display = str(contract["display_name"])
         if journey_id in ids or display in displays:
             raise JourneyContractError("Journey identity or display binding is duplicated")
         ids.add(journey_id)
         displays.add(display)
-        row = ledger_row(dict(ledger), display)
-        if row is None:
-            raise JourneyContractError("Journey display binding is missing from the ledger")
-        _validate_surface_binding(contract, row)
+        legacy = "legacy_display_key" in contract["display_binding"]
+        row = ledger_row(dict(ledger), display) if legacy else None
+        if legacy:
+            if contract["display_binding"]["legacy_display_key"] != display:
+                raise JourneyContractError("Journey display binding contradicts display_name")
+            if row is None:
+                raise JourneyContractError("Journey display binding is missing from the ledger")
+            _validate_surface_binding(contract, row)
+        elif contract["display_binding"].get("runtime_contract") != journey_id:
+            raise JourneyContractError("Journey runtime registration contradicts journey_id")
+        elif ledger_row(dict(ledger), display) is not None:
+            raise JourneyContractError("A historical Journey display must retain its legacy binding")
         _validate_capability_requirements(contract)
         bindings.append(
             {
                 "journey_id": journey_id,
                 "display_name": display,
-                "ledger_status": row["ledger_status"],
-                "ledger_row_digest": row["row_digest"],
+                "ledger_status": row["ledger_status"] if row is not None else None,
+                "ledger_row_digest": row["row_digest"] if row is not None else None,
                 "contract_digest": canonical_digest(contract),
+                **({"registration_source": "runtime_contract"} if not legacy else {}),
             }
         )
     return tuple(bindings)
@@ -90,8 +111,8 @@ def verify_journey_registry() -> dict[str, Any]:
     bindings = validate_journey_bindings(
         [artifact["contract"] for artifact in artifacts], ledger
     )
-    return {
-        "schema_version": "gravity.journey-registry-verification.v1",
+    return serialize_envelope({
+        "schema_version": "gravity.journey-registry-verification.v2",
         "status": "valid",
         "ledger_digest": ledger["snapshot_digest"],
         "ledger_row_count": ledger["row_count"],
@@ -99,7 +120,13 @@ def verify_journey_registry() -> dict[str, Any]:
         "bindings": [copy.deepcopy(item) for item in bindings],
         "reason_codes": [],
         "network_called": False,
-    }
+    }, EnvelopeObligations(
+        ExecutionStatus(ExecutionState.NOT_STARTED, "JOURNEY_REGISTRY_VERIFICATION_ONLY"),
+        DataCompleteness(CompletenessState.NOT_APPLICABLE, "REGISTRY_METADATA_ONLY"),
+        SemanticValidity(SemanticState.NOT_APPLICABLE, ()),
+        DiagnosticEvidence(DiagnosticState.NONE),
+        MutationCertainty(MutationState.NOT_APPLICABLE, "REGISTRY_READ_ONLY"),
+    ))
 
 
 @lru_cache(maxsize=1)

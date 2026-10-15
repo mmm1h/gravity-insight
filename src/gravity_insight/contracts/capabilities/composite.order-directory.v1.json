@@ -1,0 +1,32 @@
+{
+  "artifact_kind": "capability",
+  "schema_version": "gravity.capability.v1",
+  "identity_kind": "composite",
+  "selector": "composite:order_directory",
+  "contract_version": "1",
+  "display_name": "composite:order_directory",
+  "lifecycle": "active",
+  "owner": "gravity-runtime/report",
+  "effect": "read",
+  "privacy_classification": "internal_business",
+  "provider": {
+    "kind": "agent_product_card",
+    "fingerprint": "ecfa3bf7e743f00681dbe4e39c5128d8a66cddfcb8288fdabcd2511f81cf87ac"
+  },
+  "dependencies": [
+    {
+      "identity_kind": "operation",
+      "selector": "analysis.order_detail.list",
+      "contract_version": "4",
+      "minimum_trust": "stable",
+      "completeness": "unknown",
+      "data_quality": "pass"
+    }
+  ],
+  "declared_completeness": "unknown",
+  "required_data_quality": "pass",
+  "allowed_claims": [
+    "returned-scope-observation"
+  ],
+  "validation_ttl_seconds": 86400
+}

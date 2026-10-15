@@ -37,24 +37,24 @@ EXPECTED = {
 class JourneyContractTests(unittest.TestCase):
     def test_registry_has_exact_explicit_display_bindings(self):
         artifacts = journey_artifacts()
-        ids = {item["contract"]["journey_id"] for item in artifacts}
+        ids = {item["contract"]["journey_id"] for item in artifacts if "legacy_display_key" in item["contract"]["display_binding"]}
 
         self.assertEqual(EXPECTED, ids)
         self.assertEqual(
             len(artifacts),
             len(
                 {
-                    item["contract"]["display_binding"]["legacy_display_key"]
+                    item["contract"]["display_name"]
                     for item in artifacts
                 }
             ),
         )
         for artifact in artifacts:
             contract = artifact["contract"]
-            self.assertEqual(
-                contract["display_name"],
-                contract["display_binding"]["legacy_display_key"],
-            )
+            if "legacy_display_key" in contract["display_binding"]:
+                self.assertEqual(contract["display_name"], contract["display_binding"]["legacy_display_key"])
+            else:
+                self.assertEqual(contract["journey_id"], contract["display_binding"]["runtime_contract"])
             self.assertRegex(artifact["digest"], r"^[0-9a-f]{64}$")
 
     def test_registry_verification_preserves_human_ledger_authority(self):
@@ -62,7 +62,7 @@ class JourneyContractTests(unittest.TestCase):
 
         self.assertEqual("valid", result["status"])
         self.assertEqual(69, result["ledger_row_count"])
-        self.assertEqual(13, result["machine_contract_count"])
+        self.assertEqual(30, result["machine_contract_count"])
         self.assertFalse(result["network_called"])
         first = next(
             item

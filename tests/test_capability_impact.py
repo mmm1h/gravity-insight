@@ -26,6 +26,7 @@ class CapabilityImpactTests(unittest.TestCase):
         self.assertEqual("affected", result["status"])
         self.assertEqual(
             [
+                ("composite", "composite:multidim"),
                 ("operation", "report.multidim.query"),
                 ("product", "metric-anomaly-localization@1"),
             ],
@@ -39,7 +40,7 @@ class CapabilityImpactTests(unittest.TestCase):
             [item["skill_uri"] for item in result["affected_skills"]],
         )
         self.assertEqual(
-            ["analysis.merge2.ap-cost-anomaly-localization"],
+            ["analysis.ad-report", "analysis.merge2.ap-cost-anomaly-localization"],
             [item["journey_id"] for item in result["affected_journeys"]],
         )
         self.assertFalse(result["network_called"])

@@ -1,0 +1,32 @@
+{
+  "artifact_kind": "capability",
+  "schema_version": "gravity.capability.v1",
+  "identity_kind": "composite",
+  "selector": "composite:material_performance",
+  "contract_version": "1",
+  "display_name": "composite:material_performance",
+  "lifecycle": "active",
+  "owner": "gravity-runtime/report",
+  "effect": "read",
+  "privacy_classification": "internal_business",
+  "provider": {
+    "kind": "agent_product_card",
+    "fingerprint": "3b439f585e5057044e4a49a0c6f7f23cf1700cc5dea38fae967ab87ccac4e97e"
+  },
+  "dependencies": [
+    {
+      "identity_kind": "operation",
+      "selector": "material.report.query",
+      "contract_version": "3",
+      "minimum_trust": "stable",
+      "completeness": "unknown",
+      "data_quality": "pass"
+    }
+  ],
+  "declared_completeness": "unknown",
+  "required_data_quality": "pass",
+  "allowed_claims": [
+    "returned-scope-observation"
+  ],
+  "validation_ttl_seconds": 86400
+}

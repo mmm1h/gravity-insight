@@ -24,6 +24,7 @@
       "owner": "Journey, Capability Trust and Data Quality contracts",
       "machine_sources": [
         "../../src/gravity_insight/contracts/schema/journey-v1.schema.json",
+        "../../src/gravity_insight/contracts/schema/journey-v2.schema.json",
         "../../src/gravity_insight/contracts/schema/capability-trust-result-v1.schema.json",
         "../../src/gravity_insight/contracts/schema/data-quality-result-v1.schema.json"
       ],
