@@ -40,9 +40,10 @@ def test_escape():
                            "OUTSIDE_CACHE": str(home / ".cache/gravity-insight"),
                            "HOMEDRIVE": home.drive, "HOMEPATH": str(home)[len(home.drive):]}
                     run = subprocess.run(
-                        [sys.executable, "-m", "pytest", "-q", "-n", "0",
+                        [sys.executable, "-X", "utf8", "-m", "pytest", "-q", "-n", "0",
                          "-p", "tests.conftest", *(f"{offender}::test_{name}" for name in order)],
-                        env=env, capture_output=True, text=True, timeout=60,
+                        env={**env, "PYTHONIOENCODING": "utf-8"},
+                        capture_output=True, text=True, encoding="utf-8", timeout=60,
                     )
                     self.assertNotEqual(0, run.returncode, run.stdout + run.stderr)
                     self.assertIn("outside test cache isolation", run.stdout + run.stderr)
