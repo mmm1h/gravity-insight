@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from gravity_insight import blob_storage, provider_rpc_transport
+from gravity_insight import blob_policy, blob_storage, provider_rpc_transport
 from gravity_insight.blob_models import BlobTransferError
 from gravity_insight.blob_policy import BlobPolicy
 from gravity_insight.support import system_paths
@@ -54,6 +54,9 @@ def model_fs(monkeypatch):
         monkeypatch.setattr(blob_storage, "sys", SimpleNamespace(platform=platform, modules={}))
         monkeypatch.setattr(blob_storage, "os", filesystem)
         monkeypatch.setattr(blob_storage, "Path", ModelPath)
+        # BlobPolicy rebuilds its roots with Path; a Windows host would otherwise
+        # rewrite the simulated POSIX spellings.
+        monkeypatch.setattr(blob_policy, "Path", ModelPath)
         monkeypatch.setattr(provider_rpc_transport, "Path", ModelPath)
         return ModelPath, entries, trace
     return install
