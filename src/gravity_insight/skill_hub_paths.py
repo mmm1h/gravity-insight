@@ -6,6 +6,7 @@ import stat
 from pathlib import Path
 
 from .skill_hub_contract import SkillHubContractError
+from .support.system_paths import is_system_alias
 
 
 def assert_unlinked_path(path: Path, *, reason: str, label: str) -> Path:
@@ -18,6 +19,8 @@ def assert_unlinked_path(path: Path, *, reason: str, label: str) -> Path:
         except OSError as exc:
             raise SkillHubContractError(reason, f"{label} is unavailable") from exc
         if stat.S_ISLNK(metadata.st_mode) or is_reparse(metadata):
+            if candidate != selected and is_system_alias(candidate, metadata):
+                continue
             raise SkillHubContractError(
                 reason, f"{label} contains a link or reparse point"
             )

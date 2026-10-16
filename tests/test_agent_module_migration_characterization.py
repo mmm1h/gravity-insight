@@ -555,14 +555,14 @@ def run():
         """
         expected = module_graph_baseline()
         self.assertEqual(
-            "741c537e49aaa9d1242bc8d4fd8b4ffac949a72de22b35b918a49931bc991f13",
+            "28f8993c4fd56946a625bccfa00349ca4b5cf713dddd16b99e2a776e51f59372",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(
             {
                 "ast-only": 17,
                 "ast+lazy-exports": 464,
-                "canonical": 582,
+                "canonical": 583,
                 "eager-ast-only": 0,
             },
             {
@@ -575,7 +575,7 @@ def run():
             expected["profiles"]["ast-only"]["cyclic_scc_sizes"],
         )
         self.assertEqual(
-            [582, 15, 8, 3, 2, 2, 2],
+            [583, 15, 8, 3, 2, 2, 2],
             expected["profiles"]["canonical"]["cyclic_scc_sizes"],
         )
         self.assertEqual(expected, module_graph_measurement())

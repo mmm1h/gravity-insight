@@ -54,7 +54,7 @@ status = gravity.account_pool_status
 
 `enabled=False` 为默认值。显式提供关闭的配置覆盖环境开关；关闭时不解析、不 stat、不打开备用
 源。每个槽位仍通过 `connect(env_path=...)` 创建独立 SDK/Runtime，未增加凭据格式或共享 session。
-全部账号源及 session 必须位于仓库外、无 symlink/junction、可收紧到当前用户及系统管理员访问；
+全部账号源及 session 必须位于仓库外、可收紧到当前用户及系统管理员访问，禁止 symlink/junction（仅 macOS 经 root 属主、受保护父目录及目标核验的 `/var`、`/tmp`、`/etc` 系统祖先别名例外，受管根与内部链接仍禁止）；
 不能把备用账号加入主 `.env`。`max_accounts=2` 是配置默认值，不是固定数组长度；显式调大即可
 允许更多槽位，但账号之间仍顺序执行，不增加 host/global 并发。
 

@@ -11,6 +11,7 @@ from typing import Any
 
 from .blob_models import BlobResumeState, BlobTransferError
 from .blob_policy import BlobPolicy, _select_extension
+from .support.system_paths import is_system_alias_ancestor, system_alias_path
 
 _REPARSE_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _WINDOWS_RESERVED_NAMES = frozenset(
@@ -52,13 +53,15 @@ def _prepare_destination(destination: str | Path, policy: BlobPolicy) -> tuple[P
         stage="destination_policy",
     )
     try:
-        parent.relative_to(temporary_root)
+        system_alias_path(parent).relative_to(system_alias_path(temporary_root))
     except ValueError as exc:
         raise BlobTransferError(
             "destination is outside the configured temporary root",
             code="BLOB_PATH_ESCAPE",
             stage="destination_policy",
         ) from exc
+    if sys.platform == "darwin":
+        _assert_plain_ancestors(parent, boundary=temporary_root, stage="destination_policy")
     if os.path.lexists(candidate):
         value = os.lstat(candidate)
         if _reparse_stat(candidate, value):
@@ -166,7 +169,7 @@ def _require_plain_directory(
             code="BLOB_PATH_REPARSE",
             stage=stage,
         )
-    _assert_plain_ancestors(lexical, stage=stage)
+    _assert_plain_ancestors(lexical, boundary=boundary, stage=stage)
     if boundary is not None:
         safe_boundary = Path(os.path.abspath(boundary))
         try:
@@ -186,14 +189,15 @@ def _require_plain_directory(
                 stage=stage,
             )
         try:
-            relative = lexical.relative_to(safe_boundary)
+            relative = system_alias_path(lexical).relative_to(system_alias_path(safe_boundary))
         except ValueError as exc:
             raise BlobTransferError(
                 "local path escapes its configured root",
                 code="BLOB_PATH_ESCAPE",
                 stage=stage,
             ) from exc
-        current = safe_boundary
+        # Walk the original spelling, including every component below the root.
+        current = lexical.parents[len(relative.parts) - 1] if relative.parts else lexical
         for part in relative.parts:
             current = current / part
             try:
@@ -221,7 +225,8 @@ def _require_plain_directory(
     return lexical
 
 
-def _assert_plain_ancestors(path: Path, *, stage: str) -> None:
+def _assert_plain_ancestors(path: Path, *, boundary: Path | None = None, stage: str) -> None:
+    root = Path(os.path.abspath(boundary)) if boundary is not None else path
     parts = path.parts
     if not parts:
         return
@@ -237,6 +242,8 @@ def _assert_plain_ancestors(path: Path, *, stage: str) -> None:
                 stage=stage,
             ) from exc
         if _reparse_stat(current, value):
+            if is_system_alias_ancestor(current, value, root):
+                continue
             raise BlobTransferError(
                 "local path contains a symlink or reparse point",
                 code="BLOB_PATH_REPARSE",
