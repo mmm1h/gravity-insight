@@ -8,6 +8,8 @@ from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from typing import Iterator
 
+from .system_paths import is_system_alias, system_alias_path
+
 
 def linked(info: os.stat_result) -> bool:
     return stat.S_ISLNK(info.st_mode) or bool(
@@ -22,7 +24,8 @@ def identity(info: os.stat_result) -> tuple[int, ...]:
 
 def assert_unlinked(path: Path) -> None:
     for part in (*reversed(path.parents), path):
-        if linked(part.lstat()):
+        info = part.lstat()
+        if linked(info) and not (part != path and is_system_alias(part, info)):
             raise OSError("CACHE_LINK_REFUSED")
 
 
@@ -172,6 +175,9 @@ def unlink_unchanged(root: Path, path: Path, expected: os.stat_result) -> None:
     relative = path.relative_to(root)
     if not relative.parts or ".." in relative.parts:
         raise OSError("CACHE_OUTSIDE_ROOT")
+    # Normalize ancestors of the managed root only. Links inside it still meet
+    # O_NOFOLLOW below, even when the managed root happens to be / itself.
+    path = system_alias_path(root) / relative
     if os.name == "nt":
         import ctypes
 

@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Protocol
 
 from .external_context_contract import compile_external_provider
+from .support.system_paths import is_system_alias, system_alias_path
 from .provider_windows_job import (
     attach_windows_job,
     close_windows_job,
@@ -498,11 +499,11 @@ def _validate_argument_path(value: str, root: Path) -> None:
     if not candidate.is_absolute():
         return
     supplied = candidate.absolute()
+    _assert_unlinked(supplied, "Provider argument path")
     try:
-        supplied.relative_to(root)
+        system_alias_path(supplied).relative_to(root)
     except ValueError as exc:
         raise ValueError("Provider argument path escapes its work root") from exc
-    _assert_unlinked(supplied, "Provider argument path")
 
 
 def _assert_unlinked(path: Path, label: str) -> None:
@@ -516,6 +517,8 @@ def _assert_unlinked(path: Path, label: str) -> None:
         attributes = getattr(metadata, "st_file_attributes", 0)
         reparse = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
         if stat.S_ISLNK(metadata.st_mode) or bool(attributes & reparse):
+            if candidate != path and is_system_alias(candidate, metadata):
+                continue
             raise ValueError(f"{label} contains a link or reparse point")
 
 

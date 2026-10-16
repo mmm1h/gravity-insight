@@ -16,6 +16,7 @@ from typing import Any, Mapping
 
 from .account_pool_lease import AccountReadLease, ReadGenerationChanged
 from .errors import AuthenticationError, CredentialError, GravityInsightError, InputValidationError, PermissionUnavailableError, PolicyViolation
+from .support.system_paths import is_system_alias
 
 
 _LOGGER = logging.getLogger("gravity_insight")
@@ -274,7 +275,9 @@ def _protect_sources(path: Path) -> None:
     from .paths import PROJECT_ROOT
 
     for source in (path, session_path(path)):
-        if any(_linked_source(parent) for parent in (source, *source.parents)):
+        if _linked_source(source) or any(
+            _linked_source(parent, ancestor=True) for parent in source.parents
+        ):
             raise _unavailable("ACCOUNT_SOURCE_LINK_BLOCKED")
         if source.resolve().is_relative_to(PROJECT_ROOT.resolve()):
             raise _unavailable("ACCOUNT_SOURCE_IN_REPOSITORY")
@@ -289,14 +292,15 @@ def _protect_sources(path: Path) -> None:
             _check_windows_acl(source)
 
 
-def _linked_source(path: Path) -> bool:
+def _linked_source(path: Path, *, ancestor: bool = False) -> bool:
     try:
         info = path.lstat()
     except FileNotFoundError:
         return False
-    return bool(stat.S_ISLNK(info.st_mode) or (
+    linked = bool(stat.S_ISLNK(info.st_mode) or (
         getattr(info, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT
     ))
+    return linked and not (ancestor and is_system_alias(path, info))
 
 
 def _check_windows_acl(path: Path) -> None:

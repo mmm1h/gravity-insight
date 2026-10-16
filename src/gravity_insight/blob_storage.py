@@ -11,6 +11,7 @@ from typing import Any
 
 from .blob_models import BlobResumeState, BlobTransferError
 from .blob_policy import BlobPolicy, _select_extension
+from .support.system_paths import is_system_alias, system_alias_path
 
 _REPARSE_ATTRIBUTE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 _WINDOWS_RESERVED_NAMES = frozenset(
@@ -52,7 +53,7 @@ def _prepare_destination(destination: str | Path, policy: BlobPolicy) -> tuple[P
         stage="destination_policy",
     )
     try:
-        parent.relative_to(temporary_root)
+        system_alias_path(parent).relative_to(system_alias_path(temporary_root))
     except ValueError as exc:
         raise BlobTransferError(
             "destination is outside the configured temporary root",
@@ -186,7 +187,7 @@ def _require_plain_directory(
                 stage=stage,
             )
         try:
-            relative = lexical.relative_to(safe_boundary)
+            relative = system_alias_path(lexical).relative_to(system_alias_path(safe_boundary))
         except ValueError as exc:
             raise BlobTransferError(
                 "local path escapes its configured root",
@@ -237,6 +238,8 @@ def _assert_plain_ancestors(path: Path, *, stage: str) -> None:
                 stage=stage,
             ) from exc
         if _reparse_stat(current, value):
+            if current != path and is_system_alias(current, value):
+                continue
             raise BlobTransferError(
                 "local path contains a symlink or reparse point",
                 code="BLOB_PATH_REPARSE",

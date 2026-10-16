@@ -78,6 +78,7 @@ DOMAIN_MODULE_LAYER_OVERRIDES = {
     "gravity_insight.cache_lifecycle": "domain_services",
     "gravity_insight.support.cache_files": "domain_services",
     "gravity_insight.support.cache_paths": "domain_services",
+    "gravity_insight.support.system_paths": "domain_services",
     "gravity_insight.sdk": "facade_cli_mcp",
     "gravity_insight.journey_execution": "facade_cli_mcp",
     "gravity_insight.account_pool": "facade_cli_mcp",

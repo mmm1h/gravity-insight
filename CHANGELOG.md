@@ -19,6 +19,10 @@ Target release: `0.3.28`
 
 - None.
 
+### Fixed
+
+- macOS local path guards accept verified system ancestor aliases (`/var`, `/tmp`, `/etc`), including the default temporary directory. User-controlled links, managed leaves and Windows reparse points remain blocked; mixed system-alias/real-path containment and cache deletion retain their safety checks.
+
 ## [0.3.27] - 2026-10-16
 
 ### Breaking changes
