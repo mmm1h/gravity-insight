@@ -135,13 +135,13 @@ def test_guards_reject_user_controlled_ancestors(tmp_path, monkeypatch, guard, i
             cache_files.assert_unlinked(child)
 
 
-def test_provider_checks_links_before_normalized_containment(tmp_path):
+def test_provider_checks_original_links_after_normalized_containment(tmp_path):
     lexical, canonical = tmp_path / "var", tmp_path / "private" / "var"
     argument = lexical / "provider.py"
     with patch.object(provider_rpc_transport, "system_alias_path", return_value=canonical / "provider.py"):
         with patch.object(provider_rpc_transport, "_assert_unlinked") as guard:
             provider_rpc_transport._validate_argument_path(str(argument), canonical)
-        guard.assert_called_once_with(argument, "Provider argument path")
+        guard.assert_called_once_with(argument, "Provider argument path", root=canonical)
         with patch.object(provider_rpc_transport, "_assert_unlinked", side_effect=ValueError("linked")):
             with pytest.raises(ValueError, match="linked"):
                 provider_rpc_transport._validate_argument_path(str(argument), canonical)

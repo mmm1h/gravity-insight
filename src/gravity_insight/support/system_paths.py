@@ -52,6 +52,13 @@ def _root_directory(metadata: os.stat_result) -> bool:
     )
 
 
+def is_system_alias_ancestor(path: Path, metadata: os.stat_result, root: Path) -> bool:
+    """Accept a verified alias only strictly above the managed root's spelling."""
+    return is_system_alias(path, metadata) and (
+        path in root.parents or path.parent / _DARWIN_ALIASES[str(path)] in root.parents
+    )
+
+
 def system_alias_path(path: Path) -> Path:
     """Replace only a verified system ancestor, retaining all user components.
 
