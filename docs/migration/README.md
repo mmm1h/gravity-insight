@@ -37,7 +37,7 @@ GitHub 自动生成仍可保留，但不能替代这份维护型记录。
 
 1. 默认用 [Release cut](../maintainers/releasing.md#one-click-release-cut)：
    `gh workflow run release-cut.yml --ref main`。先用 `-f dry_run=true` 验证候选；
-   正常 PR 负责编辑发布说明，自动化只做机械转换，不修改 roadmap 或迁移措辞。
+   候选必须由 deploy-key push 触发 CI；`workflow_dispatch` 检查不满足必需状态检查。正常 PR 编辑说明，自动化只做机械转换，不修改 roadmap 或迁移措辞。
 2. 人工 fallback 仍使用同一脚本，在独立虚拟环境、干净分支中运行
    `python scripts/release_cut.py prepare --version <当前版本>`，提交生成物后运行
    `python scripts/release_cut.py check`。日期默认 Asia/Shanghai；重现可传 `--date YYYY-MM-DD`。

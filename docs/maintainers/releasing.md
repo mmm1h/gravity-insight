@@ -2,49 +2,49 @@
 
 ## One-click release cut
 
-- Merge consumer-facing changelog and migration edits through normal PRs first.
-  `pyproject.toml` and Unreleased target must match; a placeholder-only release is refused.
+- Merge changelog/migration edits through PRs first.
+  `pyproject.toml` must match Unreleased target; placeholder-only releases fail.
 - Complete [owner setup](owner-actions.md#release-cut-setup-and-key-lifecycle).
 - Dispatch **Release cut** on **main**: `gh workflow run release-cut.yml --ref main`;
   add `-f dry_run=true` to validate without publishing. Optional `version` must equal
   pyproject at dispatch `GITHUB_SHA`; retries retain that V, never select a later train.
-- Prepare deterministically dates Unreleased (Asia/Shanghai), appends its digest,
+- Prepare dates Unreleased (Asia/Shanghai), appends its digest,
   runs compatibility/harness generators, and pushes A to `release-cut/vV/prepare`.
-  Require exact-SHA dispatch CI with successful `ci-required` before promotion.
+  Require exact-SHA deploy-key push CI with successful `ci-required` before promotion.
 - Promote fast-forwards main to A; require exact-SHA push/main CI before annotated
   `vV`. Tag decisions read remote state; any prior release.yml run for vV, GitHub
   Release or PyPI version forbids creating an absent tag. Read errors fail closed.
 - Coordinate all main writers **before promoting A until B lands**, including retries.
-  Any merge in this window strands the cut and cancels A's push CI if still running (ref concurrency).
-  Main-check/tag-push is not atomic; preserve any tag created during that race.
+  Merges in this window strand the cut and cancel running A push CI (ref concurrency).
+  Main-check/tag-push is not atomic; preserve tags created during that race.
 - If main advances before A is promoted, regenerate from current main only when A
   never reached main, V/Unreleased remain valid and no tag/train/publication exists.
-  Replace only the candidate branch with an explicit lease; require fresh exact-SHA CI.
+  Lease-replace only the candidate branch; require fresh exact-SHA push CI.
 - `main_advanced_after_promotion`: deleting the candidate does not reset the release.
   Never rewind main or tag superseded A. Recover through a reviewed forward-only PR
   and fresh candidate/version, preserving changelog locks; unpublished-version reuse
   requires explicit reconciliation. After tagging, preserve the tag: if publication
   succeeded, open/verify the next train through a green PR; otherwise use a new version.
 - Open train waits for successful tag-push release.yml, builds B (next-patch bump),
-  validates locally and with dispatch CI, then fast-forwards main while still A.
+  validates locally and with push CI, then fast-forwards main while still A.
   Rebuild a stale B with a lease only while main=A and tag=A. Best-effort lease-delete
   both candidates after B lands; never touch other refs.
-- Resume by rerunning the cut. Done means vV replays as deterministic prep of its
-  parent, is an ancestor of main, and main's version > V; candidate refs are unnecessary.
-  This check precedes current-version checks. Without a tag, main version ≠ V requires
+- Rerun the cut to resume. Done means vV replays as deterministic prep of its
+  parent, is an ancestor of main, and main version > V; no candidate refs needed.
+  Check this before current-version checks. No tag and main version ≠ V requires
   a new dispatch. Fresh dispatches on B target the new train; empty releases still fail.
-- Discovery selects the newest run for exact workflow/branch/event/SHA—the run branch
-  protection evaluates. Re-run that run's failed jobs, then retry the cut; never use an
-  older successful rerun. Watch errors report run ID/URL/conclusion; GET retries are bounded.
+- Select the newest exact workflow/branch/event/SHA run for branch protection.
+  Re-run its failed jobs, then retry; never substitute an older success.
+  Missing push CI: lease-delete the candidate exact ref/SHA, then retry. Watch errors retain ID/URL/conclusion; GET retries are bounded.
 - Follow [release recovery](owner-actions.md#publishing) for partial publication;
-  GitHub-only reconciliation cannot replace successful tag-push release.yml.
+  GitHub reconciliation cannot replace successful tag-push release.yml.
   Never delete, move or recreate a published tag.
 - Dry run checks A through CI on `release-cut/dry-run/<run>-<attempt>` and B locally;
   never promotes main or tags. Both cleanups use the saved pre-push SHA; after runner
-  loss or cleanup failure, inspect and delete only that exact ref manually.
-- All pushes use the environment deploy key: main triggers CI, tags trigger release;
-  candidates need explicit CI dispatch. The token only reads/dispatches Actions.
-  Non-cancelling cut concurrency serializes cuts, not other main writers.
+  loss/cleanup failure, inspect and delete only that exact ref.
+- Environment deploy-key pushes trigger main CI and tag release;
+  candidates require push CI: `workflow_dispatch` checks do not satisfy required status checks. Token: Actions read-only.
+  Only cuts share non-cancelling concurrency.
 
 ## Publication boundary
 
