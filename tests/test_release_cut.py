@@ -67,6 +67,12 @@ class TransformTests(unittest.TestCase):
         with self.assertRaises(cut.CutError):
             cut.require_version('0.3.29', '0.3.28')
 
+    def test_done_is_bound_to_the_dispatch_start_version(self):
+        title = 'Release cut: open-train 0.3.28'
+        self.assertEqual(cut.resume_version('0.3.29', title, '0.3.28'), '0.3.28')
+        self.assertEqual(cut.resume_version('0.3.29', title, '0.3.29'), '0.3.29')
+        self.assertEqual(cut.resume_version('0.3.29', 'ordinary commit', '0.3.28'), '0.3.29')
+
     def test_stage_boundaries(self):
         cases = [
             (('M', None, None, None, 'M'), 'prepare'),
@@ -144,6 +150,8 @@ class FakeRepository:
             return ''
         if args[:1] == ('checkout',):
             self.local_head = args[-1]
+        if args[:1] == ('show',) and args[-1].endswith(':pyproject.toml'):
+            return PROJECT
         if args[:1] == ('show',):
             sha = args[-1]
             return {'A': 'Release cut: prepare 0.3.28',
@@ -187,7 +195,7 @@ class FakeRepository:
 
 
 ENV = {'GITHUB_REF': 'refs/heads/main', 'GITHUB_EVENT_NAME': 'workflow_dispatch',
-       'GITHUB_REPOSITORY': 'owner/repo', 'GITHUB_RUN_ID': '123', 'GITHUB_RUN_ATTEMPT': '2'}
+       'GITHUB_SHA': 'M', 'GITHUB_REPOSITORY': 'owner/repo', 'GITHUB_RUN_ID': '123', 'GITHUB_RUN_ATTEMPT': '2'}
 
 
 @patch.dict('os.environ', ENV)

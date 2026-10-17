@@ -25,7 +25,7 @@
 - Resume by re-running the cut. It fetches main/tags/retained candidate branches,
   reconstructs candidate trees, and uses exact workflow/event/branch/SHA runs.
   A on main resumes push-CI/tag; an existing tag resumes release/train; B on main
-  reports done. A supplied version still must match current main, including after B;
+  reports done only when this dispatch started before B. A fresh dispatch on B targets the new train. A supplied version still must match current main, including after B;
   if an old explicit input no longer matches, dispatch again without it.
 - Failed CI/release runs are not silently replaced. Re-run their failed jobs, then
   retry the cut. Missing runs time out; rejected promotion or unexpected main/tag

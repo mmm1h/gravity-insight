@@ -109,6 +109,14 @@ def detect_stage(main: str, prep: str | None, train: str | None,
     return "prepare"
 
 
+def resume_version(main_version: str, main_title: str, dispatch_version: str) -> str:
+    completed = re.fullmatch(rf"Release cut: open-train ({SEMVER})", main_title)
+    if (completed and next_version(completed[1]) == main_version
+            and completed[1] == dispatch_version):
+        return completed[1]
+    return main_version
+
+
 class Repository:
     def __init__(self, root: Path = ROOT):
         self.root = root
@@ -307,11 +315,11 @@ def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
         finally:
             cleanup(repo, branch)
         return
-    # A completed train can be recognized on a rerun after the last push.
+    # Only a dispatch that started before B may resume that completed release.
+    # A fresh dispatch on B targets the new train and must still reject emptiness.
     title = repo.git("show", "-s", "--format=%s", main)
-    completed = re.fullmatch(rf"Release cut: open-train ({SEMVER})", title)
-    if completed and next_version(completed[1]) == version:
-        version = completed[1]
+    dispatch_version = project_version(repo.git("show", f"{os.environ['GITHUB_SHA']}:pyproject.toml"))
+    version = resume_version(version, title, dispatch_version)
     prefix = f"release-cut/v{version}"
     prep = repo.ref(f"refs/remotes/origin/{prefix}/prepare")
     train = repo.ref(f"refs/remotes/origin/{prefix}/open-train")

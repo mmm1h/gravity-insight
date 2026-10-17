@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "237fb8b14cf6302e6219c164f3aad3c3159c2666f21c3930af46991bc35249c9",
-    "manual_review_sha256": "5c67f2b07d41b880aaa3368e499d7d34fdc7dff13b6a8d020d16ad368fc7e54b",
+    "reference_evidence_sha256": "bfa72db9714d960e8aee0a5c259a34ac5beb2f85374a2b7fd3894836d4b36684",
+    "manual_review_sha256": "d3c93893e3c65e7db2ebb9c6b515c103c5c3a449fdfe7f22819240bb7c5748cd",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3360,
     "scanned_file_count": 3352,
@@ -889,7 +889,7 @@
     "dispositions": {
       "no_migration_effect": 398
     },
-    "sites_sha256": "904aae8acf26d826688c3834e82a148341042eca83f213a1bcb3ac2c476889c4"
+    "sites_sha256": "ff4281d00d10c5eaec70c51a9bb2f0d8fbd5e5fd40e701b6dde52dcba969be99"
   },
   "blockers": [],
   "site_fields": [
@@ -5317,7 +5317,7 @@
       }
     ],
     [
-      "tests/test_release_cut.py:196:14:patch.object",
+      "tests/test_release_cut.py:204:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "cut",
@@ -5332,7 +5332,7 @@
       }
     ],
     [
-      "tests/test_release_cut.py:196:55:patch.object",
+      "tests/test_release_cut.py:204:55:patch.object",
       "rm",
       "non_string_patch_expression",
       "cut",
@@ -5347,7 +5347,7 @@
       }
     ],
     [
-      "tests/test_release_cut.py:196:85:patch.object",
+      "tests/test_release_cut.py:204:85:patch.object",
       "rm",
       "non_string_patch_expression",
       "cut",
@@ -5362,7 +5362,7 @@
       }
     ],
     [
-      "tests/test_release_cut.py:255:100:patch.object",
+      "tests/test_release_cut.py:263:100:patch.object",
       "rm",
       "non_string_patch_expression",
       "cut",
@@ -5377,7 +5377,7 @@
       }
     ],
     [
-      "tests/test_release_cut.py:255:18:patch.object",
+      "tests/test_release_cut.py:263:18:patch.object",
       "rm",
       "non_string_patch_expression",
       "cut",
@@ -5392,7 +5392,7 @@
       }
     ],
     [
-      "tests/test_release_cut.py:255:59:patch.object",
+      "tests/test_release_cut.py:263:59:patch.object",
       "rm",
       "non_string_patch_expression",
       "cut",
@@ -5407,7 +5407,7 @@
       }
     ],
     [
-      "tests/test_release_cut.py:298:14:patch.object",
+      "tests/test_release_cut.py:306:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "cut.time",
