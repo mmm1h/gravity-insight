@@ -200,7 +200,7 @@ isolated.
 - Merge only through a green PR to `main`. `merged_main` means code is on the
   protected trunk but not necessarily released; the retired `fixed_dev` token
   remains only in frozen Agent Runtime delivery evidence.
-- Remove a merged worktree and run `git worktree prune` while closing its unit.
+- Delete each worktree as soon as its unit merges or is abandoned: `git worktree remove <path>` (this also deletes its `.venv` and `tmp/`), `git worktree prune`, then `git branch -d <branch>`. Never leave finished `_wt_*` worktrees under the repository root; if removal is refused, inspect the leftovers instead of forcing.
 
 ## Issue workflow
 

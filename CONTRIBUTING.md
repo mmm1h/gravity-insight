@@ -4,7 +4,8 @@ This repository is a governed SDK, not a wrapper around the Gravity web UI.
 Start at `docs/maintainers/index.md`, read only the maintainer guidance for the
 task, and put each round's working proposal in `tmp/`.
 
-Develop on `dev` in a dedicated worktree, not `main`. Keep changes narrowly
+Develop on a short-lived branch from current `main` in a dedicated worktree;
+delete it as soon as the change merges or is abandoned. Keep changes narrowly
 scoped. Public SDK, CLI, Plan, and operation capabilities are additive: retain
 existing public surfaces and prove that a breaking upgrade loses no read
 capability. Do not add compatibility aliases solely for old callers.
