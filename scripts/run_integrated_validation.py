@@ -668,7 +668,8 @@ def main(argv: list[str] | None = None) -> int:
     logs = run_root / "logs"
     logs.mkdir(parents=True, exist_ok=True)
     available = gate_specs(
-        Path(sys.executable).resolve(),
+        # Resolving a POSIX venv symlink would launch the base environment.
+        Path(sys.executable),
         run_root,
         cumulative_capability_base=_cumulative_capability_base(
             branch_is_main=before["branch_is_main"]

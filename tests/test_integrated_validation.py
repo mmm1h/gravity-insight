@@ -28,6 +28,7 @@ from scripts.run_integrated_validation import (
     gate_specs,
     integrated_green,
     is_independent_venv,
+    main,
     run_gate,
     summarize_gate_results,
 )
@@ -290,6 +291,33 @@ class InstalledWheelConsumerGuardTests(unittest.TestCase):
 
 
 class IntegratedValidationTests(unittest.TestCase):
+    @unittest.skipIf(os.name == "nt", "POSIX venv symlink regression")
+    def test_main_passes_invoked_symlink_to_every_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            python = Path(raw) / ".venv/bin/python"
+            python.parent.mkdir(parents=True)
+            python.symlink_to(Path(sys.executable).resolve())
+            self.assertNotEqual(python, python.resolve())
+            before = {
+                "clean": True,
+                "independent_venv": True,
+                "branch_is_main": False,
+                "head": "fixture",
+            }
+            with patch("scripts.run_integrated_validation.sys.executable", str(python)), patch(
+                "scripts.run_integrated_validation.preconditions", return_value=before
+            ), patch("scripts.run_integrated_validation.gate_specs", wraps=gate_specs) as specs:
+                # Stop after inventory construction, before running any real gate.
+                self.assertEqual(2, main(["--trial", "--only", "unknown-test-gate"]))
+            invoked = specs.call_args.args[0]
+            self.assertEqual(python, invoked)
+            gates = gate_specs(invoked, Path(raw))
+            self.assertTrue(gates)
+            self.assertTrue(all(
+                gate.command[0] == str(python)
+                for gate in gates if gate.command[0] != "git"
+            ))
+
     def test_structured_skip_remains_distinct_in_gate_and_report(self) -> None:
         with tempfile.TemporaryDirectory(dir=ROOT / "tmp") as raw:
             logs = Path(raw)

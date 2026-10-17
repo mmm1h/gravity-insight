@@ -185,4 +185,5 @@ def package_version_from_filename(artifact: Path) -> str:
 
 
 def current_python() -> Path:
-    return Path(sys.executable).resolve()
+    """Keep host tools in the invoking environment, including symlinked venvs."""
+    return Path(sys.executable)
