@@ -121,7 +121,9 @@ def read_retry(operation):
                 transient = exc.code == 429 or 500 <= exc.code < 600
             elif isinstance(exc, subprocess.CalledProcessError):
                 detail = str(exc.stderr or "") + str(exc.stdout or "")
-                transient = bool(re.search(r"HTTP (?:429|5[0-9]{2})|timeout|connection|TLS|EOF|network", detail, re.I))
+                status = re.search(r"HTTP\s+(\d{3})\b", detail, re.I)
+                transient = (int(status[1]) == 429 or 500 <= int(status[1]) < 600) if status else bool(
+                    re.search(r"timeout|connection|TLS|EOF|network", detail, re.I))
             else:
                 transient = isinstance(exc, (subprocess.TimeoutExpired, urllib.error.URLError, ConnectionError, TimeoutError))
             if not transient or attempt == 2:
@@ -212,7 +214,13 @@ class Repository:
         return sha
 
     def ancestor(self, older: str, newer: str) -> bool:
-        return self.git("merge-base", older, newer) == older
+        try:
+            self.git("merge-base", "--is-ancestor", older, newer)
+        except subprocess.CalledProcessError as exc:
+            if exc.returncode == 1:
+                return False
+            raise
+        return True
 
     def prepare(self, version: str, release_date: str) -> None:
         require_version(project_version(self.read("pyproject.toml")), version)
@@ -285,6 +293,23 @@ class Repository:
             self.git("checkout", "--detach", sha)
 
 
+def api_inventory(value, key: str) -> list:
+    if (not isinstance(value, dict) or type(value.get("total_count")) is not int
+            or value["total_count"] < 0 or not isinstance(value.get(key), list)
+            or value["total_count"] < len(value[key])):
+        raise CutError(f"invalid {key} inventory schema")
+    return value[key]
+
+
+def validate_run(run) -> None:
+    if (not isinstance(run, dict) or type(run.get("id")) is not int or run["id"] <= 0
+            or any(not isinstance(run.get(key), str) or not run[key]
+                   for key in ("head_sha", "head_branch", "event", "status", "html_url"))
+            or "conclusion" not in run
+            or (run["conclusion"] is not None and not isinstance(run["conclusion"], str))):
+        raise CutError("invalid workflow run schema")
+
+
 class Actions:
     def __init__(self, repo: Repository):
         self.repo = repo
@@ -299,7 +324,8 @@ class Actions:
         # Do not filter SHA/event: any historical publication attempt forbids recreation.
         runs = self.api("actions/workflows/release.yml/runs", "-f", f"branch={tag}",
                         "-f", "per_page=100")
-        if runs["total_count"] or runs["workflow_runs"]:
+        inventory = api_inventory(runs, "workflow_runs")
+        if runs["total_count"] or inventory:
             raise CutError("prior publication evidence: release.yml run; never recreate tag")
         try:
             self.api(f"releases/tags/{tag}")
@@ -314,7 +340,13 @@ class Actions:
     def find(self, workflow: str, branch: str, sha: str, event: str):
         runs = self.api(f"actions/workflows/{workflow}/runs", "-f", f"head_sha={sha}",
                         "-f", f"branch={branch}", "-f", f"event={event}",
-                        "-f", "per_page=100")["workflow_runs"]
+                        "-f", "per_page=100")
+        inventory = api_inventory(runs, "workflow_runs")
+        if len(inventory) != min(runs["total_count"], 100):
+            raise CutError("incomplete workflow_runs inventory schema")
+        runs = inventory
+        for run in runs:
+            validate_run(run)
         matches = [run for run in runs if run["head_sha"] == sha
                    and run["head_branch"] == branch and run["event"] == event]
         return max(matches, key=lambda run: run["id"]) if matches else None
@@ -343,6 +375,7 @@ class Actions:
             current = self.api(f"actions/runs/{run['id']}")
         except (subprocess.SubprocessError, OSError) as exc:
             raise CutError(f"cannot read final state of run {run['id']} {run.get('html_url', '')}: {exc}; retry after transport/auth recovery") from exc
+        validate_run(current)
         diagnostic = (f"run {run['id']} {current['html_url']} conclusion={current['conclusion']}; "
                       "re-run failed jobs, then retry the cut")
         if watch_error:
@@ -352,17 +385,36 @@ class Actions:
             raise CutError(diagnostic)
         if workflow == "ci.yml":
             jobs = self.api(f"actions/runs/{run['id']}/jobs", "-f", "per_page=100")
-            required = [job for job in jobs["jobs"] if job["name"] == "ci-required"]
-            if jobs["total_count"] > 100 or len(required) != 1 or required[0]["conclusion"] != "success":
+            inventory = api_inventory(jobs, "jobs")
+            if any(not isinstance(job, dict) or not isinstance(job.get("name"), str) or not job["name"]
+                   or "conclusion" not in job
+                   or (job["conclusion"] is not None and not isinstance(job["conclusion"], str))
+                   for job in inventory):
+                raise CutError("invalid jobs inventory schema")
+            required = [job for job in inventory if job["name"] == "ci-required"]
+            if jobs["total_count"] != len(inventory) or jobs["total_count"] > 100 or len(required) != 1 or required[0]["conclusion"] != "success":
                 raise CutError("missing unique successful ci-required on exact-SHA CI run")
         return current["html_url"]
 
 
-def cleanup(repo: Repository, branch: str) -> None:
+def cleanup(repo: Repository, branch: str, expected_sha: str | None = None) -> None:
     if not re.fullmatch(r"release-cut/dry-run/[0-9]+-[0-9]+", branch):
         raise CutError("cleanup only accepts this workflow's dry-run branch")
-    if repo.git("ls-remote", "--heads", "origin", f"refs/heads/{branch}"):
-        repo.git("push", "origin", "--delete", branch)
+    ref = f"refs/heads/{branch}"
+    lines = repo.git("ls-remote", "--heads", "origin", ref).splitlines()
+    if not lines:
+        return
+    fields = lines[0].split()
+    if (len(lines) != 1 or len(fields) != 2 or fields[1] != ref
+            or not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", fields[0])):
+        raise CutError(f"invalid remote ref inventory for {ref}; retained")
+    observed = fields[0]
+    if expected_sha is not None and observed != expected_sha:
+        raise CutError(f"dry-run cleanup lease mismatch for {ref}; retained")
+    try:
+        repo.git("push", "origin", f"--force-with-lease={ref}:{expected_sha or observed}", f":{ref}")
+    except (subprocess.SubprocessError, OSError) as exc:
+        raise CutError(f"dry-run cleanup failed for {ref}; retained on lease mismatch: {exc}") from exc
 
 
 def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
@@ -371,13 +423,14 @@ def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
     if repo.git("status", "--porcelain"):
         raise CutError("release cut requires a clean checkout")
     main = repo.refresh()
-    repo.git("checkout", "--detach", main)
     version = require_version(project_version(repo.git("show", f"{os.environ['GITHUB_SHA']}:pyproject.toml")), requested)
     actions = Actions(repo)
     if dry_run:
+        repo.git("checkout", "--detach", main)
         if project_version(repo.read("pyproject.toml")) != version:
             raise CutError(f"main version is no longer {version}; dispatch a new cut")
         branch = f"release-cut/dry-run/{os.environ['GITHUB_RUN_ID']}-{os.environ['GITHUB_RUN_ATTEMPT']}"
+        prep = None
         try:
             stamp = datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat()
             repo.prepare(version, stamp)
@@ -392,16 +445,20 @@ def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
                     f"Real run would promote prep, wait for main push CI, tag v{version}, "
                     "wait for release.yml, then validate and promote train. Main/tags unchanged.")
         finally:
-            cleanup(repo, branch)
+            if prep is not None:
+                cleanup(repo, branch, expected_sha=prep)
         return
     prefix = f"release-cut/v{version}"
     tag = repo.remote_tag(version)
     if tag:
+        if not repo.ancestor(tag, main):
+            raise CutError("foreign_release_tag: tagged commit is outside trusted main history; preserve tag")
         base = repo.git("rev-parse", tag + "^")
         repo.validate_candidate(tag, "prepare", version, base)
         main_version = project_version(repo.git("show", f"{main}:pyproject.toml"))
         if repo.ancestor(tag, main) and tuple(map(int, main_version.split("."))) > tuple(map(int, version.split("."))):
-            summary(f"Release {version} done: validated v{version} at {tag} is an ancestor of main {main}; train already opened.")
+            summary(f"Release cut {version} done; publication record: "
+                    f"https://github.com/{actions.slug}/actions/workflows/release.yml?query=branch%3Av{version}")
             return
     elif project_version(repo.git("show", f"{main}:pyproject.toml")) != version:
         raise CutError(f"main version is no longer {version}; dispatch a new cut")
@@ -411,11 +468,18 @@ def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
         if prep and prep != tag:
             raise CutError("release tag exists elsewhere; never move or replace it")
         prep = tag
-    if not prep and repo.git("show", "-s", "--format=%s", main) == f"Release cut: prepare {version}":
-        prep = main
+    if not prep and not tag:
+        # Only protected main history supplies a missing candidate identity.
+        for line in repo.git("log", "--first-parent", "--format=%H%x09%s", main).splitlines():
+            sha, title = line.split("\t", 1)
+            if title == f"Release cut: prepare {version}":
+                prep = sha
+                break
     base = repo.git("rev-parse", prep + "^") if prep else main
     old_prep = None
     if prep:
+        if not repo.ancestor(base, main):
+            raise CutError("foreign_candidate_parent: prepare parent is outside trusted main history")
         repo.validate_candidate(prep, "prepare", version, base)
         if main != prep and repo.ancestor(prep, main) and not tag:
             raise CutError("main_advanced_after_promotion: use a reviewed forward-only PR and fresh candidate/version; do not rewind main or tag superseded A")
@@ -500,8 +564,8 @@ def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
             repo.git("push", "origin", f"--force-with-lease={ref}:{sha}", f":{ref}")
         except (subprocess.SubprocessError, OSError, CutError) as exc:
             print(f"Best-effort candidate cleanup failed for {ref}: {exc}", flush=True)
-    summary(f"Release {version}\n\nPrep: {prep}\n\nTrain: {train}\n\n"
-            f"Tag: v{version}\n\nRelease run: {release_url}")
+    summary(f"Release cut {version} complete\n\nPrep: {prep}\n\nTrain: {train}\n\n"
+            f"Tag: v{version}\n\nPublication record (release.yml): {release_url}")
 
 
 def summary(text: str) -> None:

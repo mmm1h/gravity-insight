@@ -15,7 +15,7 @@
   `vV`. Tag decisions read remote state; any prior release.yml run for vV, GitHub
   Release or PyPI version forbids creating an absent tag. Read errors fail closed.
 - Coordinate all main writers **before promoting A until B lands**, including retries.
-  Any merge in this window strands the cut and cancels A's push CI (ref concurrency).
+  Any merge in this window strands the cut and cancels A's push CI if still running (ref concurrency).
   Main-check/tag-push is not atomic; preserve any tag created during that race.
 - If main advances before A is promoted, regenerate from current main only when A
   never reached main, V/Unreleased remain valid and no tag/train/publication exists.

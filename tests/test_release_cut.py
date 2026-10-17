@@ -151,6 +151,8 @@ class FakeRepository:
             sha = args[-1]
             return {'A': 'Release cut: prepare 0.3.28',
                     'B': 'Release cut: open-train 0.3.28'}.get(sha, 'ordinary change')
+        if args[:1] == ('log',):
+            return 'A\tRelease cut: prepare 0.3.28' if self.main in {'A', 'advanced'} else ''
         if args[:1] == ('rev-parse',):
             return 'M'
         if args[:1] == ('push',):
@@ -170,7 +172,7 @@ class FakeRepository:
         return self.tag
 
     def ancestor(self, older, newer):
-        return older == newer or (older == 'A' and newer in {'B', 'C', 'advanced'})
+        return older == 'M' or older == newer or (older == 'A' and newer in {'B', 'C', 'advanced'})
 
     def refresh(self):
         return self.main
@@ -277,7 +279,7 @@ class OrchestrationTests(unittest.TestCase):
                 else:
                     cut.orchestrate(repo, '', True)
                     self.assertIn(('train',), repo.commands)
-                cleanup.assert_called_once_with(repo, 'release-cut/dry-run/123-2')
+                cleanup.assert_called_once_with(repo, 'release-cut/dry-run/123-2', expected_sha='A')
                 pushes = [c for c in repo.commands if c[0] == 'push']
                 self.assertEqual(pushes, [('push', 'origin', 'A:refs/heads/release-cut/dry-run/123-2')])
 
@@ -292,8 +294,9 @@ class OrchestrationTests(unittest.TestCase):
 class ActionsTests(unittest.TestCase):
     def test_selection_filters_event_branch_sha_even_if_api_does_not(self):
         actions = cut.Actions(Mock())
-        good = {'id': 1, 'head_sha': 'A', 'head_branch': 'main', 'event': 'push'}
-        actions.api = Mock(return_value={'workflow_runs': [good, {**good, 'id': 2, 'event': 'workflow_dispatch'},
+        good = {'id': 1, 'head_sha': 'A', 'head_branch': 'main', 'event': 'push',
+                'status': 'completed', 'conclusion': 'success', 'html_url': 'url/1'}
+        actions.api = Mock(return_value={'total_count': 3, 'workflow_runs': [good, {**good, 'id': 2, 'event': 'workflow_dispatch'},
                                                           {**good, 'id': 3, 'head_sha': 'other'}]})
         self.assertEqual(actions.find('ci.yml', 'main', 'A', 'push'), good)
 
@@ -364,8 +367,10 @@ class RecoveryTests(unittest.TestCase):
                 repo = FakeRepository(main=main, tag='A')
                 with patch.object(cut, 'Actions') as actions, patch.object(cut, 'summary') as summary:
                     cut.orchestrate(repo, requested, False)
-                actions.return_value.wait.assert_not_called()
-                self.assertIn('done', summary.call_args.args[0])
+                self.assertEqual(actions.return_value.method_calls, [])
+                self.assertEqual(summary.call_args.args[0],
+                    f'Release cut 0.3.28 done; publication record: '
+                    f'https://github.com/{actions.return_value.slug}/actions/workflows/release.yml?query=branch%3Av0.3.28')
                 self.assertFalse(any(c[0] == 'push' for c in repo.commands))
 
     def test_absent_tag_and_changed_version_requires_new_dispatch(self):
@@ -454,19 +459,29 @@ class RecoveryTests(unittest.TestCase):
                 with patch.object(cut, 'Actions'), patch.object(cut, 'cleanup') as cleanup:
                     with self.assertRaises(cut.CutError):
                         cut.orchestrate(repo, '', True)
-                    cleanup.assert_called_once()
+                    if method in {'prepare', 'commit'}:
+                        cleanup.assert_not_called()
+                    else:
+                        cleanup.assert_called_once_with(repo, 'release-cut/dry-run/123-2', expected_sha='A')
                 self.assertFalse(any(c[0] == 'push' and ('main' in c[-1] or 'tags/' in c[-1]) for c in repo.commands))
 
     def test_cleanup_failure_is_best_effort_with_exact_leases(self):
         repo = FakeRepository()
         original = repo.git
+        deletions = []
         def git(*args):
             if args[0] == 'push' and args[-1].startswith(':'):
+                deletions.append(args)
                 raise subprocess.CalledProcessError(1, ['git', *args])
             return original(*args)
         repo.git = git
         self.execute(repo)
         self.assertEqual(repo.main, 'B')
+        self.assertEqual(deletions, [
+            ('push', 'origin', '--force-with-lease=refs/heads/release-cut/v0.3.28/prepare:A',
+             ':refs/heads/release-cut/v0.3.28/prepare'),
+            ('push', 'origin', '--force-with-lease=refs/heads/release-cut/v0.3.28/open-train:B',
+             ':refs/heads/release-cut/v0.3.28/open-train')])
 
     def test_remote_tag_changes_during_release_stop_train(self):
         for tag in (None, 'elsewhere'):
@@ -486,7 +501,7 @@ class ReadFailureTests(unittest.TestCase):
         older = dict(id=1, head_sha='A', head_branch='main', event='push',
                      status='completed', conclusion='success', html_url='url/1', run_attempt=5)
         newer = {**older, 'id': 2, 'conclusion': 'failure', 'html_url': 'url/2', 'run_attempt': 1}
-        actions.api = Mock(side_effect=[{'workflow_runs': [older, newer]}, newer])
+        actions.api = Mock(side_effect=[{'total_count': 2, 'workflow_runs': [older, newer]}, newer])
         with self.assertRaisesRegex(cut.CutError, 'run 2 url/2 conclusion=failure'):
             actions.wait('ci.yml', 'main', 'A', 'push')
 
@@ -501,13 +516,15 @@ class ReadFailureTests(unittest.TestCase):
             actions.wait('ci.yml', 'main', 'A', 'push')
 
     def test_api_retries_transient_only_and_bounds_exhaustion(self):
-        for error, attempts in [('HTTP 503', 3), ('HTTP 429', 3), ('connection reset', 3),
-                                ('HTTP 401', 1), ('HTTP 403', 1), ('HTTP 422', 1)]:
+        for error, attempts in [('HTTP 503', 3), ('HTTP 502', 3), ('HTTP 429', 3), ('connection reset', 3),
+                                ('HTTP 403: network access denied', 1), ('HTTP 401', 1), ('HTTP 403', 1), ('HTTP 422', 1)]:
             repo = Mock()
             repo.run.side_effect = subprocess.CalledProcessError(1, ['gh', 'api'], stderr=error)
             with patch.object(cut.time, 'sleep') as sleep, self.assertRaises(subprocess.CalledProcessError):
                 cut.Actions(repo).api('actions/runs/1')
             self.assertEqual(repo.run.call_count, attempts)
+            self.assertTrue(all(call.args[1:4] == ('api', '--method', 'GET')
+                                for call in repo.run.call_args_list))
             self.assertEqual([c.args[0] for c in sleep.call_args_list], [1, 2] if attempts == 3 else [])
         repo.run.side_effect = [subprocess.CalledProcessError(1, ['gh'], stderr='HTTP 502'), '{"ok": true}']
         with patch.object(cut.time, 'sleep'):
@@ -624,11 +641,14 @@ class GitReplayTests(unittest.TestCase):
 
     def test_dry_cleanup_push_failure_and_restricted_ref(self):
         repo = Mock()
-        repo.git.side_effect = ['abc\trefs/heads/release-cut/dry-run/123-2',
+        ref = 'refs/heads/release-cut/dry-run/123-2'
+        sha = 'a' * 40
+        repo.git.side_effect = [f'{sha}\t{ref}',
                                 subprocess.CalledProcessError(128, ['git', 'push'])]
-        with self.assertRaises(subprocess.CalledProcessError):
+        with self.assertRaisesRegex(cut.CutError, 'cleanup failed.*retained'):
             cut.cleanup(repo, 'release-cut/dry-run/123-2')
-        self.assertEqual(repo.git.call_args.args, ('push', 'origin', '--delete', 'release-cut/dry-run/123-2'))
+        self.assertEqual(repo.git.call_args.args,
+                         ('push', 'origin', f'--force-with-lease={ref}:{sha}', f':{ref}'))
 
 
 @patch.dict('os.environ', ENV)
@@ -655,7 +675,7 @@ class AdditionalBoundaries(unittest.TestCase):
         with patch.object(cut, 'Actions'), patch.object(cut, 'cleanup') as cleanup:
             with self.assertRaises(cut.CutError):
                 cut.orchestrate(repo, '', True)
-            cleanup.assert_called_once_with(repo, 'release-cut/dry-run/123-2')
+            cleanup.assert_called_once_with(repo, 'release-cut/dry-run/123-2', expected_sha='A')
 
     def test_watch_timeout_and_final_read_auth_failure_are_closed(self):
         run = dict(id=7, head_sha='A', head_branch='main', event='push',
@@ -676,3 +696,228 @@ class AdditionalBoundaries(unittest.TestCase):
                 cut.orchestrate(repo, '', False)
         self.assertEqual(repo.prepare.call_args.args[0], '0.3.29')
         self.assertFalse(any(c[0] == 'push' for c in repo.commands))
+
+
+@patch.dict('os.environ', ENV)
+class RoundTwoTrustTests(unittest.TestCase):
+    make_repo = GitReplayTests.make_repo
+
+    def assert_untrusted_rejected_at_subprocess(self, tagged):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'local').mkdir()
+            repo = self.make_repo(root / 'local')
+            base = repo.git('rev-parse', 'HEAD')
+            remote = cut.Repository(root / 'remote.git')
+            remote.root.mkdir()
+            remote.git('init', '--bare', '-q')
+            repo.git('remote', 'add', 'origin', str(remote.root))
+            repo.git('push', '-q', 'origin', f'{base}:refs/heads/main')
+            repo.write('scripts/check_changelog.py', 'raise RuntimeError("foreign code executed")\n')
+            repo.git('add', '.')
+            repo.git('commit', '-qm', 'foreign parent')
+            repo.git('commit', '--allow-empty', '-qm', 'Release cut: prepare 0.3.28',
+                     '-m', 'Release-Cut-Date: 2026-10-17')
+            candidate = repo.git('rev-parse', 'HEAD')
+            ref = 'refs/tags/v0.3.28' if tagged else 'refs/heads/release-cut/v0.3.28/prepare'
+            repo.git('push', '-q', 'origin', f'{candidate}:{ref}')
+            repo.git('checkout', '--detach', base)
+            real_run = subprocess.run
+            commands = []
+            def boundary(command, **kwargs):
+                commands.append(command)
+                # Fetch only reads the local fixture remote; all other allowed Git
+                # operations are reads. Checkout/reset/push, gh, Python and pip fail here.
+                self.assertEqual(command[0], 'git')
+                self.assertIn(command[1], {'status', 'fetch', 'rev-parse', 'show',
+                                          'ls-remote', 'merge-base', 'for-each-ref'})
+                return real_run(command, **kwargs)
+            reason = 'foreign_release_tag' if tagged else 'foreign_candidate_parent'
+            with patch.dict('os.environ', {'GITHUB_SHA': base}), patch.object(
+                    cut.subprocess, 'run', side_effect=boundary), self.assertRaisesRegex(cut.CutError, reason):
+                cut.orchestrate(repo, '', False)
+            fetch = next(i for i, c in enumerate(commands) if c[1:3] == ['fetch', '--prune'])
+            ancestry = next(i for i, c in enumerate(commands) if c[1] == 'merge-base')
+            self.assertLess(fetch, ancestry)
+            self.assertEqual(remote.git('rev-parse', ref), candidate)
+
+    def test_foreign_prepare_parent_rejected_before_any_executable_subprocess(self):
+        self.assert_untrusted_rejected_at_subprocess(tagged=False)
+
+    def test_tag_outside_main_rejected_before_any_executable_subprocess(self):
+        self.assert_untrusted_rejected_at_subprocess(tagged=True)
+
+    def test_train_parent_checked_before_checkout_or_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(directory)
+            base = repo.git('rev-parse', 'HEAD')
+            repo.git('commit', '--allow-empty', '-qm', 'foreign train parent')
+            repo.git('commit', '--allow-empty', '-qm', 'Release cut: open-train 0.3.28')
+            train = repo.git('rev-parse', 'HEAD')
+            real_run = subprocess.run
+            commands = []
+            def boundary(command, **kwargs):
+                commands.append(command)
+                self.assertEqual(command[:2], ['git', 'rev-list'])
+                return real_run(command, **kwargs)
+            with patch.object(cut.subprocess, 'run', side_effect=boundary), self.assertRaisesRegex(
+                    cut.CutError, 'single parent'):
+                repo.validate_candidate(train, 'open-train', '0.3.28', base)
+            self.assertEqual(len(commands), 1)
+
+    def test_missing_prep_ref_recovers_promoted_history_and_stops_if_advanced(self):
+        for advanced in (False, True):
+            with self.subTest(advanced=advanced), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / 'local').mkdir()
+                repo = self.make_repo(root / 'local')
+                base = repo.git('rev-parse', 'HEAD')
+                repo.python = Mock(side_effect=lambda *args: json.dumps({'0.3.27': 'old', '0.3.28': 'new'})
+                                   if '--print-digests' in args else '')
+                repo.prepare_files('0.3.28', '2026-10-17')
+                prep = repo.commit('prepare', '0.3.28', '2026-10-17')
+                if advanced:
+                    repo.git('commit', '--allow-empty', '-qm', 'ordinary C; version remains V')
+                main = repo.git('rev-parse', 'HEAD')
+                remote = cut.Repository(root / 'remote.git')
+                remote.root.mkdir()
+                remote.git('init', '--bare', '-q')
+                repo.git('remote', 'add', 'origin', str(remote.root))
+                repo.git('push', '-q', 'origin', f'{main}:refs/heads/main')
+                # No prepare ref exists. Real history discovery and deterministic replay run.
+                with patch.dict('os.environ', {'GITHUB_SHA': base}), patch.object(cut, 'Actions') as actions, \
+                        patch.object(repo, 'git', wraps=repo.git) as git:
+                    actions.return_value.wait.side_effect = cut.CutError('recovered main A; stop at CI')
+                    reason = 'main_advanced_after_promotion.*forward-only' if advanced else 'recovered main A'
+                    with self.assertRaisesRegex(cut.CutError, reason):
+                        cut.orchestrate(repo, '', False)
+                    self.assertFalse(any(c.args[0] == 'push' for c in git.call_args_list))
+                    if advanced:
+                        actions.return_value.wait.assert_not_called()
+                    else:
+                        actions.return_value.wait.assert_called_once_with('ci.yml', 'main', prep, 'push')
+
+    def test_dry_cleanup_lease_race_preserves_remote_tip(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'local').mkdir()
+            repo = self.make_repo(root / 'local')
+            before = repo.git('rev-parse', 'HEAD')
+            remote = cut.Repository(root / 'remote.git')
+            remote.root.mkdir()
+            remote.git('init', '--bare', '-q')
+            repo.git('remote', 'add', 'origin', str(remote.root))
+            branch = 'release-cut/dry-run/123-2'
+            ref = f'refs/heads/{branch}'
+            repo.git('push', '-q', 'origin', f'{before}:{ref}')
+            repo.git('commit', '--allow-empty', '-qm', 'replacement')
+            after = repo.git('rev-parse', 'HEAD')
+            repo.git('push', '-q', 'origin', f'{after}:refs/heads/object-source')
+            original = repo.git
+            commands = []
+            def racing_git(*args):
+                commands.append(args)
+                value = original(*args)
+                if args[0] == 'ls-remote':
+                    remote.git('update-ref', ref, after, before)
+                return value
+            repo.git = racing_git
+            with self.assertRaisesRegex(cut.CutError, 'cleanup failed.*retained'):
+                cut.cleanup(repo, branch)
+            self.assertIn(('push', 'origin', f'--force-with-lease={ref}:{before}', f':{ref}'), commands)
+            self.assertEqual(remote.git('rev-parse', ref), after)
+
+    def test_dry_cleanup_inside_run_keeps_pushed_sha_as_lease(self):
+        repo = FakeRepository()
+        prep = 'a' * 40
+        replacement = 'b' * 40
+        repo.commit = Mock(side_effect=[prep, 'train'])
+        original = repo.git
+        def git(*args):
+            if args[0] == 'ls-remote':
+                return f'{replacement}\trefs/heads/release-cut/dry-run/123-2'
+            return original(*args)
+        repo.git = git
+        with patch.object(cut, 'Actions'), patch.object(cut, 'summary'), self.assertRaisesRegex(
+                cut.CutError, 'lease mismatch.*retained'):
+            cut.orchestrate(repo, '', True)
+        self.assertEqual([c for c in repo.commands if c[0] == 'push'],
+                         [('push', 'origin', f'{prep}:refs/heads/release-cut/dry-run/123-2')])
+
+
+@patch.dict('os.environ', ENV)
+class DecisionSchemaTests(unittest.TestCase):
+    def test_publication_inventory_requires_valid_empty_evidence(self):
+        malformed = [None, [], {}, {'total_count': 0}, {'workflow_runs': []},
+                     {'total_count': None, 'workflow_runs': None},
+                     {'total_count': False, 'workflow_runs': []},
+                     {'total_count': -1, 'workflow_runs': []},
+                     {'total_count': '0', 'workflow_runs': []},
+                     {'total_count': 0.0, 'workflow_runs': []},
+                     {'total_count': 0, 'workflow_runs': {}},
+                     {'total_count': 0, 'workflow_runs': [dict(id=1)]}]
+        for value in malformed:
+            with self.subTest(value=value):
+                actions = cut.Actions(Mock())
+                actions.api = Mock(return_value=value)
+                with patch.object(cut, 'pypi_exists') as pypi, self.assertRaisesRegex(cut.CutError, 'inventory schema'):
+                    actions.require_unpublished('0.3.28')
+                actions.api.assert_called_once()
+                pypi.assert_not_called()
+        for count, runs in [(1, []), (1, [{}])]:
+            actions.api = Mock(return_value={'total_count': count, 'workflow_runs': runs})
+            with self.assertRaisesRegex(cut.CutError, 'prior publication evidence'):
+                actions.require_unpublished('0.3.28')
+        actions.api = Mock(side_effect=[{'total_count': 0, 'workflow_runs': []},
+            subprocess.CalledProcessError(1, ['gh'], stderr='HTTP 404')])
+        with patch.object(cut, 'pypi_exists', return_value=False) as pypi:
+            actions.require_unpublished('0.3.28')
+        pypi.assert_called_once_with('0.3.28')
+
+    def test_run_discovery_malformed_inventory_cannot_dispatch(self):
+        run = dict(id=1, head_sha='A', head_branch='main', event='push',
+                   status='completed', conclusion='success', html_url='url/1')
+        values = [None, {}, {'total_count': 1, 'workflow_runs': []},
+                  {'total_count': 0, 'workflow_runs': None},
+                  {'total_count': 1, 'workflow_runs': [None]},
+                  {'total_count': 1, 'workflow_runs': [{**run, 'id': True}]}]
+        values += [{'total_count': 1, 'workflow_runs': [{k: v for k, v in run.items() if k != key}]}
+                   for key in run]
+        for value in values:
+            with self.subTest(value=value):
+                actions = cut.Actions(Mock())
+                actions.api = Mock(return_value=value)
+                with self.assertRaisesRegex(cut.CutError, 'schema'):
+                    actions.wait('ci.yml', 'main', 'A', 'push', dispatch=True)
+                actions.repo.run.assert_not_called()
+
+    def test_jobs_inventory_malformed_or_incomplete_cannot_authorize(self):
+        run = dict(id=1, head_sha='A', head_branch='main', event='push',
+                   status='completed', conclusion='success', html_url='url/1')
+        good = dict(name='ci-required', conclusion='success')
+        values = [None, {}, {'total_count': None, 'jobs': None},
+                  {'total_count': True, 'jobs': [good]}, {'total_count': -1, 'jobs': []},
+                  {'total_count': 0, 'jobs': [good]}, {'total_count': 1, 'jobs': {}},
+                  {'total_count': 2, 'jobs': [good]}, {'total_count': 1, 'jobs': [None]},
+                  {'total_count': 1, 'jobs': [{'name': 'ci-required'}]},
+                  {'total_count': 1, 'jobs': [{'conclusion': 'success'}]}]
+        for value in values:
+            with self.subTest(value=value):
+                actions = cut.Actions(Mock())
+                actions.find = Mock(return_value=run)
+                actions.api = Mock(side_effect=[run, value])
+                with self.assertRaises(cut.CutError):
+                    actions.wait('ci.yml', 'main', 'A', 'push')
+                actions.repo.run.assert_not_called()
+
+    def test_final_run_state_malformed_cannot_authorize(self):
+        run = dict(id=1, head_sha='A', head_branch='main', event='push',
+                   status='completed', conclusion='success', html_url='url/1')
+        for value in (None, {}, {**run, 'head_sha': None}, {**run, 'conclusion': True}):
+            with self.subTest(value=value):
+                actions = cut.Actions(Mock())
+                actions.find = Mock(return_value=run)
+                actions.api = Mock(return_value=value)
+                with self.assertRaisesRegex(cut.CutError, 'workflow run schema'):
+                    actions.wait('ci.yml', 'main', 'A', 'push')
+                actions.api.assert_called_once_with('actions/runs/1')
