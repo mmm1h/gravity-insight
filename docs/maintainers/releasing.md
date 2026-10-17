@@ -1,95 +1,69 @@
 # Release Gate
 
-The tag workflow is the publication boundary. `verify-ci` requires GitHub to
-report `main` as protected, proves that the tag, checkout, branch API commit,
-and current `origin/main` are the same commit, then re-validates the
-identical commit's successful `push`/`main` CI run and unique `ci-required` job.
-Supply-chain controls and a fresh exact-tag Integrated Validation run execute in
-the Ubuntu `release-supply-chain` job. That job validates the intended wheel on
-all five surfaces and against the pinned canonical consumer, checks the
-release-version changelog and migration declaration, and emits
-`release-gate.json`. Both jobs gate the unchanged OIDC `publish` job. They are hard
-failures: a missing scanner/tool, incomplete Git history, unreviewed secret
-candidate, failed artifact install, invalid or incomplete SBOM, unreachable
-advisory service, incomplete audit response, or reported vulnerability blocks
-publish. There are no warning-only supply-chain outcomes.
+## One-click release cut
 
-`verify-ci` only accepts a CI run for the identical commit SHA that ran on
-`main` from a `push` event, succeeded, and reported `ci-required`. A missing or
-mismatched run fails the release rather than publishing on stale evidence.
-`ci-required` is the single aggregated branch-protection check; individual
-failures still surface in their own named jobs.
+- Merge changelog/migration edits through PRs first.
+  `pyproject.toml` must match Unreleased target; placeholder-only releases fail.
+- Complete [owner setup](owner-actions.md#release-cut-setup-and-key-lifecycle).
+- Dispatch **Release cut** on **main**: `gh workflow run release-cut.yml --ref main`;
+  add `-f dry_run=true` to validate without publishing. Optional `version` must equal
+  pyproject at dispatch `GITHUB_SHA`; retries retain that V, never select a later train.
+- Prepare dates Unreleased (Asia/Shanghai), appends its digest,
+  runs compatibility/harness generators, and pushes A to `release-cut/vV/prepare`.
+  Require exact-SHA deploy-key push CI with successful `ci-required` before promotion.
+- Promote fast-forwards main to A; require exact-SHA push/main CI before annotated
+  `vV`. Tag decisions read remote state; any prior release.yml run for vV, GitHub
+  Release or PyPI version forbids creating an absent tag. Read errors fail closed.
+- Coordinate all main writers **before promoting A until B lands**, including retries.
+  Merges in this window strand the cut and cancel running A push CI (ref concurrency).
+  Main-check/tag-push is not atomic; preserve tags created during that race.
+- If main advances before A is promoted, regenerate from current main only when A
+  never reached main, V/Unreleased remain valid and no tag/train/publication exists.
+  Lease-replace only the candidate branch; require fresh exact-SHA push CI.
+- `main_advanced_after_promotion`: deleting the candidate does not reset the release.
+  Never rewind main or tag superseded A. Recover through a reviewed forward-only PR
+  and fresh candidate/version, preserving changelog locks; unpublished-version reuse
+  requires explicit reconciliation. After tagging, preserve the tag: if publication
+  succeeded, open/verify the next train through a green PR; otherwise use a new version.
+- Open train waits for successful tag-push release.yml, builds B (next-patch bump),
+  validates locally and with push CI, then fast-forwards main while still A.
+  Rebuild a stale B with a lease only while main=A and tag=A. Best-effort lease-delete
+  both candidates after B lands; never touch other refs.
+- Rerun the cut to resume. Done means vV replays as deterministic prep of its
+  parent, is an ancestor of main, and main version > V; no candidate refs needed.
+  Check this before current-version checks. No tag and main version ≠ V requires
+  a new dispatch. Fresh dispatches on B target the new train; empty releases still fail.
+- Select the newest exact workflow/branch/event/SHA run for branch protection.
+  Re-run its failed jobs, then retry; never substitute an older success.
+  Missing push CI: lease-delete the candidate exact ref/SHA, then retry. Watch errors retain ID/URL/conclusion; GET retries are bounded.
+- Follow [release recovery](owner-actions.md#publishing) for partial publication;
+  GitHub reconciliation cannot replace successful tag-push release.yml.
+  Never delete, move or recreate a published tag.
+- Dry run checks A through CI on `release-cut/dry-run/<run>-<attempt>` and B locally;
+  never promotes main or tags. Both cleanups use the saved pre-push SHA; after runner
+  loss/cleanup failure, inspect and delete only that exact ref.
+- Environment deploy-key pushes trigger main CI and tag release;
+  candidates require push CI: `workflow_dispatch` checks do not satisfy required status checks. Token: Actions read-only.
+  Only cuts share non-cancelling concurrency.
 
-Integrated Validation runs again on the tag commit rather than reusing a local
-pre-tag receipt. After exact protected-main equivalence is established, the tag
-SHA is checked out as a local `main` branch solely to satisfy IV's clean-main
-precondition; the receipt must bind that SHA, contain the complete gate set, and
-have zero skips. This deliberately adds release latency and avoids a race in
-which `main` advances between a pre-tag IV run and tag creation. The tag path
-also uses an independent `.venv`; `workflow_dispatch` measurement/recovery never
-executes these publish-only gates.
+## Publication boundary
 
-The aggregate pre-publish receipt re-parses every source receipt, recomputes the
-wheel/sdist hashes, and requires the SBOM, dependency audit, installed-wheel
-matrix, consumer, changelog, migration, CI, secret-history, protected-main, and
-IV facts to agree on the release inputs. Provenance remains explicitly
-`deferred_post_publish` in that receipt because OIDC attestations do not exist
-until publication; `finalize-release` continues to verify them before creating
-or reconciling the GitHub Release.
+- Keep `release.yml` as the only publish path. Require protected main, identical tag/checkout/API/main SHA, and successful exact-SHA push/main CI with unique `ci-required`.
+- Run supply-chain controls and fresh exact-tag Integrated Validation in `release-supply-chain`; validate the intended wheel on all five surfaces and the pinned canonical consumer, plus changelog/migration declarations. Both verify-ci and supply-chain gate OIDC publish.
+- Use an independent `.venv` and local main checkout of the proven tag SHA for IV. Require an exact-SHA, non-trial receipt with every gate and zero skips; dispatch measurement/recovery never executes these publish-only gates.
+- Fail closed on missing tooling, incomplete history, secret findings, artifact-install failure, invalid SBOM, unavailable/incomplete advisory results, vulnerabilities, or mismatched evidence. No warning-only supply-chain outcomes.
+- The aggregate re-parses receipts, recomputes distribution hashes, and binds wheel/sdist, SBOM, audit, surface, consumer, changelog/migration, CI, secret-history, protected-main and IV facts. Provenance remains `deferred_post_publish` until OIDC attestations exist; finalize-release verifies it before GitHub Release reconciliation.
 
 ## Declared step coverage
 
-Job success alone is not release evidence. Every supply-chain step has a stable
-ID. The builder requires `coverage-prepublish.json` plus the current Actions
-run ID and attempt, before it reads any other release inputs. Its fixed
-prerequisite inventory is checked against the workflow by a drift test.
-The aggregate step runs with `always()`: a measure dispatch with skipped gates
-fails aggregation and cannot produce `release-gate.json`. The read-only
-`measure_release` tail may still inspect existing published assets when
-`verify_ci` succeeded and the run was not cancelled; it cannot authorize publish.
+- Job success alone is insufficient. Give each supply-chain step a stable ID; the builder checks the fixed prerequisite inventory against workflow drift tests and checks coverage-prepublish/current run/attempt before reading any other release input.
+- Aggregate with `always()`: measure runs with skipped gates fail aggregation and produce no `release-gate.json`. The read-only measurement tail runs only if `verify_ci` succeeded and the run was not cancelled; it cannot authorize publish.
+- Record raw `steps.*.outcome`, never the continue-on-error-adjusted conclusion. Bind `gravity.context-bound-measurement.v1` observations to workflow/job/step, scope, SHA, event, run and attempt; re-resolve observations rather than trusting summaries.
+- Measurements may record skipped/failed outcomes; coverage means required successful execution. Missing/skipped is `not_measured`; failed/cancelled/malformed/future is `invalid`; wrong context is `not_applicable`; older than 24 hours is `expired`. Only every prerequisite `measured` with outcome `success` in a push run passes.
+- List expected, ran, skipped, missing and excluded IDs. Prepublish excludes its observer and later operations; final includes aggregation/distribution upload but excludes its own observer and subsequent evidence upload. No observation attests future completion.
+- Upload diagnostic evidence with `always()`. Checkout/Python/upload failure may leave no artifact; absence never passes. These are trusted-workflow observations, not cryptographic proof of execution or a replacement for receipt/provenance validation.
 
-`release_step_coverage.py` records raw `steps.*.outcome`, not the adjusted
-`conclusion` that can turn a continue-on-error failure into success. Each
-observation uses `gravity.context-bound-measurement.v1` and the existing
-measurement resolver, bound to workflow/job/step, checkpoint scope, SHA, event,
-run ID and attempt. Coverage uses the existing five states: missing/skipped is
-`not_measured`; failed, cancelled, malformed or future-dated is `invalid`;
-wrong context is `not_applicable`; evidence older than 24 hours is `expired`.
-The underlying measurement may validly measure a skipped/failed outcome; the
-coverage status describes whether the required successful execution happened.
-Only every prerequisite `measured` with outcome `success` in a push run passes.
-Declared green summaries are not trusted; the builder re-resolves observations.
-
-Both checkpoints explicitly list expected, ran, skipped, missing and excluded
-step IDs. Prepublish coverage excludes its observer and subsequent operations.
-`coverage-final.json` includes aggregation and distribution upload outcomes,
-but explicitly excludes its own observer and the later evidence upload; neither
-can truthfully attest its own future completion. Diagnostic evidence upload uses
-`always()`, so a refused measure run still explains its omissions. If checkout,
-Python or upload itself fails, the workflow can fail without delivering a
-diagnostic artifact; absence is never a passing release receipt.
-
-These are trusted-workflow observations, not cryptographic attestations of
-runner execution. They do not replace source receipt validation or post-publish
-provenance. Collectors cannot prove execution if the trusted workflow lies.
-
-## Measured release timing
-
-The v0.3.7 tag run `33794176327` (2026-09-03) reached PyPI's recorded wheel
-upload in 76s and sdist upload in 78s. `verify-ci` and `release-supply-chain`
-ran in parallel for 17s and 50s; publish then ran for 26s. The workflow's first
-successful post-publish API verification completed about 136s after the tag,
-and GitHub Release reconciliation completed the workflow at 152s. Publish must
-continue to wait for both exact-SHA CI evidence and checked distributions.
-Inside supply-chain, Twine check, SBOM generation, and dependency audit could
-be split after the shared build, but the receipt shows only about four seconds
-outside the 14s SBOM critical branch, so the extra artifact/job coordination is
-not currently justified.
-
-Main CI run `33872829080` spent 429s in the complete-history scan (447s for the
-job), making it the critical path. PRs now use the bounded commit-range scan;
-`main`/`dev` pushes retain the full scan, which is stronger than a merely
-periodic sweep and preserves the exact-SHA release evidence contract.
+- Keep Twine check, SBOM and audit in the single supply-chain job: measured timing did not justify extra job/artifact coordination.
 
 ## Independent controls
 

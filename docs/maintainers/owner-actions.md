@@ -41,9 +41,11 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
 
 ## Repository controls
 
-- `main` is protected: no direct pushes or force pushes; changes merge through PRs.
+- `main` is protected: changes merge through PRs; only the generated release-cut
+  prep/train commits may fast-forward it after exact-SHA `ci-required`. No force pushes.
+- Active tag ruleset "release tags are immutable" (25296137) covers `refs/tags/v*`: update/deletion forbidden, no bypass actors; creation unrestricted for manual fallback. Never delete or recreate a published tag; use forward recovery.
 - Branch protection requires the aggregate `ci-required` check, not an individual
-  platform job. Do not remove or weaken it or its upstream CI gates.
+  platform job; individual failures remain in named jobs. Do not remove or weaken it or its upstream CI gates.
 - Replace `@<GITHUB_CODEOWNER>` in `.github/CODEOWNERS` before enforcing code
   ownership. This prerequisite is now satisfied: `.github/CODEOWNERS` assigns
   `* @mmm1h`, and the placeholder was closed in `e3fd462f`.
@@ -86,3 +88,18 @@ The advisory covers all Requests before `2.33.0` but only exposes callers of
 was routine maintenance, not an emergency mitigation. Pins stay exact and
 synchronized — moving to compatible ranges changes downstream installs and needs
 a separate owner decision.
+
+## Release cut setup and key lifecycle
+
+- Owner creates environment `release`, with deployment branches limited to `main`.
+- Owner adds a dedicated write-enabled repository deploy key and stores its private
+  key as environment secret `RELEASE_DEPLOY_KEY`. Keep `pypi` and its OIDC setup unchanged.
+- Preserve strict `ci-required` protection, including administrator enforcement;
+  do not add a bypass. Require exact-SHA deploy-key push CI.
+- Use the deploy key for Git pushes: SSH pushes trigger push CI and tag release.
+  `GITHUB_TOKEN` reads repository/Actions data; its pushes cannot trigger workflows.
+  `workflow_dispatch` checks do not satisfy required status checks.
+- Rotate by installing a new dedicated write key, replacing the environment secret,
+  validating a dry run, then removing the old public deploy key. Never commit keys.
+- For suspected exposure, revoke the deploy key immediately, cancel active cuts,
+  remove the secret, inspect refs/runs, and install a replacement before resuming.

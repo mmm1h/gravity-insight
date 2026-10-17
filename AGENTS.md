@@ -193,6 +193,9 @@ isolated.
 - `main` is the only long-lived development and integration branch. It is
   protected: never commit or push directly to it, force-push it, or weaken its
   required `ci-required` status check.
+- Narrow exception: only `release-cut.yml` may fast-forward `main`, only to its
+  generated release-prep or train-opening commit, and only after that exact SHA
+  has passed deploy-key push-event `ci-required`; `workflow_dispatch` checks do not satisfy required status checks. No force push or other direct-main exception. Coordinate all main writers from before prep promotion until train lands; never delete/move/recreate release tags.
 - Create each development worktree on a short-lived branch based on current
   `main`. Give it an ignored `.venv` and editable install, then validate with
   that environment's Python; shared editable interpreters can resolve imports
@@ -200,7 +203,7 @@ isolated.
 - Merge only through a green PR to `main`. `merged_main` means code is on the
   protected trunk but not necessarily released; the retired `fixed_dev` token
   remains only in frozen Agent Runtime delivery evidence.
-- Remove a merged worktree and run `git worktree prune` while closing its unit.
+- Delete each worktree as soon as its unit merges or is abandoned: `git worktree remove <path>` (this also deletes its `.venv` and `tmp/`), then `git branch -d <branch>`; `git worktree prune` is only for stale entries. Never leave finished `_wt_*` worktrees under the repository root. If either step is refused, inspect the leftovers and keep unmerged commits instead of forcing.
 
 ## Issue workflow
 
