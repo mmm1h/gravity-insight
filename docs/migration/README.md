@@ -35,23 +35,18 @@ GitHub 自动生成仍可保留，但不能替代这份维护型记录。
 
 ## 发版
 
-1. 把 `[Unreleased]` 的本次内容移入 `## [x.y.z] - YYYY-MM-DD`，在新的
-   `[Unreleased]` 中写下一个 `Target release`。版本尚未 bump 时，当前
-   `project.version` 也可由刚生成的 dated release 条目覆盖。
-2. 在当前工作树运行
-   `.venv/Scripts/python.exe scripts/check_changelog.py --print-digests`，
-   只把新版本 digest 追加到 `scripts/changelog_release_lock.json`。不得重算或替换旧
-   版本 digest。
-3. 运行普通检查；缺版本条目、缺 Breaking 声明、缺迁移页、lock inventory 漂移或
-   已发布正文变化都会返回非零：
-
-   ```powershell
-   .venv/Scripts/python.exe scripts/check_changelog.py
-   ```
-
-该检查是 `scripts/run_integrated_validation.py` 的 `changelog` gate；兼容性契约的
-`--check` 是同一集成验证里的 `generator_release_compatibility` gate。因此遗漏发布说明
-或生成产物漂移都不会在完整集成验证中变绿。
+1. 默认用 [Release cut](../maintainers/releasing.md#one-click-release-cut)：
+   `gh workflow run release-cut.yml --ref main`。先用 `-f dry_run=true` 验证候选；
+   正常 PR 负责编辑发布说明，自动化只做机械转换，不修改 roadmap 或迁移措辞。
+2. 人工 fallback 仍使用同一脚本，在独立虚拟环境、干净分支中运行
+   `python scripts/release_cut.py prepare --version <当前版本>`，提交生成物后运行
+   `python scripts/release_cut.py check`。日期默认 Asia/Shanghai；重现可传 `--date YYYY-MM-DD`。
+   prepare 只新增 digest，依次调用兼容性与 harness 编排生成器，不手改生成物。
+3. 从 A 合入前到下一 train 合入，协调全部 main writer；中途推进会搁置发布并取消仍在运行的 main push CI。人工路径经绿色 PR 合入 main，等 exact-SHA push CI 成功后在该提交创建/推送
+   annotated tag。发布成功后运行 `python scripts/release_cut.py open-train --version <已发版本>`，
+   提交、重新 `check`，通过另一个绿色 PR 开启下一 patch；人工不直接推 main。
+4. `check_changelog.py` 与 compatibility `--check` 仍是 Integrated Validation 门禁。
+   A 晋升后 main 推进只能走经审查的 forward-only PR/新候选版本，不回退 main、不标记旧 A、不删除或重建发布 tag；未发布版本复用须显式协调。失败恢复沿用 [Release Gate](../maintainers/releasing.md#one-click-release-cut)，不得改旧 digest。
 
 ## 自动更新消费方接入
 
