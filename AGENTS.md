@@ -195,7 +195,7 @@ isolated.
   required `ci-required` status check.
 - Narrow exception: only `release-cut.yml` may fast-forward `main`, only to its
   generated release-prep or train-opening commit, and only after that exact SHA
-  has passed `ci-required`. No force push or other direct-main exception.
+  has passed `ci-required`. No force push or other direct-main exception. Coordinate all main writers from before prep promotion until train lands; never delete/move/recreate release tags.
 - Create each development worktree on a short-lived branch based on current
   `main`. Give it an ignored `.venv` and editable install, then validate with
   that environment's Python; shared editable interpreters can resolve imports

@@ -43,8 +43,9 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
 
 - `main` is protected: changes merge through PRs; only the generated release-cut
   prep/train commits may fast-forward it after exact-SHA `ci-required`. No force pushes.
+- Active tag ruleset "release tags are immutable" (25296137) covers `refs/tags/v*`: update/deletion forbidden, no bypass actors; creation unrestricted for manual fallback. Never delete or recreate a published tag; use forward recovery.
 - Branch protection requires the aggregate `ci-required` check, not an individual
-  platform job. Do not remove or weaken it or its upstream CI gates.
+  platform job; individual failures remain in named jobs. Do not remove or weaken it or its upstream CI gates.
 - Replace `@<GITHUB_CODEOWNER>` in `.github/CODEOWNERS` before enforcing code
   ownership. This prerequisite is now satisfied: `.github/CODEOWNERS` assigns
   `* @mmm1h`, and the placeholder was closed in `e3fd462f`.

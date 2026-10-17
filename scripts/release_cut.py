@@ -11,6 +11,8 @@ import subprocess
 import sys
 import time
 import tomllib
+import urllib.error
+import urllib.request
 from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,7 +44,7 @@ def project_version(text: str) -> str:
 
 def require_version(actual: str, requested: str) -> str:
     if requested and requested != actual:
-        raise CutError(f"requested version {requested} differs from main version {actual}")
+        raise CutError(f"requested version {requested} differs from intended version {actual}")
     return actual
 
 
@@ -109,12 +111,43 @@ def detect_stage(main: str, prep: str | None, train: str | None,
     return "prepare"
 
 
-def resume_version(main_version: str, main_title: str, dispatch_version: str) -> str:
-    completed = re.fullmatch(rf"Release cut: open-train ({SEMVER})", main_title)
-    if (completed and next_version(completed[1]) == main_version
-            and completed[1] == dispatch_version):
-        return completed[1]
-    return main_version
+def read_retry(operation):
+    """Only read-only GETs: three attempts, with 1s/2s backoff."""
+    for attempt in range(3):
+        try:
+            return operation()
+        except (subprocess.SubprocessError, OSError) as exc:
+            if isinstance(exc, urllib.error.HTTPError):
+                transient = exc.code == 429 or 500 <= exc.code < 600
+            elif isinstance(exc, subprocess.CalledProcessError):
+                detail = str(exc.stderr or "") + str(exc.stdout or "")
+                transient = bool(re.search(r"HTTP (?:429|5[0-9]{2})|timeout|connection|TLS|EOF|network", detail, re.I))
+            else:
+                transient = isinstance(exc, (subprocess.TimeoutExpired, urllib.error.URLError, ConnectionError, TimeoutError))
+            if not transient or attempt == 2:
+                raise
+            time.sleep(2 ** attempt)
+
+
+def pypi_exists(version: str) -> bool:
+    # Same public version JSON endpoint/project as release.yml/finalize-release.
+    def get():
+        request = urllib.request.Request(
+            f"https://pypi.org/pypi/gravity-insight/{version}/json",
+            headers={"Accept": "application/json", "User-Agent": "gravity-insight-release-cut"})
+        with urllib.request.urlopen(request, timeout=30) as response:
+            body = response.read(4 * 1024 * 1024 + 1)
+        if len(body) > 4 * 1024 * 1024 or not isinstance(json.loads(body), dict):
+            raise CutError("invalid PyPI version JSON")
+        return True
+    try:
+        return read_retry(get)
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            return False
+        raise CutError(f"PyPI publication check failed: {exc}") from exc
+    except (OSError, ValueError) as exc:
+        raise CutError(f"PyPI publication check failed: {exc}") from exc
 
 
 class Repository:
@@ -162,13 +195,28 @@ class Repository:
         return self.git("rev-parse", ref + "^{commit}") if ref in exists else None
 
     def refresh(self) -> str:
-        self.git("fetch", "--prune", "--tags", "origin",
+        self.git("fetch", "--prune", "--no-tags", "origin",
                  "+refs/heads/*:refs/remotes/origin/*")
         return self.git("rev-parse", "refs/remotes/origin/main")
 
+    def remote_tag(self, version: str) -> str | None:
+        ref = f"refs/tags/v{version}"
+        lines = self.git("ls-remote", "--tags", "origin", ref, ref + "^{}").splitlines()
+        values = dict(line.split()[::-1] for line in lines)
+        if ref not in values:
+            return None
+        sha = values.get(ref + "^{}", values[ref])
+        self.git("fetch", "--no-tags", "origin", sha)
+        if self.git("rev-parse", sha + "^{commit}") != sha:
+            raise CutError("remote release tag does not resolve to a commit")
+        return sha
+
+    def ancestor(self, older: str, newer: str) -> bool:
+        return self.git("merge-base", older, newer) == older
+
     def prepare(self, version: str, release_date: str) -> None:
         require_version(project_version(self.read("pyproject.toml")), version)
-        if self.ref(f"refs/tags/v{version}"):
+        if self.remote_tag(version):
             raise CutError("refusing prepare: release tag already exists")
         self.prepare_files(version, release_date)
 
@@ -225,6 +273,7 @@ class Repository:
                 stamp = re.search(r"^Release-Cut-Date: (\d{4}-\d{2}-\d{2})$", message, re.M)
                 if not stamp:
                     raise CutError("candidate missing release date")
+                require_version(project_version(self.read("pyproject.toml")), version)
                 self.prepare_files(version, stamp[1])
             else:
                 self.train(version)
@@ -242,8 +291,25 @@ class Actions:
         self.slug = os.environ["GITHUB_REPOSITORY"]
 
     def api(self, path: str, *args: str):
-        return json.loads(self.repo.run("gh", "api", "--method", "GET",
-                                        f"repos/{self.slug}/{path}", *args))
+        return json.loads(read_retry(lambda: self.repo.run(
+            "gh", "api", "--method", "GET", f"repos/{self.slug}/{path}", *args)))
+
+    def require_unpublished(self, version: str) -> None:
+        tag = f"v{version}"
+        # Do not filter SHA/event: any historical publication attempt forbids recreation.
+        runs = self.api("actions/workflows/release.yml/runs", "-f", f"branch={tag}",
+                        "-f", "per_page=100")
+        if runs["total_count"] or runs["workflow_runs"]:
+            raise CutError("prior publication evidence: release.yml run; never recreate tag")
+        try:
+            self.api(f"releases/tags/{tag}")
+        except subprocess.CalledProcessError as exc:
+            if not re.search(r"HTTP 404\b", str(exc.stderr)):
+                raise
+        else:
+            raise CutError("prior publication evidence: GitHub Release; never recreate tag")
+        if pypi_exists(version):
+            raise CutError("prior publication evidence: PyPI version; never recreate tag")
 
     def find(self, workflow: str, branch: str, sha: str, event: str):
         runs = self.api(f"actions/workflows/{workflow}/runs", "-f", f"head_sha={sha}",
@@ -266,13 +332,24 @@ class Actions:
             run = self.find(workflow, branch, sha, event)
         if run is None:
             raise CutError(f"no {workflow} {event} run for {branch}@{sha} after 10 minutes")
+        watch_error = None
         if run["status"] != "completed":
-            self.repo.run("gh", "run", "watch", str(run["id"]), "--repo", self.slug,
-                          "--interval", "30", "--exit-status", timeout=5400)
-        current = self.api(f"actions/runs/{run['id']}")
+            try:
+                self.repo.run("gh", "run", "watch", str(run["id"]), "--repo", self.slug,
+                              "--interval", "30", "--exit-status", timeout=5400)
+            except (subprocess.SubprocessError, OSError) as exc:
+                watch_error = exc
+        try:
+            current = self.api(f"actions/runs/{run['id']}")
+        except (subprocess.SubprocessError, OSError) as exc:
+            raise CutError(f"cannot read final state of run {run['id']} {run.get('html_url', '')}: {exc}; retry after transport/auth recovery") from exc
+        diagnostic = (f"run {run['id']} {current['html_url']} conclusion={current['conclusion']}; "
+                      "re-run failed jobs, then retry the cut")
+        if watch_error:
+            raise CutError(f"watch failed ({watch_error}): {diagnostic}") from watch_error
         if (current["head_sha"], current["head_branch"], current["event"],
                 current["status"], current["conclusion"]) != (sha, branch, event, "completed", "success"):
-            raise CutError(f"run not successful: {current['html_url']}; rerun failed jobs then retry cut")
+            raise CutError(diagnostic)
         if workflow == "ci.yml":
             jobs = self.api(f"actions/runs/{run['id']}/jobs", "-f", "per_page=100")
             required = [job for job in jobs["jobs"] if job["name"] == "ci-required"]
@@ -295,9 +372,11 @@ def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
         raise CutError("release cut requires a clean checkout")
     main = repo.refresh()
     repo.git("checkout", "--detach", main)
-    version = require_version(project_version(repo.read("pyproject.toml")), requested)
+    version = require_version(project_version(repo.git("show", f"{os.environ['GITHUB_SHA']}:pyproject.toml")), requested)
     actions = Actions(repo)
     if dry_run:
+        if project_version(repo.read("pyproject.toml")) != version:
+            raise CutError(f"main version is no longer {version}; dispatch a new cut")
         branch = f"release-cut/dry-run/{os.environ['GITHUB_RUN_ID']}-{os.environ['GITHUB_RUN_ATTEMPT']}"
         try:
             stamp = datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat()
@@ -315,61 +394,112 @@ def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
         finally:
             cleanup(repo, branch)
         return
-    # Only a dispatch that started before B may resume that completed release.
-    # A fresh dispatch on B targets the new train and must still reject emptiness.
-    title = repo.git("show", "-s", "--format=%s", main)
-    dispatch_version = project_version(repo.git("show", f"{os.environ['GITHUB_SHA']}:pyproject.toml"))
-    version = resume_version(version, title, dispatch_version)
     prefix = f"release-cut/v{version}"
+    tag = repo.remote_tag(version)
+    if tag:
+        base = repo.git("rev-parse", tag + "^")
+        repo.validate_candidate(tag, "prepare", version, base)
+        main_version = project_version(repo.git("show", f"{main}:pyproject.toml"))
+        if repo.ancestor(tag, main) and tuple(map(int, main_version.split("."))) > tuple(map(int, version.split("."))):
+            summary(f"Release {version} done: validated v{version} at {tag} is an ancestor of main {main}; train already opened.")
+            return
+    elif project_version(repo.git("show", f"{main}:pyproject.toml")) != version:
+        raise CutError(f"main version is no longer {version}; dispatch a new cut")
     prep = repo.ref(f"refs/remotes/origin/{prefix}/prepare")
     train = repo.ref(f"refs/remotes/origin/{prefix}/open-train")
-    tag = repo.ref(f"refs/tags/v{version}")
+    if tag:
+        if prep and prep != tag:
+            raise CutError("release tag exists elsewhere; never move or replace it")
+        prep = tag
     if not prep and repo.git("show", "-s", "--format=%s", main) == f"Release cut: prepare {version}":
         prep = main
     base = repo.git("rev-parse", prep + "^") if prep else main
-    stage = detect_stage(main, prep, train, tag, base)
-    print(f"Resume {version}: {stage}", flush=True)
+    old_prep = None
     if prep:
         repo.validate_candidate(prep, "prepare", version, base)
-    if train:
-        if not prep:
-            raise CutError("train without prep")
-        repo.validate_candidate(train, "open-train", version, prep)
+        if main != prep and repo.ancestor(prep, main) and not tag:
+            raise CutError("main_advanced_after_promotion: use a reviewed forward-only PR and fresh candidate/version; do not rewind main or tag superseded A")
+        if main not in {prep, base} and not tag:
+            if train:
+                raise CutError("train exists before release tag")
+            actions.require_unpublished(version)
+            old_prep, prep, base = prep, None, main
+    stage = detect_stage(main, prep, train, tag, base)
+    print(f"Resume {version}: {stage}", flush=True)
     if stage == "prepare":
+        actions.require_unpublished(version)
+        repo.git("checkout", "--detach", main)
         stamp = datetime.now(ZoneInfo("Asia/Shanghai")).date().isoformat()
         repo.prepare(version, stamp)
         prep = repo.commit("prepare", version, stamp)
         repo.checks()
-        repo.git("push", "origin", f"{prep}:refs/heads/{prefix}/prepare")
+        lease = (f"--force-with-lease=refs/heads/{prefix}/prepare:{old_prep}",) if old_prep else ()
+        repo.git("push", "origin", *lease, f"{prep}:refs/heads/{prefix}/prepare")
     assert prep is not None
     if stage in {"prepare", "promote"}:
         actions.wait("ci.yml", prefix + "/prepare", prep, "workflow_dispatch", dispatch=True)
         if repo.refresh() != base:
-            raise CutError("main moved before promotion; no tag or train was pushed")
+            raise CutError("main moved before promotion; retry to regenerate candidate")
         repo.git("push", "origin", f"{prep}:refs/heads/main")
-    if stage != "done":
-        actions.wait("ci.yml", "main", prep, "push")
+    actions.wait("ci.yml", "main", prep, "push")
+    main = repo.refresh()
+    observed_tag = repo.remote_tag(version)
+    if tag and observed_tag != tag:
+        raise CutError("remote tag missing or changed; never recreate it")
+    tag = observed_tag
+    if main != prep:
+        reason = "main moved after tag" if tag else "main_advanced_after_promotion"
+        raise CutError(f"{reason}: stop; reviewed forward-only recovery required")
+    if tag and tag != prep:
+        raise CutError("release tag exists elsewhere; never move or replace it")
+    if not tag:
+        actions.require_unpublished(version)
+        # Remote state is authoritative even if fetch left an old local tag.
+        if repo.remote_tag(version):
+            raise CutError("tag appeared during publication checks; retry cut")
         if repo.refresh() != prep:
-            raise CutError("main moved; refusing tag/train (nothing may land between tag and train)")
-        if not tag:
-            repo.git("-c", "user.name=github-actions[bot]", "-c",
-                     "user.email=41898282+github-actions[bot]@users.noreply.github.com",
-                     "tag", "-a", f"v{version}", prep, "-m", f"Release {version}")
-            repo.git("push", "origin", f"refs/tags/v{version}")
+            raise CutError("main_advanced_after_promotion: do not tag superseded A")
+        local_tag = repo.ref(f"refs/tags/v{version}")
+        if local_tag:
+            raise CutError("local tag exists but remote tag is absent; refusing recreation")
+        repo.git("-c", "user.name=github-actions[bot]", "-c",
+                 "user.email=41898282+github-actions[bot]@users.noreply.github.com",
+                 "tag", "-a", f"v{version}", prep, "-m", f"Release {version}")
+        repo.git("push", "origin", f"refs/tags/v{version}")
+    if repo.remote_tag(version) != prep:
+        raise CutError("remote tag missing or changed; never recreate it")
+    if repo.refresh() != prep:
+        raise CutError("main moved after tag: preserve tag; reviewed forward-only recovery required")
     release_url = actions.wait("release.yml", f"v{version}", prep, "push")
-    if stage != "done":
-        if repo.refresh() != prep:
-            raise CutError("main moved after tag; nothing may land between tag and train")
-        if not train:
-            repo.git("checkout", "--detach", prep)
-            repo.train(version)
-            train = repo.commit("open-train", version)
-            repo.checks()
-            repo.git("push", "origin", f"{train}:refs/heads/{prefix}/open-train")
-        actions.wait("ci.yml", prefix + "/open-train", train, "workflow_dispatch", dispatch=True)
-        if repo.refresh() != prep:
-            raise CutError("main moved after tag; refusing train promotion")
-        repo.git("push", "origin", f"{train}:refs/heads/main")
+    if repo.refresh() != prep:
+        raise CutError("main moved after tag; preserve tag and open train through a reviewed green PR")
+    if repo.remote_tag(version) != prep:
+        raise CutError("remote tag missing or changed; never recreate it")
+    old_train = None
+    if train:
+        try:
+            repo.validate_candidate(train, "open-train", version, prep)
+        except CutError:
+            old_train, train = train, None
+    if not train:
+        repo.git("checkout", "--detach", prep)
+        repo.train(version)
+        train = repo.commit("open-train", version)
+        repo.checks()
+        lease = (f"--force-with-lease=refs/heads/{prefix}/open-train:{old_train}",) if old_train else ()
+        repo.git("push", "origin", *lease, f"{train}:refs/heads/{prefix}/open-train")
+    actions.wait("ci.yml", prefix + "/open-train", train, "workflow_dispatch", dispatch=True)
+    if repo.refresh() != prep:
+        raise CutError("main moved after tag; refusing train promotion")
+    if repo.remote_tag(version) != prep:
+        raise CutError("remote tag missing or changed; refusing train promotion")
+    repo.git("push", "origin", f"{train}:refs/heads/main")
+    for name, sha in (("prepare", prep), ("open-train", train)):
+        ref = f"refs/heads/{prefix}/{name}"
+        try:
+            repo.git("push", "origin", f"--force-with-lease={ref}:{sha}", f":{ref}")
+        except (subprocess.SubprocessError, OSError, CutError) as exc:
+            print(f"Best-effort candidate cleanup failed for {ref}: {exc}", flush=True)
     summary(f"Release {version}\n\nPrep: {prep}\n\nTrain: {train}\n\n"
             f"Tag: v{version}\n\nRelease run: {release_url}")
 

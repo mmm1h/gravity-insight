@@ -42,11 +42,11 @@ GitHub 自动生成仍可保留，但不能替代这份维护型记录。
    `python scripts/release_cut.py prepare --version <当前版本>`，提交生成物后运行
    `python scripts/release_cut.py check`。日期默认 Asia/Shanghai；重现可传 `--date YYYY-MM-DD`。
    prepare 只新增 digest，依次调用兼容性与 harness 编排生成器，不手改生成物。
-3. 人工路径经绿色 PR 合入 main，等 exact-SHA push CI 成功后在该提交创建/推送
+3. 从 A 合入前到下一 train 合入，协调全部 main writer；中途推进会搁置发布并取消 main push CI。人工路径经绿色 PR 合入 main，等 exact-SHA push CI 成功后在该提交创建/推送
    annotated tag。发布成功后运行 `python scripts/release_cut.py open-train --version <已发版本>`，
    提交、重新 `check`，通过另一个绿色 PR 开启下一 patch；人工不直接推 main。
 4. `check_changelog.py` 与 compatibility `--check` 仍是 Integrated Validation 门禁。
-   失败恢复沿用 [Release Gate](../maintainers/releasing.md#one-click-release-cut)，不得改旧 digest。
+   A 晋升后 main 推进只能走经审查的 forward-only PR/新候选版本，不回退 main、不标记旧 A、不删除或重建发布 tag；未发布版本复用须显式协调。失败恢复沿用 [Release Gate](../maintainers/releasing.md#one-click-release-cut)，不得改旧 digest。
 
 ## 自动更新消费方接入
 

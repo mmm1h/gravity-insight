@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Optional version, must equal main's pyproject.toml version
+        description: Optional version, must equal pyproject.toml version at dispatch SHA
         required: false
         type: string
       dry_run:
