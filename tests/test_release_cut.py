@@ -2,6 +2,7 @@
 from pathlib import Path
 from unittest.mock import Mock, patch
 import json
+import re
 import subprocess
 import tempfile
 import unittest
@@ -228,8 +229,8 @@ class OrchestrationTests(LeaseTestCase):
         repo = FakeRepository()
         calls, _ = self.execute(repo)
         self.assertEqual([(c.args[0], c.args[3]) for c in calls],
-                         [('ci.yml', 'workflow_dispatch'), ('ci.yml', 'push'),
-                          ('release.yml', 'push'), ('ci.yml', 'workflow_dispatch')])
+                         [('ci.yml', 'push'), ('ci.yml', 'push'),
+                          ('release.yml', 'push'), ('ci.yml', 'push')])
         pushes = [c[-1] for c in repo.commands if c[0] == 'push']
         self.assertEqual(pushes, ['A:refs/heads/release-cut/v0.3.28/prepare',
                                  'A:refs/heads/main', 'refs/tags/v0.3.28',
@@ -253,7 +254,7 @@ class OrchestrationTests(LeaseTestCase):
                 if main == 'B':
                     self.assertFalse(any(c[0] == 'push' for c in repo.commands))
 
-    def test_failed_dispatch_cannot_promote_or_tag(self):
+    def test_failed_candidate_push_ci_cannot_promote_or_tag(self):
         repo = FakeRepository()
         with self.assertRaises(cut.CutError):
             self.execute(repo, effect=cut.CutError('CI failed'))
@@ -300,6 +301,114 @@ class OrchestrationTests(LeaseTestCase):
 
 
 @patch.dict('os.environ', ENV)
+class CandidatePushTests(LeaseTestCase):
+    """Exercise real Actions/Repository.run down to the subprocess boundary."""
+
+    def execute(self, repo, *, dry=False, missing_sha=None):
+        repo.root = cut.ROOT
+        repo.run = lambda *args, **kwargs: cut.Repository.run(repo, *args, **kwargs)
+        queries, runs = [], {}
+
+        def boundary(command, **kwargs):
+            self.assertEqual(kwargs['encoding'], 'utf-8')
+            self.assertEqual(command[0], 'gh')
+            self.assertNotEqual(command[1:3], ['workflow', 'run'])
+            if command[1:3] == ['run', 'watch']:
+                self.assertIn(int(command[3]), runs)
+                return subprocess.CompletedProcess(command, 0, stdout='')
+            self.assertEqual(command[1:4], ['api', '--method', 'GET'])
+            path = command[4]
+            if '/workflows/' in path:
+                fields = dict(value.split('=', 1) for flag, value in
+                              zip(command[5::2], command[6::2]) if flag == '-f')
+                workflow = path.split('/workflows/')[1].split('/')[0]
+                query = (workflow, fields['branch'], fields['head_sha'], fields['event'])
+                queries.append(query)
+                self.assertEqual(fields['event'], 'push')
+                run_id = len(queries)
+                run = dict(id=run_id, head_sha=fields['head_sha'], head_branch=fields['branch'],
+                           event='push', status='queued', conclusion=None, html_url=f'url/{run_id}')
+                runs[run_id] = {**run, 'status': 'completed', 'conclusion': 'success'}
+                # Even a newer successful dispatch on the same SHA must never count.
+                inventory = [{**run, 'id': run_id + 1000, 'event': 'workflow_dispatch',
+                              'status': 'completed', 'conclusion': 'success'}]
+                if fields['head_sha'] != missing_sha:
+                    inventory.append(run)
+                result = dict(total_count=len(inventory), workflow_runs=inventory)
+            elif path.endswith('/jobs'):
+                result = dict(total_count=1, jobs=[dict(name='ci-required', conclusion='success')])
+            else:
+                result = runs[int(path.rsplit('/', 1)[1])]
+            return subprocess.CompletedProcess(command, 0, stdout=json.dumps(result))
+
+        with patch.object(cut.subprocess, 'run', side_effect=boundary), \
+                patch.object(cut.Actions, 'require_unpublished'), \
+                patch.object(cut, 'cleanup'), patch.object(cut, 'summary'), \
+                patch.object(cut.time, 'sleep') as sleep:
+            try:
+                cut.orchestrate(repo, '', dry)
+            finally:
+                self.queries = queries
+                self.sleeps = sleep.call_count
+        return queries
+
+    def test_all_candidate_waits_use_push_at_subprocess_boundary(self):
+        full = self.execute(FakeRepository())
+        dry = self.execute(FakeRepository(), dry=True)
+        self.assertEqual(full, [
+            ('ci.yml', 'release-cut/v0.3.28/prepare', 'A', 'push'),
+            ('ci.yml', 'main', 'A', 'push'),
+            ('release.yml', 'v0.3.28', 'A', 'push'),
+            ('ci.yml', 'release-cut/v0.3.28/open-train', 'B', 'push')])
+        self.assertEqual(dry, [('ci.yml', 'release-cut/dry-run/123-2', 'A', 'push')])
+
+    def test_ci_push_trigger_covers_every_pushed_candidate_ref(self):
+        workflow = yaml.load((cut.ROOT / '.github/workflows/ci.yml').read_text(encoding='utf-8'),
+                             Loader=yaml.BaseLoader)
+        patterns = workflow['on']['push']['branches']
+        branches = set()
+        for dry in (False, True):
+            repo = FakeRepository()
+            self.execute(repo, dry=dry)
+            for command in repo.commands:
+                if command[0] == 'push' and ':refs/heads/' in command[-1]:
+                    sha, ref = command[-1].split(':', 1)
+                    if sha and ref != 'refs/heads/main':
+                        branches.add(ref.removeprefix('refs/heads/'))
+        self.assertEqual(len(branches), 3)
+        # GitHub * excludes '/', while ** includes nested candidate names.
+        for branch in branches:
+            covered = False
+            for pattern in patterns:
+                regex = re.escape(pattern.removeprefix('!')).replace(r'\*\*', '.*').replace(r'\*', '[^/]*')
+                if re.fullmatch(regex, branch):
+                    covered = not pattern.startswith('!')  # Ordered exclusions can undo inclusion.
+            self.assertTrue(covered, (branch, patterns))
+
+    def test_unpromoted_candidate_without_push_ci_is_replaced_after_main_advances(self):
+        repo = FakeRepository(main='new-base', prep='old-A')
+        queries = self.execute(repo, missing_sha='old-A')
+        self.assertIn(('push', 'origin',
+                       '--force-with-lease=refs/heads/release-cut/v0.3.28/prepare:old-A',
+                       'A:refs/heads/release-cut/v0.3.28/prepare'), repo.commands)
+        self.assertEqual(queries[0], ('ci.yml', 'release-cut/v0.3.28/prepare', 'A', 'push'))
+        self.assertFalse(any(query[2] == 'old-A' for query in queries))
+
+    def test_existing_candidate_without_push_ci_stops_with_exact_lease_recovery(self):
+        repo = FakeRepository(prep='A')
+        with self.assertRaises(cut.CutError) as failure:
+            self.execute(repo, missing_sha='A')
+        message = str(failure.exception)
+        self.assertIn('no ci.yml push run for release-cut/v0.3.28/prepare@A after 10 minutes', message)
+        self.assertIn('git push origin --force-with-lease=refs/heads/release-cut/v0.3.28/prepare:A '
+                      ':refs/heads/release-cut/v0.3.28/prepare; then retry', message)
+        self.assertIn('advanced main regenerates an unpromoted prepare candidate automatically', message)
+        self.assertEqual(self.sleeps, 20)
+        self.assertEqual(len(self.queries), 21)
+        self.assertFalse(any(command[0] in {'prepare', 'push', 'tag'} for command in repo.commands))
+
+
+@patch.dict('os.environ', ENV)
 class ActionsTests(unittest.TestCase):
     def test_selection_filters_event_branch_sha_even_if_api_does_not(self):
         actions = cut.Actions(Mock())
@@ -310,7 +419,7 @@ class ActionsTests(unittest.TestCase):
         self.assertEqual(actions.find('ci.yml', 'main', 'A', 'push'), good)
 
     def test_wait_requires_unique_ci_required_not_just_run_success(self):
-        run = {'id': 1, 'head_sha': 'A', 'head_branch': 'branch', 'event': 'workflow_dispatch',
+        run = {'id': 1, 'head_sha': 'A', 'head_branch': 'branch', 'event': 'push',
                'status': 'completed', 'conclusion': 'success', 'html_url': 'https://example.invalid/1'}
         for jobs in [[], [{'name': 'ci-required', 'conclusion': 'skipped'}],
                      [{'name': 'ci-required', 'conclusion': 'success'}] * 2]:
@@ -318,16 +427,16 @@ class ActionsTests(unittest.TestCase):
             actions.find = Mock(return_value=run)
             actions.api = Mock(side_effect=[run, {'total_count': len(jobs), 'jobs': jobs}])
             with self.subTest(jobs=jobs), self.assertRaises(cut.CutError):
-                actions.wait('ci.yml', 'branch', 'A', 'workflow_dispatch', dispatch=True)
+                actions.wait('ci.yml', 'branch', 'A', 'push')
             actions.repo.run.assert_not_called()
 
-    def test_discovery_is_bounded_and_does_not_repeat_dispatch(self):
+    def test_discovery_is_bounded_and_never_dispatches(self):
         actions = cut.Actions(Mock())
         actions.find = Mock(return_value=None)
         with patch.object(cut.time, 'sleep') as sleep, self.assertRaisesRegex(cut.CutError, '10 minutes'):
-            actions.wait('ci.yml', 'branch', 'A', 'workflow_dispatch', dispatch=True)
+            actions.wait('ci.yml', 'branch', 'A', 'push')
         self.assertEqual(sleep.call_count, 20)
-        actions.repo.run.assert_called_once()
+        actions.repo.run.assert_not_called()
 
     def test_watch_is_bounded_and_failed_run_never_auto_redispatched(self):
         for status in ['queued', 'completed']:
@@ -355,7 +464,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(workflow['concurrency']['cancel-in-progress'], 'false')
         job = workflow['jobs']['cut']
         self.assertEqual(job['environment'], 'release')
-        self.assertEqual(job['permissions'], {'contents': 'read', 'actions': 'write'})
+        self.assertEqual(job['permissions'], {'contents': 'read', 'actions': 'read'})
         self.assertEqual(job['if'], "github.ref == 'refs/heads/main'")
         checkout = next(step for step in job['steps'] if step.get('uses', '').startswith('actions/checkout@'))
         self.assertEqual(checkout['with']['ssh-key'], '${{ secrets.RELEASE_DEPLOY_KEY }}')
@@ -403,7 +512,7 @@ class RecoveryTests(LeaseTestCase):
         for boundary in ('push', 'train'):
             repo = FakeRepository()
             def wait(workflow, branch, sha, event, **kwargs):
-                if (boundary == 'push' and event == 'push' and workflow == 'ci.yml'
+                if (boundary == 'push' and branch == 'main' and workflow == 'ci.yml'
                         or boundary == 'train' and branch.endswith('/open-train')):
                     repo.main = 'advanced'
             with self.assertRaisesRegex(cut.CutError, 'main_advanced_after_promotion|refusing train'):
@@ -898,7 +1007,7 @@ class DecisionSchemaTests(unittest.TestCase):
                 actions = cut.Actions(Mock())
                 actions.api = Mock(return_value=value)
                 with self.assertRaisesRegex(cut.CutError, 'schema'):
-                    actions.wait('ci.yml', 'main', 'A', 'push', dispatch=True)
+                    actions.wait('ci.yml', 'main', 'A', 'push')
                 actions.repo.run.assert_not_called()
 
     def test_jobs_inventory_malformed_or_incomplete_cannot_authorize(self):
@@ -1020,7 +1129,7 @@ class RoundThreeTests(LeaseTestCase):
                     self.assertEqual(pushes, [('push', 'origin',
                         f'{new_prep}:refs/heads/release-cut/v0.3.28/prepare')])
                     actions.return_value.wait.assert_called_once_with('ci.yml',
-                        'release-cut/v0.3.28/prepare', new_prep, 'workflow_dispatch', dispatch=True)
+                        'release-cut/v0.3.28/prepare', new_prep, 'push')
                 else:
                     self.assertEqual(pushes, [])
                     if position == 'before':

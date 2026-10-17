@@ -351,19 +351,21 @@ class Actions:
                    and run["head_branch"] == branch and run["event"] == event]
         return max(matches, key=lambda run: run["id"]) if matches else None
 
-    def wait(self, workflow: str, branch: str, sha: str, event: str,
-             *, dispatch: bool = False) -> str:
+    def wait(self, workflow: str, branch: str, sha: str, event: str) -> str:
         run = self.find(workflow, branch, sha, event)
-        if run is None and dispatch:
-            self.repo.run("gh", "workflow", "run", workflow, "--repo", self.slug,
-                          "--ref", branch)
         for _ in range(20):
             if run is not None:
                 break
             time.sleep(30)
             run = self.find(workflow, branch, sha, event)
         if run is None:
-            raise CutError(f"no {workflow} {event} run for {branch}@{sha} after 10 minutes")
+            diagnostic = f"no {workflow} {event} run for {branch}@{sha} after 10 minutes"
+            if workflow == "ci.yml" and event == "push" and branch.startswith("release-cut/"):
+                ref = f"refs/heads/{branch}"
+                diagnostic += (f"; delete only this exact ref with its SHA lease: "
+                               f"git push origin --force-with-lease={ref}:{sha} :{ref}; "
+                               "then retry the cut; advanced main regenerates an unpromoted prepare candidate automatically")
+            raise CutError(diagnostic)
         watch_error = None
         if run["status"] != "completed":
             try:
@@ -452,7 +454,7 @@ def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
             repo.checks()
             dry_run_lease_path(branch).write_text(prep + "\n", encoding="utf-8")
             repo.git("push", "origin", f"{prep}:refs/heads/{branch}")
-            actions.wait("ci.yml", branch, prep, "workflow_dispatch", dispatch=True)
+            actions.wait("ci.yml", branch, prep, "push")
             repo.train(version)
             train = repo.commit("open-train", version)
             repo.checks()
@@ -530,7 +532,7 @@ def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
         repo.git("push", "origin", *lease, f"{prep}:refs/heads/{prefix}/prepare")
     assert prep is not None
     if stage in {"prepare", "promote"}:
-        actions.wait("ci.yml", prefix + "/prepare", prep, "workflow_dispatch", dispatch=True)
+        actions.wait("ci.yml", prefix + "/prepare", prep, "push")
         if repo.refresh() != base:
             raise CutError("main moved before promotion; retry to regenerate candidate")
         repo.git("push", "origin", f"{prep}:refs/heads/main")
@@ -581,7 +583,7 @@ def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
         repo.checks()
         lease = (f"--force-with-lease=refs/heads/{prefix}/open-train:{old_train}",) if old_train else ()
         repo.git("push", "origin", *lease, f"{train}:refs/heads/{prefix}/open-train")
-    actions.wait("ci.yml", prefix + "/open-train", train, "workflow_dispatch", dispatch=True)
+    actions.wait("ci.yml", prefix + "/open-train", train, "push")
     if repo.refresh() != prep:
         raise CutError("main moved after tag; refusing train promotion")
     if repo.remote_tag(version) != prep:

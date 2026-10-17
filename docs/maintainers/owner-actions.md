@@ -95,10 +95,10 @@ a separate owner decision.
 - Owner adds a dedicated write-enabled repository deploy key and stores its private
   key as environment secret `RELEASE_DEPLOY_KEY`. Keep `pypi` and its OIDC setup unchanged.
 - Preserve strict `ci-required` protection, including administrator enforcement;
-  do not add a bypass. The dispatch CI checks the exact commit before promotion.
+  do not add a bypass. Require exact-SHA deploy-key push CI.
 - Use the deploy key for Git pushes: SSH pushes trigger push CI and tag release.
-  `GITHUB_TOKEN` only reads repository/Actions data and dispatches CI; its pushes
-  cannot trigger the required workflows.
+  `GITHUB_TOKEN` reads repository/Actions data; its pushes cannot trigger workflows.
+  `workflow_dispatch` checks do not satisfy required status checks.
 - Rotate by installing a new dedicated write key, replacing the environment secret,
   validating a dry run, then removing the old public deploy key. Never commit keys.
 - For suspected exposure, revoke the deploy key immediately, cancel active cuts,
