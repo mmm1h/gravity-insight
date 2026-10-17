@@ -26,8 +26,8 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "d0bbfdb7b5f91d01d709db381da6c81f26bf5c7ba4d0d6112a875cbb1081057c",
-    "manual_review_sha256": "f983523e154e4cd771b70a6d3f3eb9eb01252bfe82d661a7b2fc7d317d506e8a",
+    "reference_evidence_sha256": "bc7d7eb78d016b8d0de02de0a19e9aa6ba45c8b458f58e3d1b1fb00990032232",
+    "manual_review_sha256": "dc3bea2534335ba5b670ca90f936ce41c3a77883f3ef5cd477d08b3f7e69d4ab",
     "owner_state": "phase_2",
     "version_controlled_file_count": 3360,
     "scanned_file_count": 3352,
@@ -872,12 +872,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 421,
-    "reference_site_count": 419,
-    "manual_review_site_count": 316,
-    "reference_manual_overlap_count": 314,
+    "tracked_site_count": 428,
+    "reference_site_count": 426,
+    "manual_review_site_count": 323,
+    "reference_manual_overlap_count": 321,
     "manual_only_site_count": 2,
-    "unique_source_keys": 421,
+    "unique_source_keys": 428,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -886,7 +886,7 @@
       "documentation_spec": 2,
       "dynamic_import": 11,
       "entrypoint_config": 3,
-      "manual_patch_expression": 294,
+      "manual_patch_expression": 301,
       "module_qualname_dependency": 7,
       "static_import": 97,
       "string_reference": 5
@@ -896,12 +896,12 @@
       "bare_agent_string": 2,
       "dynamic_import": 11,
       "module_owner_receiver": 7,
-      "non_string_patch_expression": 294
+      "non_string_patch_expression": 301
     },
     "dispositions": {
-      "no_migration_effect": 421
+      "no_migration_effect": 428
     },
-    "sites_sha256": "0952e919a7819efdfe47807d6233bae3351243a2ee0fd8b7355691e81bf19d9f"
+    "sites_sha256": "63643d9bb106056bc4d0707dcedd921fa1868b2925179ecb8a3a1a9867640eea"
   },
   "blockers": [],
   "site_fields": [
@@ -5329,7 +5329,7 @@
       }
     ],
     [
-      "tests/test_release_cut.py:213:14:patch.object",
+      "tests/test_release_cut.py:1010:66:patch.object",
       "rm",
       "non_string_patch_expression",
       "cut",
@@ -5344,367 +5344,7 @@
       }
     ],
     [
-      "tests/test_release_cut.py:213:55:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:213:85:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:274:100:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:274:18:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:274:59:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:318:14:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut.time",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      18,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:368:22:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:368:63:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:459:22:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:459:52:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:523:18:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut.time",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      18,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:530:14:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut.time",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      18,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:549:18:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:558:18:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut.urllib.request",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      19,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:558:93:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut.time",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      18,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:570:18:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut.urllib.request",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      19,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:602:18:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:666:14:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:675:14:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:675:44:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:694:61:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:736:66:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut.subprocess",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      84,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:763:18:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut.subprocess",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      84,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:788:70:patch.object",
-      "rm",
-      "non_string_patch_expression",
-      "cut",
-      "",
-      "manual_patch_expression",
-      "manual",
-      "no_migration_effect",
-      "direct_object_patch",
-      23,
-      {
-        "kind": "none"
-      }
-    ],
-    [
-      "tests/test_release_cut.py:789:25:patch.object",
+      "tests/test_release_cut.py:1011:21:patch.object",
       "rm",
       "non_string_patch_expression",
       "repo",
@@ -5719,7 +5359,7 @@
       }
     ],
     [
-      "tests/test_release_cut.py:841:14:patch.object",
+      "tests/test_release_cut.py:1077:66:patch.object",
       "rm",
       "non_string_patch_expression",
       "cut",
@@ -5734,7 +5374,7 @@
       }
     ],
     [
-      "tests/test_release_cut.py:841:44:patch.object",
+      "tests/test_release_cut.py:222:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "cut",
@@ -5749,7 +5389,7 @@
       }
     ],
     [
-      "tests/test_release_cut.py:863:22:patch.object",
+      "tests/test_release_cut.py:222:55:patch.object",
       "rm",
       "non_string_patch_expression",
       "cut",
@@ -5764,7 +5404,472 @@
       }
     ],
     [
-      "tests/test_release_cut.py:873:14:patch.object",
+      "tests/test_release_cut.py:222:85:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:283:100:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:283:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:283:59:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:327:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut.time",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      18,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:377:22:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:377:63:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:468:22:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:468:52:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:533:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut.time",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      18,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:540:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut.time",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      18,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:559:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:568:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut.urllib.request",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      19,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:568:93:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut.time",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      18,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:580:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut.urllib.request",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      19,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:612:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:676:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:685:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:685:44:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:704:61:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:746:66:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut.subprocess",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      84,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:773:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut.subprocess",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      84,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:798:70:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:799:25:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "repo",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      38,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:851:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:851:44:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:873:22:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:883:14:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:977:66:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "repo",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      38,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:978:21:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:980:18:patch.object",
+      "rm",
+      "non_string_patch_expression",
+      "cut",
+      "",
+      "manual_patch_expression",
+      "manual",
+      "no_migration_effect",
+      "direct_object_patch",
+      23,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_release_cut.py:987:14:patch.object",
       "rm",
       "non_string_patch_expression",
       "cut",

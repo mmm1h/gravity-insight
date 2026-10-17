@@ -34,6 +34,15 @@ Target release: `0.3.28`
 PROJECT = '[project]\nname = "example"\nversion = "0.3.28"\n\n[tool.example]\nversion = "leave-me"\n'
 
 
+class LeaseTestCase(unittest.TestCase):
+    def setUp(self):
+        directory = tempfile.TemporaryDirectory()
+        self.addCleanup(directory.cleanup)
+        env = patch.dict('os.environ', {'RUNNER_TEMP': directory.name})
+        env.start()
+        self.addCleanup(env.stop)
+
+
 class TransformTests(unittest.TestCase):
     def test_prepare_preserves_history_and_advances_target(self):
         result = cut.prepare_changelog(CHANGELOG, "0.3.28", "2026-10-17")
@@ -208,7 +217,7 @@ ENV = {'GITHUB_REF': 'refs/heads/main', 'GITHUB_EVENT_NAME': 'workflow_dispatch'
 
 
 @patch.dict('os.environ', ENV)
-class OrchestrationTests(unittest.TestCase):
+class OrchestrationTests(LeaseTestCase):
     def execute(self, repo, dry=False, effect=None):
         with patch.object(cut, 'Actions') as actions, patch.object(cut, 'summary'), patch.object(cut, 'cleanup') as cleanup:
             actions.return_value.wait.side_effect = effect
@@ -279,7 +288,7 @@ class OrchestrationTests(unittest.TestCase):
                 else:
                     cut.orchestrate(repo, '', True)
                     self.assertIn(('train',), repo.commands)
-                cleanup.assert_called_once_with(repo, 'release-cut/dry-run/123-2', expected_sha='A')
+                cleanup.assert_called_once_with(repo, 'release-cut/dry-run/123-2')
                 pushes = [c for c in repo.commands if c[0] == 'push']
                 self.assertEqual(pushes, [('push', 'origin', 'A:refs/heads/release-cut/dry-run/123-2')])
 
@@ -358,7 +367,7 @@ class WorkflowTests(unittest.TestCase):
 
 
 @patch.dict('os.environ', ENV)
-class RecoveryTests(unittest.TestCase):
+class RecoveryTests(LeaseTestCase):
     execute = OrchestrationTests.execute
 
     def test_old_retry_after_later_commit_or_deleted_candidates_pushes_nothing(self):
@@ -462,7 +471,7 @@ class RecoveryTests(unittest.TestCase):
                     if method in {'prepare', 'commit'}:
                         cleanup.assert_not_called()
                     else:
-                        cleanup.assert_called_once_with(repo, 'release-cut/dry-run/123-2', expected_sha='A')
+                        cleanup.assert_called_once_with(repo, 'release-cut/dry-run/123-2')
                 self.assertFalse(any(c[0] == 'push' and ('main' in c[-1] or 'tags/' in c[-1]) for c in repo.commands))
 
     def test_cleanup_failure_is_best_effort_with_exact_leases(self):
@@ -517,7 +526,8 @@ class ReadFailureTests(unittest.TestCase):
 
     def test_api_retries_transient_only_and_bounds_exhaustion(self):
         for error, attempts in [('HTTP 503', 3), ('HTTP 502', 3), ('HTTP 429', 3), ('connection reset', 3),
-                                ('HTTP 403: network access denied', 1), ('HTTP 401', 1), ('HTTP 403', 1), ('HTTP 422', 1)]:
+                                ('HTTP/2 403: network access denied', 1), ('HTTP/1.1 502', 3),
+                                ('HTTP/2 429', 3), ('HTTP 403: network access denied', 1), ('HTTP 401', 1), ('HTTP 403', 1), ('HTTP 422', 1)]:
             repo = Mock()
             repo.run.side_effect = subprocess.CalledProcessError(1, ['gh', 'api'], stderr=error)
             with patch.object(cut.time, 'sleep') as sleep, self.assertRaises(subprocess.CalledProcessError):
@@ -646,13 +656,13 @@ class GitReplayTests(unittest.TestCase):
         repo.git.side_effect = [f'{sha}\t{ref}',
                                 subprocess.CalledProcessError(128, ['git', 'push'])]
         with self.assertRaisesRegex(cut.CutError, 'cleanup failed.*retained'):
-            cut.cleanup(repo, 'release-cut/dry-run/123-2')
+            cut.cleanup(repo, 'release-cut/dry-run/123-2', expected_sha=sha)
         self.assertEqual(repo.git.call_args.args,
                          ('push', 'origin', f'--force-with-lease={ref}:{sha}', f':{ref}'))
 
 
 @patch.dict('os.environ', ENV)
-class AdditionalBoundaries(unittest.TestCase):
+class AdditionalBoundaries(LeaseTestCase):
     def test_tag_seen_then_deleted_is_never_recreated_even_without_run_evidence(self):
         repo = FakeRepository(main='A', prep='A', tag='A')
         def wait(*args, **kwargs):
@@ -675,7 +685,7 @@ class AdditionalBoundaries(unittest.TestCase):
         with patch.object(cut, 'Actions'), patch.object(cut, 'cleanup') as cleanup:
             with self.assertRaises(cut.CutError):
                 cut.orchestrate(repo, '', True)
-            cleanup.assert_called_once_with(repo, 'release-cut/dry-run/123-2', expected_sha='A')
+            cleanup.assert_called_once_with(repo, 'release-cut/dry-run/123-2')
 
     def test_watch_timeout_and_final_read_auth_failure_are_closed(self):
         run = dict(id=7, head_sha='A', head_branch='main', event='push',
@@ -699,7 +709,7 @@ class AdditionalBoundaries(unittest.TestCase):
 
 
 @patch.dict('os.environ', ENV)
-class RoundTwoTrustTests(unittest.TestCase):
+class RoundTwoTrustTests(LeaseTestCase):
     make_repo = GitReplayTests.make_repo
 
     def assert_untrusted_rejected_at_subprocess(self, tagged):
@@ -823,7 +833,7 @@ class RoundTwoTrustTests(unittest.TestCase):
                 return value
             repo.git = racing_git
             with self.assertRaisesRegex(cut.CutError, 'cleanup failed.*retained'):
-                cut.cleanup(repo, branch)
+                cut.cleanup(repo, branch, expected_sha=before)
             self.assertIn(('push', 'origin', f'--force-with-lease={ref}:{before}', f':{ref}'), commands)
             self.assertEqual(remote.git('rev-parse', ref), after)
 
@@ -921,3 +931,152 @@ class DecisionSchemaTests(unittest.TestCase):
                 with self.assertRaisesRegex(cut.CutError, 'workflow run schema'):
                     actions.wait('ci.yml', 'main', 'A', 'push')
                 actions.api.assert_called_once_with('actions/runs/1')
+
+
+@patch.dict('os.environ', ENV)
+class RoundThreeTests(LeaseTestCase):
+    make_repo = GitReplayTests.make_repo
+
+    def attach_remote(self, root, repo):
+        remote = cut.Repository(root / 'remote.git')
+        remote.root.mkdir()
+        remote.git('init', '--bare', '-q')
+        repo.git('remote', 'add', 'origin', str(remote.root))
+        repo.git('push', '-q', 'origin', 'HEAD:refs/heads/main')
+        return remote
+
+    def generators(self, repo):
+        repo.python = Mock(side_effect=lambda *args: json.dumps({'0.3.27': 'old', '0.3.28': 'new'})
+                           if '--print-digests' in args else '')
+
+    def test_both_cleanup_entries_preserve_raced_tip_with_original_recorded_lease(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'local').mkdir()
+            repo = self.make_repo(root / 'local')
+            base = repo.git('rev-parse', 'HEAD')
+            remote = self.attach_remote(root, repo)
+            self.generators(repo)
+            repo.checks = Mock()
+            branch = 'release-cut/dry-run/123-2'
+            ref = f'refs/heads/{branch}'
+            original = repo.git
+            prep = replacement = None
+            def race(*args):
+                nonlocal prep, replacement
+                if args[0] == 'push' and args[-1].endswith(':' + ref):
+                    prep = args[-1].split(':')[0]
+                    # The lease exists before the push, even if its acknowledgement is lost.
+                    self.assertEqual(cut.dry_run_lease_path(branch).read_text().strip(), prep)
+                    original(*args)
+                    original('commit', '--allow-empty', '-qm', 'another writer')
+                    replacement = original('rev-parse', 'HEAD')
+                    original('push', '-q', 'origin', f'{replacement}:{ref}')
+                    raise cut.CutError('lost push acknowledgement')
+                return original(*args)
+            with patch.dict('os.environ', {'GITHUB_SHA': base}), patch.object(repo, 'git', side_effect=race), \
+                    patch.object(cut, 'Actions'), self.assertRaisesRegex(cut.CutError, 'lease mismatch.*retained'):
+                cut.orchestrate(repo, '', True)
+            with patch.object(cut, 'Repository', return_value=repo):
+                self.assertEqual(cut.main(['cleanup', '--branch', branch]), 1)
+            self.assertEqual(remote.git('rev-parse', ref), replacement)
+            self.assertEqual(cut.dry_run_lease_path(branch).read_text().strip(), prep)
+
+    def test_cli_cleanup_without_recorded_lease_performs_no_git_operations(self):
+        repo = Mock()
+        with patch.object(cut, 'Repository', return_value=repo):
+            self.assertEqual(cut.main(['cleanup', '--branch', 'release-cut/dry-run/123-2']), 0)
+        repo.git.assert_not_called()
+
+    def historical_collision(self, position):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'local').mkdir()
+            repo = self.make_repo(root / 'local')
+            base = repo.git('rev-parse', 'HEAD')
+            self.generators(repo)
+            title = 'Release cut: prepare 0.3.28'
+            if position in {'before', 'only'}:
+                repo.git('commit', '--allow-empty', '-qm', title)
+            prep = None
+            if position != 'only':
+                repo.prepare_files('0.3.28', '2026-10-17')
+                prep = repo.commit('prepare', '0.3.28', '2026-10-17')
+            if position == 'after':
+                repo.git('commit', '--allow-empty', '-qm', title)
+            main = repo.git('rev-parse', 'HEAD')
+            self.attach_remote(root, repo)
+            repo.checks = Mock()
+            with patch.dict('os.environ', {'GITHUB_SHA': base}), patch.object(cut, 'Actions') as actions, \
+                    patch.object(repo, 'git', wraps=repo.git) as git:
+                actions.return_value.wait.side_effect = cut.CutError('stop at CI')
+                reason = 'main_advanced_after_promotion' if position == 'after' else 'stop at CI'
+                with self.assertRaisesRegex(cut.CutError, reason):
+                    cut.orchestrate(repo, '', False)
+                pushes = [c.args for c in git.call_args_list if c.args[0] == 'push']
+                if position == 'only':
+                    new_prep = repo.git('rev-parse', 'HEAD')
+                    self.assertEqual(repo.git('rev-parse', new_prep + '^'), main)
+                    self.assertEqual(pushes, [('push', 'origin',
+                        f'{new_prep}:refs/heads/release-cut/v0.3.28/prepare')])
+                    actions.return_value.wait.assert_called_once_with('ci.yml',
+                        'release-cut/v0.3.28/prepare', new_prep, 'workflow_dispatch', dispatch=True)
+                else:
+                    self.assertEqual(pushes, [])
+                    if position == 'before':
+                        actions.return_value.wait.assert_called_once_with('ci.yml', 'main', prep, 'push')
+                    else:
+                        actions.return_value.wait.assert_not_called()
+
+    def test_ordinary_same_title_before_real_prep(self):
+        self.historical_collision('before')
+
+    def test_ordinary_same_title_after_real_prep(self):
+        self.historical_collision('after')
+
+    def test_ordinary_same_title_without_real_prep_allows_prepare(self):
+        self.historical_collision('only')
+
+    def test_rejected_candidate_leaves_trusted_base_for_following_step(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = self.make_repo(directory)
+            repo.write('scripts/following.py', 'print("trusted")\n')
+            repo.git('add', '.')
+            repo.git('commit', '-qm', 'trusted following step')
+            base = repo.git('rev-parse', 'HEAD')
+            self.generators(repo)
+            repo.prepare_files('0.3.28', '2026-10-17')
+            prep = repo.commit('prepare', '0.3.28', '2026-10-17')
+            repo.validate_candidate(prep, 'prepare', '0.3.28', base)
+            self.assertEqual(repo.git('rev-parse', 'HEAD'), prep)
+            repo.write('scripts/following.py', 'raise RuntimeError("rejected code")\n')
+            repo.git('add', '.')
+            repo.git('commit', '--amend', '--no-edit', '-q')
+            rejected = repo.git('rev-parse', 'HEAD')
+            with self.assertRaisesRegex(cut.CutError, 'tree differs'):
+                repo.validate_candidate(rejected, 'prepare', '0.3.28', base)
+            self.assertEqual(repo.git('rev-parse', 'HEAD'), base)
+            self.assertEqual(repo.git('status', '--porcelain'), '')
+            self.assertEqual(cut.Repository.python(repo, 'scripts/following.py'), 'trusted')
+
+    def test_bot_titled_non_candidates_do_not_block_legitimate_prepare(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'local').mkdir()
+            repo = self.make_repo(root / 'local')
+            base = repo.git('rev-parse', 'HEAD')
+            for stamp in ('', '2026-02-30', '2026-10-17'):
+                repo.git('-c', 'user.name=github-actions[bot]', '-c',
+                         'user.email=41898282+github-actions[bot]@users.noreply.github.com',
+                         'commit', '--allow-empty', '-qm', 'Release cut: prepare 0.3.28',
+                         '-m', f'Release-Cut-Date: {stamp}')
+            main = repo.git('rev-parse', 'HEAD')
+            self.attach_remote(root, repo)
+            self.generators(repo)
+            repo.checks = Mock()
+            with patch.dict('os.environ', {'GITHUB_SHA': base}), patch.object(cut, 'Actions') as actions:
+                actions.return_value.wait.side_effect = cut.CutError('fresh prep reached CI')
+                with self.assertRaisesRegex(cut.CutError, 'fresh prep reached CI'):
+                    cut.orchestrate(repo, '', False)
+            self.assertEqual(repo.git('rev-parse', 'HEAD^'), main)
+            self.assertIn('## [0.3.28] - ', repo.read('CHANGELOG.md'))

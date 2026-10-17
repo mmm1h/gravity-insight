@@ -40,7 +40,7 @@
   GitHub-only reconciliation cannot replace successful tag-push release.yml.
   Never delete, move or recreate a published tag.
 - Dry run checks A through CI on `release-cut/dry-run/<run>-<attempt>` and B locally;
-  never promotes main or tags. `finally` and `always()` clean the dry ref; after runner
+  never promotes main or tags. Both cleanups use the saved pre-push SHA; after runner
   loss or cleanup failure, inspect and delete only that exact ref manually.
 - All pushes use the environment deploy key: main triggers CI, tags trigger release;
   candidates need explicit CI dispatch. The token only reads/dispatches Actions.

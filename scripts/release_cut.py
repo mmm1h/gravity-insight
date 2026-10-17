@@ -121,7 +121,7 @@ def read_retry(operation):
                 transient = exc.code == 429 or 500 <= exc.code < 600
             elif isinstance(exc, subprocess.CalledProcessError):
                 detail = str(exc.stderr or "") + str(exc.stdout or "")
-                status = re.search(r"HTTP\s+(\d{3})\b", detail, re.I)
+                status = re.search(r"HTTP(?:/\d+(?:\.\d+)?)?\s+(\d{3})\b", detail, re.I)
                 transient = (int(status[1]) == 429 or 500 <= int(status[1]) < 600) if status else bool(
                     re.search(r"timeout|connection|TLS|EOF|network", detail, re.I))
             else:
@@ -290,7 +290,7 @@ class Repository:
                 raise CutError("candidate tree differs from deterministic generated release")
         finally:
             self.git("reset", "--hard", base)
-            self.git("checkout", "--detach", sha)
+        self.git("checkout", "--detach", sha)
 
 
 def api_inventory(value, key: str) -> list:
@@ -397,9 +397,23 @@ class Actions:
         return current["html_url"]
 
 
+def dry_run_lease_path(branch: str) -> Path:
+    if not re.fullmatch(r"release-cut/dry-run/[0-9]+-[0-9]+", branch):
+        raise CutError("cleanup only accepts this workflow's dry-run branch")
+    return Path(os.environ["RUNNER_TEMP"]) / (branch.replace("/", "-") + ".sha")
+
+
 def cleanup(repo: Repository, branch: str, expected_sha: str | None = None) -> None:
     if not re.fullmatch(r"release-cut/dry-run/[0-9]+-[0-9]+", branch):
         raise CutError("cleanup only accepts this workflow's dry-run branch")
+    if expected_sha is None:
+        lease = dry_run_lease_path(branch)
+        if not lease.exists():
+            print(f"No recorded dry-run lease for {branch}; nothing deleted", flush=True)
+            return
+        expected_sha = lease.read_text(encoding="utf-8").strip()
+    if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", expected_sha):
+        raise CutError("invalid recorded dry-run lease; retained")
     ref = f"refs/heads/{branch}"
     lines = repo.git("ls-remote", "--heads", "origin", ref).splitlines()
     if not lines:
@@ -409,10 +423,10 @@ def cleanup(repo: Repository, branch: str, expected_sha: str | None = None) -> N
             or not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", fields[0])):
         raise CutError(f"invalid remote ref inventory for {ref}; retained")
     observed = fields[0]
-    if expected_sha is not None and observed != expected_sha:
+    if observed != expected_sha:
         raise CutError(f"dry-run cleanup lease mismatch for {ref}; retained")
     try:
-        repo.git("push", "origin", f"--force-with-lease={ref}:{expected_sha or observed}", f":{ref}")
+        repo.git("push", "origin", f"--force-with-lease={ref}:{expected_sha}", f":{ref}")
     except (subprocess.SubprocessError, OSError) as exc:
         raise CutError(f"dry-run cleanup failed for {ref}; retained on lease mismatch: {exc}") from exc
 
@@ -436,6 +450,7 @@ def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
             repo.prepare(version, stamp)
             prep = repo.commit("prepare", version, stamp)
             repo.checks()
+            dry_run_lease_path(branch).write_text(prep + "\n", encoding="utf-8")
             repo.git("push", "origin", f"{prep}:refs/heads/{branch}")
             actions.wait("ci.yml", branch, prep, "workflow_dispatch", dispatch=True)
             repo.train(version)
@@ -446,7 +461,7 @@ def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
                     "wait for release.yml, then validate and promote train. Main/tags unchanged.")
         finally:
             if prep is not None:
-                cleanup(repo, branch, expected_sha=prep)
+                cleanup(repo, branch)
         return
     prefix = f"release-cut/v{version}"
     tag = repo.remote_tag(version)
@@ -473,6 +488,20 @@ def orchestrate(repo: Repository, requested: str, dry_run: bool) -> None:
         for line in repo.git("log", "--first-parent", "--format=%H%x09%s", main).splitlines():
             sha, title = line.split("\t", 1)
             if title == f"Release cut: prepare {version}":
+                parents = repo.git("rev-list", "--parents", "-n", "1", sha).split()
+                if len(parents) != 2 or not repo.ancestor(parents[1], main):
+                    continue
+                if repo.git("show", "-s", "--format=%cn <%ce>", sha) != (
+                        "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"):
+                    continue
+                try:
+                    stamp = repo.git("show", "-s", "--format=%(trailers:key=Release-Cut-Date,valueonly)", sha)
+                    if date.fromisoformat(stamp).isoformat() != stamp:
+                        continue
+                    repo.validate_candidate(sha, "prepare", version, parents[1])
+                except (ValueError, subprocess.CalledProcessError):
+                    # A title is only a hint. Explicit refs/tags still fail closed below.
+                    continue
                 prep = sha
                 break
     base = repo.git("rev-parse", prep + "^") if prep else main
