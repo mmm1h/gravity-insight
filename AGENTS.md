@@ -193,6 +193,9 @@ isolated.
 - `main` is the only long-lived development and integration branch. It is
   protected: never commit or push directly to it, force-push it, or weaken its
   required `ci-required` status check.
+- Narrow exception: only `release-cut.yml` may fast-forward `main`, only to its
+  generated release-prep or train-opening commit, and only after that exact SHA
+  has passed `ci-required`. No force push or other direct-main exception.
 - Create each development worktree on a short-lived branch based on current
   `main`. Give it an ignored `.venv` and editable install, then validate with
   that environment's Python; shared editable interpreters can resolve imports

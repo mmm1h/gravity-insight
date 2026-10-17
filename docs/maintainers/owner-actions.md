@@ -41,7 +41,8 @@ the natural choice at that point (patent and trademark clauses beyond MIT's).
 
 ## Repository controls
 
-- `main` is protected: no direct pushes or force pushes; changes merge through PRs.
+- `main` is protected: changes merge through PRs; only the generated release-cut
+  prep/train commits may fast-forward it after exact-SHA `ci-required`. No force pushes.
 - Branch protection requires the aggregate `ci-required` check, not an individual
   platform job. Do not remove or weaken it or its upstream CI gates.
 - Replace `@<GITHUB_CODEOWNER>` in `.github/CODEOWNERS` before enforcing code
@@ -86,3 +87,18 @@ The advisory covers all Requests before `2.33.0` but only exposes callers of
 was routine maintenance, not an emergency mitigation. Pins stay exact and
 synchronized — moving to compatible ranges changes downstream installs and needs
 a separate owner decision.
+
+## Release cut setup and key lifecycle
+
+- Owner creates environment `release`, with deployment branches limited to `main`.
+- Owner adds a dedicated write-enabled repository deploy key and stores its private
+  key as environment secret `RELEASE_DEPLOY_KEY`. Keep `pypi` and its OIDC setup unchanged.
+- Preserve strict `ci-required` protection, including administrator enforcement;
+  do not add a bypass. The dispatch CI checks the exact commit before promotion.
+- Use the deploy key for Git pushes: SSH pushes trigger push CI and tag release.
+  `GITHUB_TOKEN` only reads repository/Actions data and dispatches CI; its pushes
+  cannot trigger the required workflows.
+- Rotate by installing a new dedicated write key, replacing the environment secret,
+  validating a dry run, then removing the old public deploy key. Never commit keys.
+- For suspected exposure, revoke the deploy key immediately, cancel active cuts,
+  remove the secret, inspect refs/runs, and install a replacement before resuming.
