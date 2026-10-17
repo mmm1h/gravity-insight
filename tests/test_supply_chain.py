@@ -12,6 +12,7 @@ from unittest.mock import Mock, patch
 
 from scripts.audit_release_dependencies import audit_site_packages
 from scripts.generate_release_sbom import _bind_distribution
+from scripts.supply_chain_common import current_python, run_checked
 from scripts.scan_repository_secrets import (
     SecretScanError,
     load_allowlist,
@@ -52,6 +53,34 @@ def empty_allowlist(root: Path) -> Path:
         encoding="utf-8",
     )
     return path
+
+
+class CurrentPythonTests(unittest.TestCase):
+    @unittest.skipIf(os.name == "nt", "POSIX venv symlink regression")
+    def test_symlinked_host_python_keeps_child_in_the_venv(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            environment = Path(raw) / "environment"
+            python = environment / "bin/python"
+            python.parent.mkdir(parents=True)
+            python.symlink_to(Path(sys.executable).resolve())
+            (environment / "pyvenv.cfg").write_text(
+                f"home = {Path(sys.base_prefix) / 'bin'}\n"
+                "include-system-site-packages = false\n",
+                encoding="utf-8",
+            )
+            with patch("scripts.supply_chain_common.sys.executable", str(python)):
+                selected = current_python()
+            self.assertEqual(python, selected)
+            child = run_checked(
+                (str(selected), "-c", "import sys; print(sys.prefix)"),
+                label="probe invoking venv",
+            )
+            self.assertEqual(environment.resolve(), Path(child.stdout.strip()).resolve())
+
+    def test_copied_executable_path_is_unchanged(self) -> None:
+        python = Path("C:/worktree/.venv/Scripts/python.exe")
+        with patch("scripts.supply_chain_common.sys.executable", str(python)):
+            self.assertEqual(python, current_python())
 
 
 class SecretScanTests(unittest.TestCase):
