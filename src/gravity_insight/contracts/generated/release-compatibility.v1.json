@@ -2,7 +2,7 @@
   "schema_version": "gravity.release-compatibility.v1",
   "generated_from": {
     "path": "CHANGELOG.md",
-    "compatibility_sha256": "ffbfaa551365518eb1e313fff75dd5e340b93b9e4701cab0b3bc04a352b75bdd"
+    "compatibility_sha256": "1f20a2322f1d22c79fb21d64848f23a48bb9e6c9dda07bc0ad4b898d0938cfb1"
   },
   "upgrade_policy": {
     "release_order": "ascending_semver",
@@ -520,6 +520,16 @@
     },
     {
       "version": "0.3.29",
+      "release_status": "released",
+      "release_date": "2026-10-22",
+      "breaking_status": "none",
+      "breaking_status_reason": "explicitly_recorded_none",
+      "hard_breaks": [],
+      "soft_breaks": [],
+      "migration_guide": null
+    },
+    {
+      "version": "0.3.30",
       "release_status": "unreleased",
       "release_date": null,
       "breaking_status": "none",
