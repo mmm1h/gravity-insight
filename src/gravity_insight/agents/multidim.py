@@ -98,6 +98,11 @@ MULTIDIM_CAPABILITY: Mapping[str, Any] = {
         "调用方填写 App、指标、维度、日期和筛选，Agent 不推断任何业务值。",
         "不接受 SQL 文本，也不引用语义组合成员名。",
         (
+            "Source-through/native-calendar and zero-suppression semantics are "
+            "unverified: missing dates remain unknown, including empty spend windows. "
+            "Totals cover returned query rows; empty queries skip totals and return null."
+        ),
+        (
             "Cohort observation days must use the compiled Multidim "
             f"multi_keys item enum ({_MULTI_KEY_CONTRACT.allowed_text}); "
             f"post-D{_MULTI_KEY_CONTRACT.maximum} requests are a registered gap."

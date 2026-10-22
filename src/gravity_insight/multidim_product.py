@@ -10,6 +10,7 @@ from typing import Any, Mapping
 
 from .actionable_error_values import actual_value
 from .contracts.behavior_ad_semantics import behavior_ad_semantics_catalog
+from .contracts.multidim_availability import multidim_source_availability
 from .composite_batch import validate_composite_bounds
 from .errors import InputValidationError
 from .multidim_contract import (
@@ -106,14 +107,12 @@ def multidim_input_schema(
     selected_contract = contract or multidim_multi_key_contract()
 
     def name_array(field: str, *, default: bool = False) -> dict[str, Any]:
-        result = {
+        return {
             "type": "array",
             "maxItems": _NAME_LIMITS[field],
             "items": {"type": "string", "minLength": 1, "maxLength": 4_096},
+            **({"default": []} if default else {}),
         }
-        if default:
-            result["default"] = []
-        return result
     schema = {
         "schema_version": MULTIDIM_INPUT_SCHEMA_VERSION,
         "type": "object",
@@ -121,6 +120,7 @@ def multidim_input_schema(
         "required": ["date_list", "time_dims", "metrics_list"],
         "x-cli-shortcuts": _cli_shortcut_schema(selected_contract),
         "x-native-behavior-ad-semantics": behavior_ad_semantics_catalog(),
+        "x-source-availability": multidim_source_availability(),
         "properties": {
             "date_list": {
                 "type": "array",

@@ -26,11 +26,11 @@
     "generator_path": "scripts/generate_agent_module_reference_dispositions.py",
     "generator_sha256": "8f3fd5b671269680080d9d06ce1690b04af9b1b88e6c368c6f351ca5518481b2",
     "candidate_map_sha256": "c1f51eedcb83727de0cbd0821e5fb4a8d9bd5bdc616dd039df36e4d69aa85f4f",
-    "reference_evidence_sha256": "b2df2464127669cb07de84c9493a7e121cfba8ae8fed78fc2d24bdb80f08ac94",
+    "reference_evidence_sha256": "4b7ec48f6da4627d09bfaf4b85bd071417fc3ddea987cf40daf5302cb8cdc24e",
     "manual_review_sha256": "f4ce49a5854f4c6e15dde5154f2bb4dc5b3ecb4417c94d3bc8651fed26916d5a",
     "owner_state": "phase_2",
-    "version_controlled_file_count": 3360,
-    "scanned_file_count": 3352,
+    "version_controlled_file_count": 3363,
+    "scanned_file_count": 3355,
     "excluded_files": [
       ".env.example",
       "scripts/audit_agent_module_references.py",
@@ -876,12 +876,12 @@
     }
   ],
   "summary": {
-    "tracked_site_count": 433,
-    "reference_site_count": 431,
+    "tracked_site_count": 434,
+    "reference_site_count": 432,
     "manual_review_site_count": 328,
     "reference_manual_overlap_count": 326,
     "manual_only_site_count": 2,
-    "unique_source_keys": 433,
+    "unique_source_keys": 434,
     "unclassified_sites": 0,
     "blocker_count": 0,
     "site_blocker_count": 0,
@@ -892,7 +892,7 @@
       "entrypoint_config": 3,
       "manual_patch_expression": 306,
       "module_qualname_dependency": 7,
-      "static_import": 97,
+      "static_import": 98,
       "string_reference": 5
     },
     "manual_review_categories": {
@@ -903,9 +903,9 @@
       "non_string_patch_expression": 306
     },
     "dispositions": {
-      "no_migration_effect": 433
+      "no_migration_effect": 434
     },
-    "sites_sha256": "9381c14a3920e91776c899593d7692084921673313f5ac523318c2e032aca671"
+    "sites_sha256": "f7ff0d19b675ba855194a03920a1096f4fcc61ed1782746ff09618f9f56031e9"
   },
   "blockers": [],
   "site_fields": [
@@ -1283,7 +1283,7 @@
       }
     ],
     [
-      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:79329:text module path",
+      "src/gravity_insight/contracts/generated/repository-map.v2.json:1:79383:text module path",
       "r",
       "exact_reference",
       "gravity_insight.agent_runtime_contracts",
@@ -5118,6 +5118,21 @@
       "no_migration_effect",
       "direct_object_patch",
       91,
+      {
+        "kind": "none"
+      }
+    ],
+    [
+      "tests/test_multidim_source_availability.py:9:1:from import",
+      "r",
+      "exact_reference",
+      "gravity_insight.agent_runtime_contracts",
+      "gravity_insight.agent_runtime_contracts",
+      "static_import",
+      "exact",
+      "no_migration_effect",
+      "retained_module_reference",
+      115,
       {
         "kind": "none"
       }

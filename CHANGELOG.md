@@ -19,6 +19,10 @@ Target release: `0.3.29`
 
 - None.
 
+### Fixed
+
+- Multidim reads and discovery now expose a versioned `source_availability` capability gap for the unverified source-through/native-calendar and zero-suppression boundary, including acquisition spend. Missing dates remain unknown even when returned totals reconcile or fetch/page metadata looks current. SDK, CLI, Plan and Agent preserve the declaration; native composite totals cover returned query rows, and empty queries skip `calc_total` and keep `total=null` (#316).
+
 ## [0.3.28] - 2026-10-17
 
 ### Breaking changes

@@ -75,6 +75,7 @@ MULTIDIM_OUTPUT_FIELDS = frozenset(
         "query_executed",
         "schema_version",
         "status",
+        "source_availability",
         "total",
         "validation",
     }

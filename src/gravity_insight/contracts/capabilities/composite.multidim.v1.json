@@ -11,7 +11,7 @@
   "privacy_classification": "internal_business",
   "provider": {
     "kind": "agent_product_card",
-    "fingerprint": "f846fddeff80e4c8033f4d3928add9c0101ec07dad730814ee6392b417b26772"
+    "fingerprint": "65b0d6089629dd1fafd2664e35676e02f245aff7fd12d5c98a7cb285631966c6"
   },
   "dependencies": [
     {

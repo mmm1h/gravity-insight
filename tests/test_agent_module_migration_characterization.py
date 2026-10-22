@@ -550,19 +550,19 @@ def run():
 
         SQL catalog reads registration, not execution; discovery navigation and
         schema/default values use output, not routing or the public Agent facade.
-        Material-game composition adds reachable product nodes, not AST-only
-        or eager cycles. The untouched 17-module Agent ring remains largest.
+        Material-game composition and the Multidim availability leaf add reachable
+        nodes, not AST-only or eager cycles. The 17-module Agent ring remains largest.
         """
         expected = module_graph_baseline()
         self.assertEqual(
-            "28f8993c4fd56946a625bccfa00349ca4b5cf713dddd16b99e2a776e51f59372",
+            "95f47475d4fe64d8c7128f5a1735474d4900a16827dc76202259e17ce99e0219",
             module_graph_canonical_sha256(expected),
         )
         self.assertEqual(
             {
                 "ast-only": 17,
                 "ast+lazy-exports": 464,
-                "canonical": 583,
+                "canonical": 584,
                 "eager-ast-only": 0,
             },
             {
@@ -575,7 +575,7 @@ def run():
             expected["profiles"]["ast-only"]["cyclic_scc_sizes"],
         )
         self.assertEqual(
-            [583, 15, 8, 3, 2, 2, 2],
+            [584, 15, 8, 3, 2, 2, 2],
             expected["profiles"]["canonical"]["cyclic_scc_sizes"],
         )
         self.assertEqual(expected, module_graph_measurement())

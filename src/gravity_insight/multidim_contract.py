@@ -25,6 +25,7 @@ from ._field_policy_operations import (
     REPORT_MULTIDIM_TOTAL,
 )
 from .models import load_operation_manifest
+from .contracts.multidim_availability import multidim_source_availability
 from .paths import MANIFEST_ROOT
 
 
@@ -63,6 +64,7 @@ def multidim_component_observation(
     """Decide source-read provenance separately from source completeness."""
     stamp = _source_fetched_at(fetched_at)
     observation = {
+        "source_availability": multidim_source_availability(),
         "fetched_at": stamp,
         "fetched_at_availability": "available" if stamp is not None else "unavailable",
         "fetched_at_semantics": "source_fetch_observation",

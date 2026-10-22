@@ -57,7 +57,10 @@ def add_multidim_commands(
     query.add_argument(
         "--include-total",
         action="store_true",
-        help="Validate live metric metadata and calculate totals in the same command.",
+        help=(
+            "Calculate native totals from returned query rows; empty queries skip "
+            "totals and return null. Missing dates remain unknown."
+        ),
     )
     _add_product_shortcuts(query)
     query.add_argument(
