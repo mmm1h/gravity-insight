@@ -210,7 +210,7 @@ gravity multidim query --app main --input query.json --all-pages --output result
 ```
 
 入口只接受闭合物理输入。未知指标、维度、关系或 cohort horizon 在发网前失败；结果检查顶层状态、
-`query.status` 和分页完整性。`--include-total` 的 `revenue_1day` 会在同次查询中补齐并实时验证两个登记基础指标 `standard_1day_pay_amount`、`ad_1day_amount`；缺列/空值时拒绝合计，可去掉该选项保留普通观察。
+`query.status` 和分页完整性。`--include-total` 的 `revenue_1day` 会在同次查询中补齐并实时验证两个登记基础指标 `standard_1day_pay_amount`、`ad_1day_amount`；缺列/空值时拒绝合计，可去掉该选项保留普通观察。 `source_availability`（同份声明见 `--input-schema` 的 `x-source-availability`）明确报告当前未登记来源可用截止日、原生日历与零值省略语义；缺失日期保持未知，即使此前有显式零值行、调用方日期已结束、分页总数为零或合计与行和一致，也不能证明该日零消耗或全窗消耗完整。`fetched_at` 仅为读取时间。`--include-total` 将已返回行交给原生合计接口；`query.status=empty` 时跳过该调用并返回 `total=null`，不补零或自动另查日期。
 
 ### Business Semantic 与 Semantic Compose
 

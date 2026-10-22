@@ -111,7 +111,7 @@ preflight 决定；先用 Agent 产品卡生成节点，不手写猜测。
 | <a id="order-directory-composite"></a>`order_directory` | 产品行为见 [Order Directory v1](cli.md#order-directory-v1)；失败投影保留 `contract_diagnostic` 与类型化结果事实，旧合法 envelope 可重建但不补造字段证据。 |
 | <a id="order-split-trace-composite"></a>`order_split_trace` | 产品行为见 [Order Split Trace v1](cli.md#order-split-trace-v1)。 |
 | <a id="segment-rule-composite"></a>`segment_evaluate` | 接受显式 Segment Rule Spec；聚合人数/占比、自然语言和不保存分群的边界见 [Segment Rule Spec v2](cli.md#segment-rule-spec-v2)。 |
-| <a id="multidim-composite"></a>`multidim` | 要求 `input_schema_version`；闭合物理输入、预检和结果状态规则见 [Multidim](cli.md#multidim)。 |
+| <a id="multidim-composite"></a>`multidim` | 要求 `input_schema_version`；`source_availability` 为不可裁掉的结构边界，缺日未知、空查询跳过合计；闭合物理输入、预检和结果状态规则见 [Multidim](cli.md#multidim)。 |
 | <a id="user-detail-aggregate-composite"></a>`user_detail_aggregate` | request 只接受 `name/input_schema_version/inputs`，不接受 binding 或 foreach 目标；`inputs` 与 CLI 的闭合 schema 相同。adapter 内部固定 `max_workers=1`，要求请求 `bounds.max_pages <= node.limits.max_pages`、`bounds.max_cells <= node.limits.max_items`。结果 projector 从闭合单元格、分页/source/audit 白名单重新构造信封，原始 `data/request/next_page_input` 或未知容器 不会穿过 Plan 边界。 |
 | <a id="material-performance-composite"></a>`material_performance` | 按 App、日期窗和平台读取；原生字段与跨平台边界见 [Material Performance](cli.md#material-performance)。 |
 | <a id="promotion-performance-composite"></a>`promotion_performance` | 要求显式 App、日期窗、平台和物理指标；每个平台独立受预算约束，未用份额不能 借给 sibling。 |

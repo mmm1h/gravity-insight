@@ -10,6 +10,7 @@ from typing import Any
 from .response_drift import merge_response_drifts, normalize_response_drift
 from .contracts.user_event_scope import annotate_user_event_scope
 from .contracts.behavior_ad_semantics import annotate_behavior_ad_semantics
+from .contracts.multidim_availability import annotate_multidim_availability
 
 
 SCHEMA_VERSION = "gravity.result-audit.v1"
@@ -51,7 +52,9 @@ def add_result_audit(
 ) -> dict[str, Any]:
     """Add or merge the independent audit sub-contract without copying facts."""
 
-    selected = annotate_behavior_ad_semantics(annotate_user_event_scope(_audit_retention_result(dict(value))))
+    selected = annotate_multidim_availability(
+        annotate_behavior_ad_semantics(annotate_user_event_scope(_audit_retention_result(dict(value))))
+    )
     normalized = _references(references)
     current = selected.get("result_audit")
     existing_references: list[dict[str, str]] = []

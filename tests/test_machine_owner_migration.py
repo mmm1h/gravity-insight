@@ -24,7 +24,7 @@ class MachineOwnerMigrationTests(unittest.TestCase):
                 module_graph_canonical_sha256(module_graph_definition()),
             )
             self.assertEqual(
-                "28f8993c4fd56946a625bccfa00349ca4b5cf713dddd16b99e2a776e51f59372",
+                "95f47475d4fe64d8c7128f5a1735474d4900a16827dc76202259e17ce99e0219",
                 module_graph_canonical_sha256(module_graph_baseline()),
             )
 

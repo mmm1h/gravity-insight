@@ -14,6 +14,7 @@ from typing import Any, Mapping, Protocol, Sequence
 from .cache import is_metadata_operation
 from .composite_batch import validate_composite_bounds
 from .composite_result import multidim_envelope
+from .contracts.multidim_availability import multidim_source_availability
 from ._field_policy_operations import (
     REPORT_MULTIDIM_CUSTOM_METRIC,
     REPORT_MULTIDIM_METRIC,
@@ -148,13 +149,15 @@ class MultidimService:
                 operation_id=MULTIDIM_TOTAL_OPERATION,
                 label="total",
             )
-        return multidim_envelope(
+        result = multidim_envelope(
             validation,
             query,
             total,
             query_operation=MULTIDIM_QUERY_OPERATION,
             total_operation=MULTIDIM_TOTAL_OPERATION,
         )
+        result["source_availability"] = multidim_source_availability()
+        return result
 
     def validate(
         self,

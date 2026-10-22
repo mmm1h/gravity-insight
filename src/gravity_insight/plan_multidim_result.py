@@ -8,6 +8,7 @@ from typing import Any
 
 from .contracts.envelope_obligations import serialize_envelope
 from .contracts.behavior_ad_semantics import project_behavior_ad_semantics
+from .contracts.multidim_availability import multidim_source_availability
 from .multidim_contract import multidim_component_observation
 from .errors import ContractChangedError, ErrorCode
 from .multidim_service import (
@@ -36,6 +37,7 @@ _STRUCTURAL = frozenset(
         "schema_version", "ok", "status", "exit_code", "app_id",
         "network_called", "query_executed", "operation_id",
         "input_schema_version", "next_action",
+        "source_availability",
     }
 )
 _KNOWN_CODES = frozenset(item.value for item in ErrorCode)
@@ -101,6 +103,7 @@ def sanitize_multidim_result(
         if key in result
     }
     failed = result["ok"] is False
+    selected["source_availability"] = multidim_source_availability()
     if failed:
         selected["error"] = _safe_error(result.get("error"))
     selected["query"] = _safe_component(

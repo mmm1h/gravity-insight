@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "gravity.multidim-source-availability.v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "availability",
+    "gap_code",
+    "source_through",
+    "native_calendar",
+    "zero_suppression",
+    "missing_dates",
+    "source_completeness",
+    "fetched_at_semantics",
+    "composite_total",
+    "allowed_claims",
+    "forbidden_claims",
+    "evidence_needed",
+    "remediation"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "gravity.multidim-source-availability.v1"
+    },
+    "availability": {
+      "const": "unavailable"
+    },
+    "gap_code": {
+      "const": "MULTIDIM_SOURCE_AVAILABILITY_UNVERIFIED"
+    },
+    "source_through": {
+      "const": null
+    },
+    "native_calendar": {
+      "const": null
+    },
+    "zero_suppression": {
+      "const": "unverified"
+    },
+    "missing_dates": {
+      "const": "unknown_not_zero"
+    },
+    "source_completeness": {
+      "const": "unknown"
+    },
+    "fetched_at_semantics": {
+      "const": "source_fetch_observation_not_source_through"
+    },
+    "composite_total": {
+      "const": {
+        "basis": "returned_query_rows",
+        "requested_window_completeness": "unverified",
+        "empty_query_behavior": "skip_calc_total_and_return_null"
+      }
+    },
+    "allowed_claims": {
+      "const": [
+        "returned-scope-observation"
+      ]
+    },
+    "forbidden_claims": {
+      "const": [
+        "missing-date-as-zero",
+        "source-current-through-requested-end",
+        "complete-requested-window-spend"
+      ]
+    },
+    "evidence_needed": {
+      "const": [
+        "verified-source-through-and-native-calendar",
+        "verified-zero-suppression-semantics"
+      ]
+    },
+    "remediation": {
+      "const": "Keep omitted dates unknown and totals conditional on returned rows. Register reviewed source-through/native-calendar or zero-suppression evidence before certifying zero spend or complete requested-window spend."
+    }
+  }
+}
