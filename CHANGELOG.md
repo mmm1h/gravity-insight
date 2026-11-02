@@ -19,6 +19,10 @@ Target release: `0.3.30`
 
 - None.
 
+### Fixed
+
+- Shared structured `--input -` now decodes piped UTF-8 independently of the Windows locale and accepts an optional leading BOM. Unicode values survive PowerShell pipelines unchanged; UTF-8 JSON files also accept a BOM. Invalid UTF-8 remains `LOCAL_IO_ERROR` and malformed JSON remains `INPUT_INVALID` (#314).
+
 ## [0.3.29] - 2026-10-22
 
 ### Breaking changes

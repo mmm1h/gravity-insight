@@ -4,6 +4,10 @@ CLI 负责输入文件、UTF-8 输出、退出码和本地原子写文件。参�
 `--help` 为准；operation 字段、分页、投影和 fail-closed 规则以本页
 [机器契约索引](#machine-contract-index)中的运行时入口为准。
 
+共享结构化 `--input` 的 JSON 文件和 `--input -` 管道输入按严格 UTF-8 读取，允许一个开头 BOM；
+PowerShell 的 `$OutputEncoding` 应设为 UTF-8。非法 UTF-8 返回 `LOCAL_IO_ERROR`，解码后 JSON
+格式错误返回 `INPUT_INVALID`，均标记 `field=input`。
+
 ## 最短路径
 
 ```powershell
