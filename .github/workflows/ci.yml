@@ -5,6 +5,12 @@ on:
     branches: [main, dev, "release-cut/**"]
   pull_request:
   workflow_dispatch:
+    inputs:
+      full_platforms:
+        description: Run release-level Linux and Python compatibility checks
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -225,6 +231,7 @@ jobs:
 
   core_linux_python311:
     name: core-linux-python311
+    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-cut/v') && endsWith(github.ref, '/prepare')) || (github.event_name == 'workflow_dispatch' && inputs.full_platforms)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -246,6 +253,7 @@ jobs:
 
   core_linux_python312:
     name: core-linux-python312
+    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-cut/v') && endsWith(github.ref, '/prepare')) || (github.event_name == 'workflow_dispatch' && inputs.full_platforms)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -265,6 +273,7 @@ jobs:
 
   installed_wheel_linux_python312:
     name: installed-wheel-linux-python312
+    if: (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-cut/v') && endsWith(github.ref, '/prepare')) || (github.event_name == 'workflow_dispatch' && inputs.full_platforms)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -297,7 +306,9 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Require every CI gate
+        shell: python
         env:
+          PLATFORM_CHECKS_REQUIRED: ${{ (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release-cut/v') && endsWith(github.ref, '/prepare')) || (github.event_name == 'workflow_dispatch' && inputs.full_platforms) }}
           RESULTS: >-
             surface-parity=${{ needs.surface_parity.result }}
             windows-tests=${{ needs.windows_tests.result }}
@@ -307,15 +318,23 @@ jobs:
             agent-usability=${{ needs.agent_usability.result }}
             cli-smoke=${{ needs.cli_smoke.result }}
             supply-chain=${{ needs.supply_chain.result }}
+          PLATFORM_RESULTS: >-
             core-linux-python311=${{ needs.core_linux_python311.result }}
             core-linux-python312=${{ needs.core_linux_python312.result }}
             installed-wheel-linux-python312=${{ needs.installed_wheel_linux_python312.result }}
         run: |
-          failed=0
-          for result in $RESULTS; do
-            echo "$result"
-            if [[ "$result" != *=success ]]; then
-              failed=1
-            fi
-          done
-          exit "$failed"
+          import os
+          required = os.environ["PLATFORM_CHECKS_REQUIRED"]
+          if required not in {"true", "false"}:
+              raise SystemExit("invalid platform-check scope")
+          failed = False
+          for variable, expected in (
+              ("RESULTS", "success"),
+              ("PLATFORM_RESULTS", "success" if required == "true" else "skipped"),
+          ):
+              results = os.environ[variable].split()
+              failed |= not results
+              for result in results:
+                  print(result)
+                  failed |= result.rpartition("=")[2] != expected
+          raise SystemExit(int(failed))

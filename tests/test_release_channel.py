@@ -8,6 +8,7 @@ import subprocess
 import os
 import sys
 import tempfile
+import textwrap
 import tomllib
 import unittest
 from importlib import metadata
@@ -457,6 +458,45 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("Windows 3.11", readme)
         self.assertIn("Linux 3.11 / 3.12", readme)
         self.assertNotRegex(readme, r"Python 3\.(?:13|14)")
+
+    def test_platform_jobs_share_the_release_or_explicit_dispatch_scope(self) -> None:
+        ci = self.workflows[CI_WORKFLOW.name]
+        conditions = []
+        for name in (
+            "core_linux_python311", "core_linux_python312",
+            "installed_wheel_linux_python312",
+        ):
+            job = re.search(rf"(?ms)^  {name}:\n(.*?)(?=^  \w+:|\Z)", ci)
+            self.assertIsNotNone(job, name)
+            conditions.append(re.search(r"(?m)^    if: (.+)$", job.group()).group(1))
+        scope = conditions[0]
+        self.assertEqual([scope] * 3, conditions)
+        self.assertIn("github.event_name == 'push'", scope)
+        self.assertIn("startsWith(github.ref, 'refs/heads/release-cut/v')", scope)
+        self.assertIn("endsWith(github.ref, '/prepare')", scope)
+        self.assertIn("github.event_name == 'workflow_dispatch' && inputs.full_platforms", scope)
+        self.assertIn("PLATFORM_CHECKS_REQUIRED: ${{ " + scope + " }}", ci)
+        self.assertIn("full_platforms:", ci)
+        self.assertIn("default: false", ci)
+
+    def test_required_ci_accepts_intentional_platform_skips_and_rejects_gate_failures(self) -> None:
+        ci = self.workflows[CI_WORKFLOW.name]
+        aggregate = re.search(r"(?ms)^  ci_required:\n(.*)\Z", ci).group()
+        code = textwrap.dedent(aggregate.split("        run: |\n", 1)[1])
+        for scope, core, platforms, expected in (
+            ("false", "windows=success governance=success", "linux=skipped wheel=skipped", 0),
+            ("true", "windows=success governance=success", "linux=success wheel=success", 0),
+            ("true", "windows=success governance=success", "linux=skipped wheel=skipped", 1),
+            ("false", "windows=failure governance=success", "linux=skipped wheel=skipped", 1),
+            ("true", "windows=success governance=success", "linux=failure wheel=success", 1),
+        ):
+            with self.subTest(scope=scope, core=core, platforms=platforms):
+                run = subprocess.run(
+                    [sys.executable, "-I", "-c", code], capture_output=True,
+                    env={**os.environ, "PLATFORM_CHECKS_REQUIRED": scope,
+                         "RESULTS": core, "PLATFORM_RESULTS": platforms},
+                )
+                self.assertEqual(expected, run.returncode, run.stdout + run.stderr)
 
 
 class ReleaseProvenanceTests(unittest.TestCase):

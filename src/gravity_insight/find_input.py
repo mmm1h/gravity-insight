@@ -68,7 +68,13 @@ def _looks_like_path(source: str) -> bool:
 
 def _read_stdin() -> str:
     try:
-        return sys.stdin.read()
+        # Redirected Windows stdin can retain a locale codec even when the
+        # producer writes UTF-8. Decode bytes here, without changing a caller's
+        # text stream configuration; StringIO remains usable by embedded CLIs.
+        buffer = getattr(sys.stdin, "buffer", None)
+        if buffer is not None:
+            return buffer.read().decode("utf-8-sig")
+        return sys.stdin.read().removeprefix("\ufeff")
     except UnicodeError as exc:
         raise LocalIOError(
             "structured input source is not readable UTF-8 text", field="input"
@@ -77,7 +83,7 @@ def _read_stdin() -> str:
 
 def _read_json_file(source: str) -> str:
     try:
-        return Path(source).read_text(encoding="utf-8")
+        return Path(source).read_text(encoding="utf-8-sig")
     except FileNotFoundError as exc:
         raise InputValidationError(
             f"actual value: {actual_value(source)}; allowed value: an existing JSON file",

@@ -5,6 +5,49 @@ from gravity_insight.errors import error_detail_from_exception, exit_code_for_er
 
 
 class CliStdioTests(unittest.TestCase):
+    def test_utf8_json_pipe_preserves_unicode_with_or_without_bom(self):
+        value = {"app_id": "1", "query": "中文 Łódź 😀", "literal": "\ufeffinside"}
+        script = """from unittest.mock import patch
+from gravity_insight import __main__ as entry
+from gravity_insight.find_input import object_input
+patch('gravity_insight.__main__.ensure_first_run_credentials',return_value=True).start()
+patch('gravity_insight.cli.dispatch_command',side_effect=lambda args,*_: {'inputs':object_input(args.input)}).start()
+raise SystemExit(entry.main(['run','analysis.event.list','--input','-']))
+"""
+        env = {**os.environ, "PYTHONIOENCODING": "gbk", "PYTHONUTF8": "0"}
+        for prefix in (b"", b"\xef\xbb\xbf"):
+            with self.subTest(bom=bool(prefix)):
+                run = subprocess.run(
+                    [sys.executable, "-c", script], env=env,
+                    input=prefix + json.dumps(value, ensure_ascii=False).encode("utf-8"),
+                    capture_output=True,
+                )
+                self.assertEqual(0, run.returncode, run.stderr.decode("utf-8", "replace"))
+                self.assertEqual(value, json.loads(run.stdout.decode("utf-8"))["inputs"])
+
+    def test_json_pipe_distinguishes_invalid_utf8_from_malformed_json(self):
+        script = """from unittest.mock import patch
+from gravity_insight import __main__ as entry
+from gravity_insight.find_input import object_input
+patch('gravity_insight.__main__.ensure_first_run_credentials',return_value=True).start()
+patch('gravity_insight.cli.dispatch_command',side_effect=lambda args,*_: object_input(args.input)).start()
+raise SystemExit(entry.main(['run','analysis.event.list','--input','-']))
+"""
+        env = {**os.environ, "PYTHONIOENCODING": "gbk", "PYTHONUTF8": "0"}
+        for payload, expected in (
+            (b'{"query":"\xff"}', (4, "LOCAL_IO_ERROR", "local")),
+            (b'\xef\xbb\xbf{"query":', (2, "INPUT_INVALID", "caller")),
+        ):
+            with self.subTest(code=expected[1]):
+                run = subprocess.run(
+                    [sys.executable, "-c", script], env=env,
+                    input=payload, capture_output=True,
+                )
+                error = json.loads(run.stderr.decode("utf-8"))["error"]
+                self.assertEqual(expected, (run.returncode, error["code"], error["category"]))
+                self.assertEqual("input", error["field"])
+                self.assertEqual(b"", run.stdout)
+
     def test_gbk_process_emits_utf8_and_classifies_codec_failures_as_local(self):
         script = "from unittest.mock import patch\nfrom gravity_insight import __main__ as entry\np=patch('gravity_insight.cli.dispatch_command',return_value={'data':{'list':['Łódź']}});p.start()\nraise SystemExit(entry.main(['--dry-run']))"
         env = {**os.environ, "PYTHONIOENCODING": "gbk"}

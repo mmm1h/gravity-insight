@@ -408,6 +408,21 @@ class GravityInsightCliTests(unittest.TestCase):
         self.assertEqual(25, result["limit"])
         self.assertEqual(25, client.read_all_calls[0][2])
 
+    def test_bom_json_file_and_text_stdin_reach_read_unchanged(self):
+        value = {"app_id": "1", "query": "中文", "literal": "\ufeffinside"}
+        content = json.dumps(value, ensure_ascii=False)
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "input.json"
+            path.write_text(content, encoding="utf-8-sig")
+            for source, stdin in ((str(path), ""), ("-", "\ufeff" + content)):
+                with self.subTest(source=source):
+                    code, result, error, client = self.invoke(
+                        ["read", "analysis.event.list", "--input", source], stdin=stdin,
+                    )
+                    self.assertEqual(0, code, error)
+                    self.assertEqual(value, result["inputs"])
+                    self.assertEqual([("analysis.event.list", value)], client.read_calls)
+
     def test_batch_read_passes_concurrency(self):
         payload = [{"operation_id": "app.list", "inputs": {}, "request_id": "apps"}]
         with tempfile.TemporaryDirectory() as temporary:
