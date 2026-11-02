@@ -10,7 +10,7 @@
   pyproject at dispatch `GITHUB_SHA`; retries retain that V, never select a later train.
 - Prepare dates Unreleased (Asia/Shanghai), appends its digest,
   runs compatibility/harness generators, and pushes A to `release-cut/vV/prepare`.
-  Require exact-SHA deploy-key push CI with successful `ci-required` before promotion.
+  Require exact-SHA deploy-key push CI with successful `ci-required` before promotion; release preparation includes the Linux/Python compatibility jobs that daily CI omits (`full_platforms` dispatch also runs them).
 - Promote fast-forwards main to A; require exact-SHA push/main CI before annotated
   `vV`. Tag decisions read remote state; any prior release.yml run for vV, GitHub
   Release or PyPI version forbids creating an absent tag. Read errors fail closed.
